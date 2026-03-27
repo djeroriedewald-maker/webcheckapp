@@ -24,13 +24,21 @@ class ScanService
     {
         $results = [];
 
+        // Resolve the canonical host once before running any scanner.
+        // Many sites have SSL/services only on www.domain.com while the apex
+        // domain has no open port 443. Without this step every scanner would
+        // fail for those sites (TTFB null, no compression detected, etc.).
+        $canonicalHost = $this->resolveCanonicalHost($host);
+
+        // DNS scanner always uses the user-supplied host (apex domain),
+        // because SPF/DMARC/CAA records live on the apex regardless of www.
         $scanners = [
-            'ssl'         => fn() => (new SslScanner())->scan($host),
-            'headers'     => fn() => (new HeadersScanner())->scan($host),
+            'ssl'         => fn() => (new SslScanner())->scan($canonicalHost),
+            'headers'     => fn() => (new HeadersScanner())->scan($canonicalHost),
             'dns'         => fn() => (new DnsScanner())->scan($host),
-            'performance' => fn() => (new PerformanceScanner())->scan($host),
-            'content'     => fn() => (new ContentScanner())->scan($host),
-            'technology'  => fn() => (new TechnologyScanner())->scan($host),
+            'performance' => fn() => (new PerformanceScanner())->scan($canonicalHost),
+            'content'     => fn() => (new ContentScanner())->scan($canonicalHost),
+            'technology'  => fn() => (new TechnologyScanner())->scan($canonicalHost),
         ];
 
         foreach ($scanners as $key => $scanner) {
@@ -59,6 +67,61 @@ class ScanService
             'grade'      => $grade,
             'categories' => $results,
         ];
+    }
+
+    /**
+     * Find the host that actually serves HTTPS content.
+     *
+     * Steps:
+     *  1. Try https://{host} with redirect following — covers the common case
+     *     where the apex domain redirects to www over HTTPS.
+     *  2. If that fails (e.g. port 443 not open on apex), try https://www.{host}.
+     *  3. Fall back to the original host so scanners can still report errors.
+     */
+    private function resolveCanonicalHost(string $host): string
+    {
+        // Step 1: follow HTTPS redirects from the given host
+        $resolved = $this->tryResolveHost("https://{$host}");
+        if ($resolved !== null) {
+            return $resolved;
+        }
+
+        // Step 2: try www prefix when the apex domain has no port 443
+        if (! str_starts_with($host, 'www.')) {
+            $resolved = $this->tryResolveHost("https://www.{$host}");
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return $host;
+    }
+
+    private function tryResolveHost(string $url): ?string
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_NOBODY         => true,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 5,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+        ]);
+        curl_exec($ch);
+        $errno        = curl_errno($ch);
+        $effectiveUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+        curl_close($ch);
+
+        if ($errno || empty($effectiveUrl)) {
+            return null;
+        }
+
+        $parsed = parse_url($effectiveUrl);
+
+        return ! empty($parsed['host']) ? $parsed['host'] : null;
     }
 
     private function calculateOverallScore(array $results): int
