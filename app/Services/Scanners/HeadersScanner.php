@@ -26,6 +26,7 @@ class HeadersScanner
                 'description' => 'The Server header does not expose version information.',
             ];
         } else {
+            $score += 5; // partial credit — header present but leaks version number
             $checks[] = [
                 'id'             => 'header_server',
                 'label'          => 'Server version not disclosed',
