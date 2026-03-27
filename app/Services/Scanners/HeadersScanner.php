@@ -11,8 +11,9 @@ class HeadersScanner
         $maxScore = 0;
 
         // Use HEADERFUNCTION so we only parse headers from the FINAL response (not intermediate redirects)
-        $headers = $this->safe(fn() => $this->fetchHeaders($host), []);
-        $csp     = $headers['content-security-policy'] ?? null;
+        $headers        = $this->safe(fn() => $this->fetchHeaders($host), []);
+        $csp            = $headers['content-security-policy'] ?? null;
+        $cspReportOnly  = $headers['content-security-policy-report-only'] ?? null;
 
         // --- Check: Server version disclosure ---
         $maxScore += 10;
@@ -44,7 +45,17 @@ class HeadersScanner
                 'id'          => 'header_csp',
                 'label'       => 'Content-Security-Policy',
                 'status'      => 'pass',
-                'description' => "CSP header found: \"{$csp}\".",
+                'description' => "CSP header is enforced: \"{$csp}\".",
+            ];
+        } elseif ($cspReportOnly !== null) {
+            // Report-Only mode monitors but does NOT enforce — partial credit
+            $score += 8;
+            $checks[] = [
+                'id'             => 'header_csp',
+                'label'          => 'Content-Security-Policy',
+                'status'         => 'warn',
+                'description'    => 'Only a Content-Security-Policy-Report-Only header was found. This monitors violations but does NOT prevent attacks.',
+                'recommendation' => 'Promote your CSP from Report-Only to enforced by renaming the header to Content-Security-Policy.',
             ];
         } else {
             $checks[] = [
@@ -104,7 +115,7 @@ class HeadersScanner
         // --- Check: X-Content-Type-Options ---
         $maxScore += 15;
         $xcto = $headers['x-content-type-options'] ?? null;
-        if ($xcto !== null && strtolower(trim($xcto)) === 'nosniff') {
+        if ($xcto !== null && stripos($xcto, 'nosniff') !== false) {
             $score += 15;
             $checks[] = [
                 'id'          => 'header_xcontent',
@@ -134,7 +145,7 @@ class HeadersScanner
         // --- Check: Referrer-Policy ---
         $maxScore += 15;
         $referrer        = $headers['referrer-policy'] ?? null;
-        $insecureReferrer = ['unsafe-url', 'no-referrer-when-downgrade'];
+        $insecureReferrer = ['unsafe-url', 'no-referrer-when-downgrade', 'origin-when-cross-origin', 'origin'];
         if ($referrer !== null && ! in_array(strtolower(trim($referrer)), $insecureReferrer)) {
             $score += 15;
             $checks[] = [

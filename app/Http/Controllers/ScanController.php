@@ -28,6 +28,11 @@ class ScanController extends Controller
             return back()->withErrors(['url' => 'Please enter a valid website URL.'])->withInput();
         }
 
+        // Basic validation: block IP addresses entered directly
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return back()->withErrors(['url' => 'Please enter a domain name, not an IP address.'])->withInput();
+        }
+
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,

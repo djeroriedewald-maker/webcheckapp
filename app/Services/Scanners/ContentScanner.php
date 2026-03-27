@@ -150,18 +150,23 @@ class ContentScanner
         //
         // We exclude http://host (same-host references are not external mixed content).
 
-        $escapedHost = preg_quote($host, '/');
+        // Build an exclusion pattern that covers both apex and www variants,
+        // so http://example.com and http://www.example.com are not flagged as mixed content.
+        $apexHost     = preg_replace('/^www\./i', '', $host);
+        $escapedApex  = preg_quote($apexHost, '/');
+        $exclusion    = '(?:www\.)?' . $escapedApex;
+
         $count = 0;
 
         // src= and action= attributes (all elements)
         $count += preg_match_all(
-            '/(?:src|action)=["\']http:\/\/(?!' . $escapedHost . ')[^"\']*["\']/i',
+            '/(?:src|action)=["\']http:\/\/(?!' . $exclusion . ')[^"\']*["\']/i',
             $html
         );
 
         // <link href="http://..."> — only <link> elements (stylesheets, preloads), not <a href>
         $count += preg_match_all(
-            '/<link[^>]+href=["\']http:\/\/(?!' . $escapedHost . ')[^"\']*["\']/i',
+            '/<link[^>]+href=["\']http:\/\/(?!' . $exclusion . ')[^"\']*["\']/i',
             $html
         );
 
@@ -172,7 +177,7 @@ class ContentScanner
     {
         // Only check CMS-specific admin panel paths.
         // We flag only HTTP 200 — redirects (to login pages) are normal and NOT an issue.
-        $paths = ['/wp-admin', '/wp-login.php', '/administrator'];
+        $paths = ['/wp-admin', '/wp-login.php', '/administrator', '/admin', '/admin.php', '/phpmyadmin'];
 
         foreach ($paths as $path) {
             $ch = curl_init("https://{$host}{$path}");
@@ -239,10 +244,13 @@ class ContentScanner
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
+            if (in_array($code, [200, 206]) && $body) {
+                $bodyLower = strtolower($body);
+            }
             if (in_array($code, [200, 206]) && $body && (
-                str_contains($body, 'Index of /') ||
-                str_contains($body, 'Directory listing for') ||
-                str_contains($body, '<title>Index of')
+                str_contains($bodyLower, 'index of /') ||
+                str_contains($bodyLower, 'directory listing for') ||
+                str_contains($bodyLower, '<title>index of')
             )) {
                 return true;
             }

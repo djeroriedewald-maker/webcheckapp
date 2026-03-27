@@ -417,6 +417,8 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
         completed: alreadyCompleted,
         failed: false,
         interval: null,
+        retries: 0,
+        maxRetries: 40, // ~2 minutes at 3s intervals
 
         init() {
             if (!this.completed) {
@@ -425,8 +427,15 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
         },
 
         async poll() {
+            this.retries++;
+            if (this.retries > this.maxRetries) {
+                clearInterval(this.interval);
+                this.failed = true;
+                return;
+            }
             try {
                 const res = await fetch(statusUrl);
+                if (!res.ok) return;
                 const data = await res.json();
 
                 if (data.completed) {
@@ -437,7 +446,7 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
                     this.failed = true;
                 }
             } catch (e) {
-                // keep polling
+                // network error — keep retrying until maxRetries
             }
         }
     }

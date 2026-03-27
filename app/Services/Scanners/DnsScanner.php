@@ -17,7 +17,16 @@ class DnsScanner
         // --- Check 1: SPF record (email spoofing protection) ---
         $maxScore += 35;
         $spf = $this->safe(fn() => $this->checkSpf($apexHost), ['found' => false]);
-        if ($spf['found'] && empty($spf['permissive'])) {
+        if ($spf['found'] && !empty($spf['multiple'])) {
+            // RFC 7208: exactly one SPF record allowed — multiple = broken SPF
+            $checks[] = [
+                'id'             => 'dns_spf',
+                'label'          => 'SPF record configured',
+                'status'         => 'fail',
+                'description'    => 'Multiple SPF records found. RFC 7208 requires exactly one SPF record — having multiple causes SPF validation to fail.',
+                'recommendation' => 'Remove duplicate SPF records and merge all mail providers into a single TXT record.',
+            ];
+        } elseif ($spf['found'] && empty($spf['permissive'])) {
             $score += 35;
             $checks[] = [
                 'id'          => 'dns_spf',
@@ -48,7 +57,7 @@ class DnsScanner
         $maxScore += 35;
         $dmarc = $this->safe(fn() => $this->checkDmarc($apexHost), ['found' => false, 'policy' => null]);
         if ($dmarc['found']) {
-            $score += $dmarc['policy'] === 'none' ? 15 : 35;
+            $score += $dmarc['policy'] === 'none' ? 10 : 35;
             $status = $dmarc['policy'] === 'none' ? 'warn' : 'pass';
             $description = $dmarc['policy'] === 'none'
                 ? "DMARC found but policy is \"none\" — emails are monitored but not rejected. Value: \"{$dmarc['value']}\"."
@@ -136,16 +145,27 @@ class DnsScanner
             return ['found' => false];
         }
 
+        $spfRecords = [];
         foreach ($records as $record) {
             $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
             if (str_starts_with($txt, 'v=spf1')) {
-                // +all means "any server is allowed to send" — effectively no protection
-                $dangerouslyPermissive = (bool) preg_match('/\+all\b/i', $txt);
-                return ['found' => true, 'value' => $txt, 'permissive' => $dangerouslyPermissive];
+                $spfRecords[] = $txt;
             }
         }
 
-        return ['found' => false];
+        if (empty($spfRecords)) {
+            return ['found' => false];
+        }
+
+        // RFC 7208 §3.2: a domain MUST NOT have more than one SPF record
+        if (count($spfRecords) > 1) {
+            return ['found' => true, 'multiple' => true, 'value' => implode(' | ', $spfRecords), 'permissive' => false];
+        }
+
+        $txt = $spfRecords[0];
+        $dangerouslyPermissive = (bool) preg_match('/\+all\b/i', $txt);
+
+        return ['found' => true, 'multiple' => false, 'value' => $txt, 'permissive' => $dangerouslyPermissive];
     }
 
     private function checkDmarc(string $host): array

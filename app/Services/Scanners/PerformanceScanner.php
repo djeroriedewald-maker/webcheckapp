@@ -23,24 +23,33 @@ class PerformanceScanner
                 'id'          => 'perf_ttfb',
                 'label'       => 'Fast server response time (TTFB)',
                 'status'      => 'pass',
-                'description' => sprintf('Time To First Byte: %.0f ms (measured from our scanner server).', $ttfb * 1000),
+                'description' => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — excellent.', $ttfb * 1000),
             ];
-        } elseif ($ttfb !== null && $ttfb < 2.0) {
-            $score += 12;
+        } elseif ($ttfb !== null && $ttfb < 1.8) {
+            $score += 15;
             $checks[] = [
                 'id'             => 'perf_ttfb',
                 'label'          => 'Fast server response time (TTFB)',
                 'status'         => 'warn',
-                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — aim for under 800 ms.', $ttfb * 1000),
+                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — acceptable but aim for under 800 ms.', $ttfb * 1000),
                 'recommendation' => 'Improve TTFB via server-side caching, a CDN, or optimizing database queries.',
+            ];
+        } elseif ($ttfb !== null && $ttfb < 3.0) {
+            $score += 5;
+            $checks[] = [
+                'id'             => 'perf_ttfb',
+                'label'          => 'Fast server response time (TTFB)',
+                'status'         => 'warn',
+                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — slow. Google recommends under 800 ms.', $ttfb * 1000),
+                'recommendation' => 'Consider upgrading your hosting, enabling server-side caching (OPcache, Redis), or moving to a CDN.',
             ];
         } elseif ($ttfb !== null) {
             $checks[] = [
                 'id'             => 'perf_ttfb',
                 'label'          => 'Fast server response time (TTFB)',
                 'status'         => 'fail',
-                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — this is very slow.', $ttfb * 1000),
-                'recommendation' => 'A TTFB above 2 seconds indicates a server performance problem. Investigate caching, hosting, and query performance.',
+                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — very slow. This will hurt SEO and user experience.', $ttfb * 1000),
+                'recommendation' => 'A TTFB above 3 seconds indicates a serious server performance problem. Investigate caching, hosting, and database query performance.',
             ];
         } else {
             $checks[] = [
@@ -199,11 +208,21 @@ class PerformanceScanner
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        return $code === 200;
+        // Accept 200 (normal) or 204 (empty but valid)
+        return in_array($code, [200, 204]);
     }
 
     private function checkSitemap(string $host): bool
     {
+        // First: check robots.txt for an explicit Sitemap: directive
+        $robotsContent = $this->fetchRobotsTxtContent($host);
+        if ($robotsContent && preg_match('/^Sitemap:\s*(https?:\/\/\S+)/mi', $robotsContent, $m)) {
+            if ($this->urlReturns200(trim($m[1]))) {
+                return true;
+            }
+        }
+
+        // Fallback: check common sitemap locations
         $urls = [
             "https://{$host}/sitemap.xml",
             "https://{$host}/sitemap_index.xml",
@@ -211,26 +230,50 @@ class PerformanceScanner
         ];
 
         foreach ($urls as $url) {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_NOBODY         => true,
-                CURLOPT_TIMEOUT        => self::TIMEOUT,
-                CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS      => 3,
-            ]);
-            curl_exec($ch);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($code === 200) {
+            if ($this->urlReturns200($url)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function fetchRobotsTxtContent(string $host): ?string
+    {
+        $ch = curl_init("https://{$host}/robots.txt");
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => self::TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_RANGE          => '0-8191',
+        ]);
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return ($code === 200 && $body) ? $body : null;
+    }
+
+    private function urlReturns200(string $url): bool
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_NOBODY         => true,
+            CURLOPT_TIMEOUT        => self::TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 3,
+        ]);
+        curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return $code === 200;
     }
 
     private function safe(callable $fn, mixed $default): mixed

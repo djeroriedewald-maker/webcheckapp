@@ -22,6 +22,11 @@ class ScanService
 
     public function run(string $host): array
     {
+        // Block SSRF attempts — private IPs, localhost, metadata services
+        if (! $this->isPublicHost($host)) {
+            throw new \InvalidArgumentException("Host \"{$host}\" is not a publicly reachable domain.");
+        }
+
         $results = [];
 
         // Resolve the canonical host once before running any scanner.
@@ -135,7 +140,38 @@ class ScanService
             }
         }
 
-        return (int) round($weightedScore / $totalWeight);
+        return (int) min(100, max(0, round($weightedScore / $totalWeight)));
+    }
+
+    /**
+     * Block scanning of private/reserved IP ranges and localhost (SSRF prevention).
+     */
+    private function isPublicHost(string $host): bool
+    {
+        $lower = strtolower($host);
+
+        // Block obvious internal names
+        if (in_array($lower, ['localhost', '127.0.0.1', '::1', '0.0.0.0'], true)) {
+            return false;
+        }
+
+        // Block .local / .internal / .test TLDs
+        if (preg_match('/\.(local|internal|test|lan|intranet)$/i', $host)) {
+            return false;
+        }
+
+        // Resolve to IP and verify it's a public address
+        $ip = @gethostbyname($host);
+        if ($ip === $host) {
+            // Could not resolve — let scanners report errors naturally
+            return true;
+        }
+
+        return (bool) filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        );
     }
 
     private function scoreToGrade(int $score): string

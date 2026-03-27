@@ -59,10 +59,11 @@ class Scan extends Model
 
     public function getGradeColorClass(): string
     {
+        // Aligned with scoreToGrade(): A/A-/A+ ≥85, B-/B/B+ ≥70, C-/C/C+ ≥55, D-/D/D+ ≥40, F
         return match(true) {
-            $this->score >= 90 => 'text-emerald-400',
-            $this->score >= 75 => 'text-green-400',
-            $this->score >= 60 => 'text-yellow-400',
+            $this->score >= 85 => 'text-emerald-400',
+            $this->score >= 70 => 'text-green-400',
+            $this->score >= 55 => 'text-yellow-400',
             $this->score >= 40 => 'text-orange-400',
             default            => 'text-red-400',
         };
@@ -71,9 +72,9 @@ class Scan extends Model
     public function getGradeBgClass(): string
     {
         return match(true) {
-            $this->score >= 90 => 'bg-emerald-500',
-            $this->score >= 75 => 'bg-green-500',
-            $this->score >= 60 => 'bg-yellow-500',
+            $this->score >= 85 => 'bg-emerald-500',
+            $this->score >= 70 => 'bg-green-500',
+            $this->score >= 55 => 'bg-yellow-500',
             $this->score >= 40 => 'bg-orange-500',
             default            => 'bg-red-500',
         };
