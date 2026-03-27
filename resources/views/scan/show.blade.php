@@ -27,7 +27,7 @@
         <h2 class="text-2xl font-bold mb-2">Scanning <span class="text-indigo-400">{{ $scan->host }}</span></h2>
         <p class="text-gray-400">Running security checks... this usually takes 15-30 seconds.</p>
         <div class="mt-8 flex justify-center gap-2">
-            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content', 'Technology', 'Trust'] as $i => $label)
+            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content', 'Technology', 'Trust', 'Malware'] as $i => $label)
             <div class="flex flex-col items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: {{ $i * 0.15 }}s"></div>
                 <span class="text-xs text-gray-600 hidden sm:block">{{ $label }}</span>
@@ -265,6 +265,88 @@
                     @endif
                 </div>
             </div>
+        </div>
+        @endif
+
+        {{-- Malware & Virus Scan panel --}}
+        @if(!empty($scan->results['malware']))
+        @php
+            $malware     = $scan->results['malware'];
+            $hasThreats  = ($malware['threat_count'] ?? 0) > 0;
+            $vtCheck     = collect($malware['checks'])->firstWhere('id', 'malware_virustotal');
+            $basicChecks = collect($malware['checks'])->filter(fn($c) => $c['id'] !== 'malware_virustotal');
+        @endphp
+        <div class="mb-10">
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-5 h-5 {{ $hasThreats ? 'text-red-400' : 'text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <h2 class="text-lg font-semibold">Malware &amp; Virus Scan</h2>
+                @if($hasThreats)
+                    <span class="text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25 px-2 py-0.5 rounded-full">{{ $malware['threat_count'] }} threat{{ $malware['threat_count'] > 1 ? 's' : '' }} found</span>
+                @else
+                    <span class="text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded-full">Clean</span>
+                @endif
+            </div>
+
+            {{-- Basic checks grid --}}
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-4">
+                <div class="divide-y divide-white/5">
+                    @foreach($basicChecks as $check)
+                    <div class="flex items-center gap-3 px-5 py-3">
+                        @if($check['status'] === 'pass')
+                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        @elseif($check['status'] === 'fail')
+                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        @else
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        @endif
+                        <span class="text-sm font-medium text-gray-300 w-40 shrink-0">{{ $check['label'] }}</span>
+                        <span class="text-sm text-gray-500">{{ $check['description'] }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- VirusTotal vendor results --}}
+            @if($vtCheck)
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-3 border-b border-white/5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-white">VirusTotal</span>
+                        <span class="text-xs text-gray-500">— antivirus engine aggregator</span>
+                    </div>
+                    <span class="text-xs font-bold {{ $vtCheck['status'] === 'fail' ? 'text-red-400' : 'text-emerald-400' }}">
+                        {{ $vtCheck['description'] }}
+                    </span>
+                </div>
+                @if(!empty($vtCheck['vendors']))
+                <div class="grid grid-cols-1 sm:grid-cols-2 divide-y divide-white/5 sm:divide-y-0">
+                    @foreach($vtCheck['vendors'] as $name => $vendor)
+                    @php
+                        $cat = $vendor['category'] ?? 'undetected';
+                        $isBad = in_array($cat, ['malicious', 'suspicious']);
+                    @endphp
+                    <div class="flex items-center gap-3 px-5 py-2.5 {{ !$loop->last ? 'sm:border-b border-white/5' : '' }}">
+                        @if($isBad)
+                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        @elseif($cat === 'harmless' || $cat === 'clean')
+                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        @else
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        @endif
+                        <span class="text-sm font-medium text-gray-300 w-32 shrink-0">{{ $name }}</span>
+                        <span class="text-sm {{ $isBad ? 'text-red-400' : 'text-gray-500' }}">
+                            {{ $isBad ? ($vendor['result'] ?? $cat) : 'Clean' }}
+                        </span>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <div class="px-5 py-3 text-sm text-gray-500">No vendor-specific results available yet from VirusTotal.</div>
+                @endif
+            </div>
+            @endif
         </div>
         @endif
 

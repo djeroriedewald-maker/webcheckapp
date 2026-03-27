@@ -9,6 +9,7 @@ use App\Services\Scanners\PerformanceScanner;
 use App\Services\Scanners\SslScanner;
 use App\Services\Scanners\TechnologyScanner;
 use App\Services\Scanners\TrustScanner;
+use App\Services\Scanners\MalwareScanner;
 
 class ScanService
 {
@@ -46,6 +47,7 @@ class ScanService
             'content'     => fn() => (new ContentScanner())->scan($canonicalHost),
             'technology'  => fn() => (new TechnologyScanner())->scan($canonicalHost),
             'trust'       => fn() => (new TrustScanner())->scan($canonicalHost),
+            'malware'     => fn() => (new MalwareScanner())->scan($canonicalHost),
         ];
 
         foreach ($scanners as $key => $scanner) {
