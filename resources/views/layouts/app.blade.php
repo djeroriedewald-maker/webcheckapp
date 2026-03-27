@@ -18,6 +18,11 @@
     <meta name="twitter:title" content="@yield('og_title', 'WebCheckApp — Free Website Security Scanner')">
     <meta name="twitter:description" content="@yield('og_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
 
+    <link rel="canonical" href="@yield('canonical', url()->current())">
+    <meta name="robots" content="@yield('robots', 'index, follow')">
+
+    @yield('structured_data')
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full bg-gray-950 text-white antialiased" x-data>
@@ -31,13 +36,30 @@
                     </svg>
                     <span class="text-white">WebCheck<span class="text-indigo-400">App</span></span>
                 </a>
-                <a href="{{ route('home') }}"
-                   class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/25 ring-1 ring-indigo-400/20 hover:shadow-indigo-500/40 hover:shadow-lg">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    New scan
-                </a>
+                <div class="flex items-center gap-3">
+                    @auth
+                    <a href="{{ route('dashboard') }}"
+                       class="text-sm text-gray-400 hover:text-white transition-colors">
+                        Dashboard
+                    </a>
+                    @else
+                    <a href="{{ route('login') }}"
+                       class="text-sm text-gray-400 hover:text-white transition-colors">
+                        Sign in
+                    </a>
+                    <a href="{{ route('register') }}"
+                       class="text-sm text-gray-300 hover:text-white border border-white/15 hover:border-white/30 px-3 py-1.5 rounded-lg transition-all">
+                        Register
+                    </a>
+                    @endauth
+                    <a href="{{ route('home') }}"
+                       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/25 ring-1 ring-indigo-400/20 hover:shadow-indigo-500/40 hover:shadow-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        New scan
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
@@ -206,6 +228,7 @@
 
                 {{-- Legal links --}}
                 <nav class="flex items-center gap-5 text-sm text-gray-600">
+                    <a href="{{ route('api.docs') }}" class="hover:text-gray-400 transition-colors">API</a>
                     <a href="{{ route('disclaimer') }}" class="hover:text-gray-400 transition-colors">Disclaimer</a>
                     <a href="{{ route('privacy') }}" class="hover:text-gray-400 transition-colors">Privacy Policy</a>
                     <a href="{{ route('terms') }}" class="hover:text-gray-400 transition-colors">Terms of Use</a>

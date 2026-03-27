@@ -122,6 +122,12 @@ class CheckKnowledge
                 'how'  => "DNSSEC must be enabled at both your DNS registrar and your DNS hosting provider:\n1. Enable DNSSEC at your domain registrar (Namecheap, GoDaddy, TransIP, etc.)\n2. Enable DNSSEC signing at your DNS host (Cloudflare enables this automatically)\n3. The registrar publishes DS records pointing to your zone\'s key\n\nIf you use Cloudflare: enable DNSSEC with one click in the DNS tab.\nNote: DNSSEC is difficult to set up incorrectly — misconfiguration can take your domain offline. Follow your registrar\'s guide carefully.",
             ],
 
+            'dns_dkim' => [
+                'what' => 'DKIM (DomainKeys Identified Mail) adds a cryptographic signature to every outgoing email. The signature is created with a private key on your mail server and verified by recipients using a public key published in DNS.',
+                'why'  => 'DKIM proves that an email actually came from your mail server and was not modified in transit. Without DKIM, anyone can send emails that appear to be from your domain (spoofing), and DMARC alignment checks will fail even if SPF passes.',
+                'how'  => "DKIM is configured in your email provider, not directly in DNS. Here is the process:\n\n1. Generate a DKIM key pair in your email provider:\n   - Google Workspace: Admin console → Apps → Gmail → Authenticate email\n   - Microsoft 365: Admin center → Settings → Domains → DKIM\n   - Mailchimp/SendGrid/Mailjet: Each has a DKIM setup page in their dashboard\n\n2. Copy the TXT record they provide and add it to your DNS:\n   Name: selector._domainkey.yourdomain.com\n   Value: v=DKIM1; k=rsa; p=MIGf...\n\n3. Activate DKIM signing in your provider after publishing the DNS record.\n\nThe selector name (e.g. 'google', 'selector1') comes from your email provider.",
+            ],
+
             'dns_mta_sts' => [
                 'what' => 'MTA-STS (Mail Transfer Agent Strict Transport Security) is a standard that forces other mail servers to use encrypted TLS connections when delivering email to your domain. Without it, a network attacker could silently strip TLS from email in transit.',
                 'why'  => 'Email is delivered between servers using SMTP. By default, SMTP tries TLS but falls back to plaintext if TLS is not available — a downgrade attack. MTA-STS prevents this fallback, ensuring all email delivered to your domain is encrypted in transit.',
@@ -196,6 +202,12 @@ class CheckKnowledge
                 'what' => 'The WordPress REST API exposes a /wp-json/wp/v2/users endpoint that by default lists all registered user accounts, including their usernames and display names.',
                 'why'  => 'Knowing valid usernames makes brute-force login attacks dramatically easier — an attacker no longer needs to guess both the username and password. They can enumerate all users in seconds and then focus password attacks on those known accounts.',
                 'how'  => "Add to your theme's functions.php:\n\nadd_filter('rest_endpoints', function(\$endpoints) {\n    if (isset(\$endpoints['/wp/v2/users'])) {\n        unset(\$endpoints['/wp/v2/users']);\n    }\n    if (isset(\$endpoints['/wp/v2/users/(?P<id>[\\d]+)'])) {\n        unset(\$endpoints['/wp/v2/users/(?P<id>[\\d]+)']);\n    }\n    return \$endpoints;\n});\n\nOr use a security plugin like Wordfence or iThemes Security that includes this option.",
+            ],
+
+            'content_sri' => [
+                'what' => 'Subresource Integrity (SRI) is a browser security feature that lets you specify a cryptographic hash for external scripts and stylesheets. The browser refuses to execute the resource if its content does not match the hash.',
+                'why'  => 'If a CDN you rely on is compromised (a real and recurring attack vector), an attacker can replace your JavaScript library with malicious code that steals user data, injects cryptomining scripts, or performs other attacks. SRI prevents this by making the browser verify the file has not been altered.',
+                'how'  => "Add integrity= and crossorigin= attributes to your external resources:\n\n<script\n  src=\"https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js\"\n  integrity=\"sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=\"\n  crossorigin=\"anonymous\"\n></script>\n\nGenerate hashes for any URL at: https://www.srihash.org/\n\nFor build tools, use webpack-subresource-integrity or vite-plugin-sri to add hashes automatically during builds.",
             ],
 
             // ── Technology ─────────────────────────────────────────────────

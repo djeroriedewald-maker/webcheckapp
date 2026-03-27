@@ -135,7 +135,58 @@ class ContentScanner
             }
         }
 
-        // --- Check 4: Directory listing ---
+        // --- Check 4: Subresource Integrity (SRI) ---
+        // SRI hashes ensure external scripts/styles haven't been tampered with (CDN compromise).
+        $maxScore += 15;
+        $sri = $this->safe(fn() => $this->checkSri($html), ['total' => 0, 'missing' => 0]);
+        if ($sri['total'] === 0) {
+            $score += 15;
+            $checks[] = [
+                'id'          => 'content_sri',
+                'label'       => 'Subresource Integrity (SRI)',
+                'status'      => 'pass',
+                'description' => 'No external scripts or stylesheets without Subresource Integrity hashes detected.',
+            ];
+        } elseif ($sri['missing'] === 0) {
+            $score += 15;
+            $checks[] = [
+                'id'          => 'content_sri',
+                'label'       => 'Subresource Integrity (SRI)',
+                'status'      => 'pass',
+                'description' => "All {$sri['total']} external script(s)/stylesheet(s) include an integrity hash.",
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'content_sri',
+                'label'          => 'Subresource Integrity (SRI)',
+                'status'         => 'warn',
+                'description'    => "{$sri['missing']} of {$sri['total']} external script(s)/stylesheet(s) load without an integrity= hash. If the CDN is compromised, malicious code could be silently injected into your pages.",
+                'recommendation' => 'Add integrity= and crossorigin= attributes to external <script> and <link> tags. Generate hashes at https://www.srihash.org/',
+            ];
+        }
+
+        // --- Check 5: Open redirect ---
+        $maxScore += 15;
+        $openRedirect = $this->safe(fn() => $this->checkOpenRedirect($host), false);
+        if ($openRedirect) {
+            $checks[] = [
+                'id'             => 'content_open_redirect',
+                'label'          => 'No open redirect',
+                'status'         => 'fail',
+                'description'    => 'The site appears to have an open redirect vulnerability — a URL parameter can be used to redirect visitors to an arbitrary external domain.',
+                'recommendation' => 'Validate all redirect destinations against an allowlist of trusted URLs. Never redirect to user-supplied URLs without validation.',
+            ];
+        } else {
+            $score += 15;
+            $checks[] = [
+                'id'          => 'content_open_redirect',
+                'label'       => 'No open redirect',
+                'status'      => 'pass',
+                'description' => 'No open redirect detected via common redirect parameters.',
+            ];
+        }
+
+        // --- Check 6: Directory listing ---
         $maxScore += 25;
         $dirListing = $this->safe(fn() => $this->checkDirectoryListing($host), false);
         if (! $dirListing) {
@@ -302,6 +353,103 @@ class ContentScanner
         }
 
         return false;
+    }
+
+    private function checkOpenRedirect(string $host): bool
+    {
+        // Probe the most common open-redirect parameter names with an external canary URL.
+        // We use a clearly external domain (example.com) and check if the response redirects there.
+        $canary = 'https://example.com';
+        $params = ['url', 'redirect', 'redirect_url', 'next', 'return', 'returnUrl', 'goto', 'dest', 'destination', 'target', 'redir', 'r'];
+
+        foreach ($params as $param) {
+            $testUrl = "https://{$host}/?{$param}=" . urlencode($canary);
+
+            $ch = curl_init($testUrl);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_NOBODY         => true,
+                CURLOPT_TIMEOUT        => 4,
+                CURLOPT_CONNECTTIMEOUT => 4,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => false, // Do NOT follow — we want to see the redirect target
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            ]);
+            curl_exec($ch);
+            $code     = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $location = '';
+            curl_setopt($ch, CURLOPT_HEADERFUNCTION, null);
+            curl_close($ch);
+
+            // Re-fetch with header capture for the location header
+            $location = $this->getLocationHeader($testUrl);
+
+            if (in_array($code, [301, 302, 303, 307, 308]) && $location) {
+                // Only flag if Location points to a completely different domain
+                $locHost = parse_url($location, PHP_URL_HOST);
+                if ($locHost && $locHost !== $host && str_contains($location, 'example.com')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function getLocationHeader(string $url): string
+    {
+        $location = '';
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_NOBODY         => true,
+            CURLOPT_TIMEOUT        => 4,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$location) {
+                if (preg_match('/^Location:\s*(.+)/i', $header, $m)) {
+                    $location = trim($m[1]);
+                }
+                return strlen($header);
+            },
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+        return $location;
+    }
+
+    private function checkSri(string $html): array
+    {
+        // Find all external <script src="https://..."> and <link rel="stylesheet" href="https://...">
+        // External = starts with https:// (cross-origin CDN resources)
+        $total   = 0;
+        $missing = 0;
+
+        // External scripts: <script src="https://..." [integrity="..."]>
+        preg_match_all('/<script\b([^>]*src=["\']https:\/\/[^"\']+["\'][^>]*)>/i', $html, $scriptMatches);
+        foreach ($scriptMatches[1] as $attrs) {
+            $total++;
+            if (stripos($attrs, 'integrity=') === false) {
+                $missing++;
+            }
+        }
+
+        // External stylesheets: <link rel="stylesheet" href="https://...">
+        preg_match_all('/<link\b([^>]*href=["\']https:\/\/[^"\']+["\'][^>]*)>/i', $html, $linkMatches);
+        foreach ($linkMatches[1] as $attrs) {
+            // Only care about stylesheet links, not preconnect/dns-prefetch/icon etc.
+            if (! preg_match('/rel=["\'][^"\']*stylesheet[^"\']*["\']/i', $attrs)) {
+                continue;
+            }
+            $total++;
+            if (stripos($attrs, 'integrity=') === false) {
+                $missing++;
+            }
+        }
+
+        return ['total' => $total, 'missing' => $missing];
     }
 
     private function checkXmlRpc(string $host): bool

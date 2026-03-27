@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\MonitorSites;
 use App\Models\Scan;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -13,3 +14,6 @@ Artisan::command('inspire', function () {
 Schedule::call(function () {
     Scan::where('created_at', '<', now()->subDays(30))->delete();
 })->daily()->name('delete-old-scans');
+
+// Weekly monitoring: scan all user-tracked sites and send alerts
+Schedule::command(MonitorSites::class)->weekly()->name('monitor-sites');

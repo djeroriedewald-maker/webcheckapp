@@ -135,7 +135,30 @@ class SslScanner
             ];
         }
 
-        // --- Check 5: TLS 1.0 / 1.1 deprecated versions ---
+        // --- Check 5: Weak cipher suites ---
+        if ($certInfo['reachable']) {
+            $maxScore += 15;
+            $weakCiphers = $this->safe(fn() => $this->checkWeakCiphers($host), []);
+            if (empty($weakCiphers)) {
+                $score += 15;
+                $checks[] = [
+                    'id'          => 'ssl_ciphers',
+                    'label'       => 'No weak cipher suites',
+                    'status'      => 'pass',
+                    'description' => 'Server does not accept known weak cipher suites (RC4, 3DES, EXPORT, NULL).',
+                ];
+            } else {
+                $checks[] = [
+                    'id'             => 'ssl_ciphers',
+                    'label'          => 'No weak cipher suites',
+                    'status'         => 'fail',
+                    'description'    => 'Server accepts weak cipher suite(s): ' . implode(', ', $weakCiphers) . '. These ciphers have known cryptographic weaknesses.',
+                    'recommendation' => "Restrict your cipher list in your server config:\nNginx: ssl_ciphers ECDH+AESGCM:ECDH+AES256:ECDH+AES128:!aNULL:!MD5:!3DES:!RC4;\nApache: SSLCipherSuite HIGH:!aNULL:!MD5:!3DES:!RC4\nThen reload your server.",
+                ];
+            }
+        }
+
+        // --- Check 6: TLS 1.0 / 1.1 deprecated versions ---
         // Only meaningful if HTTPS is reachable at all.
         if ($certInfo['reachable']) {
             $maxScore += 15;
@@ -316,6 +339,43 @@ class SslScanner
      * Returns an array of deprecated version names that are still accepted.
      * A false negative is possible if the scanner's own OpenSSL has these versions compiled out.
      */
+    private function checkWeakCiphers(string $host): array
+    {
+        // Test groups of historically weak ciphers using curl's cipher negotiation.
+        // curl uses OpenSSL naming; we test the most dangerous known-weak families.
+        $weakGroups = [
+            'RC4'    => 'RC4-SHA:RC4-MD5',
+            '3DES'   => 'DES-CBC3-SHA',
+            'EXPORT' => 'EXP-RC4-MD5:EXP-DES-CBC-SHA',
+            'NULL'   => 'NULL-SHA:NULL-MD5',
+        ];
+
+        $accepted = [];
+        foreach ($weakGroups as $name => $cipherList) {
+            $ch = curl_init("https://{$host}");
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER    => true,
+                CURLOPT_NOBODY            => true,
+                CURLOPT_TIMEOUT           => (float) self::TIMEOUT,
+                CURLOPT_CONNECTTIMEOUT    => (float) self::TIMEOUT,
+                CURLOPT_SSL_VERIFYPEER    => false,
+                CURLOPT_SSL_VERIFYHOST    => 0,
+                CURLOPT_SSL_CIPHER_LIST   => $cipherList,
+                CURLOPT_USERAGENT         => 'Mozilla/5.0 WebCheckApp/1.0',
+            ]);
+            curl_exec($ch);
+            $errno = curl_errno($ch);
+            curl_close($ch);
+
+            // errno 0 = connection succeeded with the weak cipher
+            if ($errno === 0) {
+                $accepted[] = $name;
+            }
+        }
+
+        return $accepted;
+    }
+
     private function checkOldTls(string $host): array
     {
         $supported = [];

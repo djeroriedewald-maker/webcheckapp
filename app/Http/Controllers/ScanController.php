@@ -34,6 +34,18 @@ class ScanController extends Controller
             return back()->withErrors(['url' => 'Please enter a domain name, not an IP address.'])->withInput();
         }
 
+        // Return a cached scan if the same host was successfully scanned within the last hour.
+        // This avoids hammering external services for popular domains and keeps responses fast.
+        $cached = Scan::where('host', $host)
+            ->where('status', 'completed')
+            ->where('completed_at', '>=', now()->subHour())
+            ->latest('completed_at')
+            ->first();
+
+        if ($cached) {
+            return redirect()->route('scan.show', $cached);
+        }
+
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,
@@ -70,7 +82,15 @@ class ScanController extends Controller
             }
         }
 
-        return view('scan.show', compact('scan', 'percentile'));
+        // Is there a newer completed scan for this host? (someone else triggered a fresh scan)
+        $newerScan = Scan::where('host', $scan->host)
+            ->where('status', 'completed')
+            ->where('id', '!=', $scan->id)
+            ->where('completed_at', '>', $scan->completed_at)
+            ->latest('completed_at')
+            ->first();
+
+        return view('scan.show', compact('scan', 'percentile', 'newerScan'));
     }
 
     public function pdf(Scan $scan)
@@ -85,6 +105,72 @@ class ScanController extends Controller
         return $pdf->download($filename);
     }
 
+    public function compare(Request $request)
+    {
+        $urlA = trim($request->input('a', ''));
+        $urlB = trim($request->input('b', ''));
+
+        $scanA = $this->scanForCompare($urlA, $request->ip());
+        $scanB = $this->scanForCompare($urlB, $request->ip());
+
+        return view('scan.compare', compact('scanA', 'scanB', 'urlA', 'urlB'));
+    }
+
+    public function badge(Scan $scan)
+    {
+        abort_unless($scan->isCompleted(), 404);
+
+        $score = $scan->score ?? 0;
+        $grade = $scan->grade ?? 'F';
+        $host  = $scan->host;
+
+        // Pick a colour based on the grade
+        $color = match(true) {
+            $score >= 80 => '#22c55e', // green
+            $score >= 60 => '#f59e0b', // amber
+            default      => '#ef4444', // red
+        };
+
+        $labelWidth = 130;
+        $valueWidth = 70;
+        $totalWidth = $labelWidth + $valueWidth;
+        $label      = 'WebCheckApp';
+        $value      = "{$grade}  {$score}/100";
+
+        $svg = <<<SVG
+        <svg xmlns="http://www.w3.org/2000/svg" width="{$totalWidth}" height="20">
+          <linearGradient id="s" x2="0" y2="100%">
+            <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+            <stop offset="1" stop-opacity=".1"/>
+          </linearGradient>
+          <clipPath id="r">
+            <rect width="{$totalWidth}" height="20" rx="3"/>
+          </clipPath>
+          <g clip-path="url(#r)">
+            <rect width="{$labelWidth}" height="20" fill="#555"/>
+            <rect x="{$labelWidth}" width="{$valueWidth}" height="20" fill="{$color}"/>
+            <rect width="{$totalWidth}" height="20" fill="url(#s)"/>
+          </g>
+          <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+            <text x="65" y="15" fill="#010101" fill-opacity=".3">{$label}</text>
+            <text x="65" y="14">{$label}</text>
+            <text x="{$this->badgeValueX($labelWidth, $valueWidth)}" y="15" fill="#010101" fill-opacity=".3">{$value}</text>
+            <text x="{$this->badgeValueX($labelWidth, $valueWidth)}" y="14">{$value}</text>
+          </g>
+        </svg>
+        SVG;
+
+        return response($svg, 200, [
+            'Content-Type'  => 'image/svg+xml',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
+    private function badgeValueX(int $labelWidth, int $valueWidth): int
+    {
+        return $labelWidth + (int) round($valueWidth / 2);
+    }
+
     public function status(Scan $scan)
     {
         return response()->json([
@@ -94,6 +180,44 @@ class ScanController extends Controller
             'completed' => $scan->isCompleted(),
             'failed'    => $scan->isFailed(),
         ]);
+    }
+
+    private function scanForCompare(string $rawUrl, string $ip): ?Scan
+    {
+        if (empty(trim($rawUrl))) {
+            return null;
+        }
+
+        $norm = $this->normalizeUrl($rawUrl);
+        $host = parse_url($norm, PHP_URL_HOST);
+
+        if (! $host || filter_var($host, FILTER_VALIDATE_IP)) {
+            return null;
+        }
+
+        $cached = Scan::where('host', $host)
+            ->where('status', 'completed')
+            ->where('completed_at', '>=', now()->subHour())
+            ->latest('completed_at')
+            ->first();
+
+        if ($cached) {
+            return $cached;
+        }
+
+        $scan = Scan::create(['url' => $norm, 'host' => $host, 'status' => 'running', 'ip_address' => $ip]);
+
+        try {
+            set_time_limit(120);
+            $results = app(ScanService::class)->run($host);
+            $scan->update(['status' => 'completed', 'score' => $results['score'], 'grade' => $results['grade'], 'results' => $results['categories'], 'completed_at' => now()]);
+
+            return $scan->fresh();
+        } catch (\Throwable) {
+            $scan->update(['status' => 'failed']);
+
+            return null;
+        }
     }
 
     private function normalizeUrl(string $url): string

@@ -115,6 +115,29 @@ class DnsScanner
             ];
         }
 
+        // --- Check 4: DKIM (email signing key) ---
+        // DKIM completes the SPF+DMARC+DKIM triad. Without it DMARC alignment checks fail.
+        // We probe common selectors since there is no standard discovery mechanism.
+        $maxScore += 20;
+        $dkim = $this->safe(fn() => $this->checkDkim($apexHost), ['found' => false, 'selector' => null]);
+        if ($dkim['found']) {
+            $score += 20;
+            $checks[] = [
+                'id'          => 'dns_dkim',
+                'label'       => 'DKIM record configured',
+                'status'      => 'pass',
+                'description' => "DKIM record found (selector \"{$dkim['selector']}\") — outgoing emails are cryptographically signed.",
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'dns_dkim',
+                'label'          => 'DKIM record configured',
+                'status'         => 'warn',
+                'description'    => 'No DKIM record found for common selectors. DKIM cryptographically signs outgoing emails, making them verifiable and preventing tampering in transit.',
+                'recommendation' => 'Configure DKIM in your email provider (Google Workspace, Microsoft 365, etc.) and publish the TXT record they provide at {selector}._domainkey.' . $apexHost,
+            ];
+        }
+
         // --- Informational: MTA-STS (enforces TLS for incoming email delivery) ---
         $mtaSts = $this->safe(fn() => $this->checkMtaSts($apexHost), ['found' => false]);
         if ($mtaSts['found']) {
@@ -131,6 +154,25 @@ class DnsScanner
                 'status'         => 'warn',
                 'description'    => 'No MTA-STS record found at _mta-sts.' . $apexHost . '. Without it, email delivery to your domain could silently fall back to unencrypted connections.',
                 'recommendation' => 'Implement MTA-STS: add a TXT record at _mta-sts.' . $apexHost . ' with value "v=STSv1; id=YYYYMMDD01" and publish a policy file at https://mta-sts.' . $apexHost . '/.well-known/mta-sts.txt',
+            ];
+        }
+
+        // --- Informational: IPv6 support ---
+        $ipv6 = $this->safe(fn() => $this->checkIpv6($apexHost), false);
+        if ($ipv6) {
+            $checks[] = [
+                'id'          => 'dns_ipv6',
+                'label'       => 'IPv6 support',
+                'status'      => 'pass',
+                'description' => 'Domain has an AAAA record — IPv6 is supported.',
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'dns_ipv6',
+                'label'          => 'IPv6 support',
+                'status'         => 'info',
+                'description'    => 'No AAAA record found. The domain is IPv4-only.',
+                'recommendation' => 'Add an AAAA record to support IPv6. Most modern hosting providers and CDNs assign IPv6 addresses automatically.',
             ];
         }
 
@@ -237,6 +279,38 @@ class DnsScanner
         $records = @dns_get_record($host, DNS_CAA);
 
         return ['found' => ! empty($records), 'checked' => true];
+    }
+
+    private function checkIpv6(string $host): bool
+    {
+        $records = @dns_get_record($host, DNS_AAAA);
+        return ! empty($records);
+    }
+
+    private function checkDkim(string $host): array
+    {
+        // DKIM has no standard discovery mechanism — probe common selectors used by major providers.
+        $selectors = [
+            'default', 'google', 'mail', 'smtp', 'dkim', 'k1', 'k2',
+            'selector1', 'selector2',  // Microsoft 365
+            'mailjet', 'sendgrid', 'amazonses', 'mandrill',
+        ];
+
+        foreach ($selectors as $selector) {
+            $records = @dns_get_record("{$selector}._domainkey.{$host}", DNS_TXT);
+            if (! $records) {
+                continue;
+            }
+            foreach ($records as $record) {
+                $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
+                // A DKIM record always contains v=DKIM1 or a p= (public key) field
+                if (stripos($txt, 'v=DKIM1') !== false || preg_match('/\bp=[A-Za-z0-9+\/]/', $txt)) {
+                    return ['found' => true, 'selector' => $selector, 'value' => $txt];
+                }
+            }
+        }
+
+        return ['found' => false, 'selector' => null];
     }
 
     private function checkMtaSts(string $host): array

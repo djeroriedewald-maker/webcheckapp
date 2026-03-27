@@ -1,13 +1,32 @@
 @use('App\Support\CheckKnowledge')
 @extends('layouts.app')
 
-@section('title', $scan->isCompleted() ? 'Security Report — ' . $scan->host : 'Scanning ' . $scan->host)
-@section('meta_description', $scan->isCompleted() ? 'Security scan report for ' . $scan->host . '. Score: ' . $scan->score . '/100 — Grade ' . $scan->grade . '. View the full security analysis.' : 'Scanning ' . $scan->host . ' for security issues.')
+@section('title', $scan->isCompleted() ? 'Security Report: ' . $scan->host . ' — Score ' . $scan->score . '/100 (Grade ' . $scan->grade . ')' : 'Scanning ' . $scan->host . ' — WebCheckApp')
+@section('meta_description', $scan->isCompleted() ? 'Free security scan for ' . $scan->host . '. Score: ' . $scan->score . '/100, Grade ' . $scan->grade . '. Checks SSL, headers, DNS, malware, open ports, exposed files and more.' : 'Scanning ' . $scan->host . ' for security vulnerabilities...')
+@section('canonical', route('scan.show', $scan))
+@section('robots', $scan->isCompleted() ? 'index, follow' : 'noindex, follow')
 
 @if($scan->isCompleted())
 @section('og_title', 'Security Report: ' . $scan->host . ' — Score ' . $scan->score . '/100 (Grade ' . $scan->grade . ')')
-@section('og_description', 'I scanned ' . $scan->host . ' with WebCheckApp and got a security score of ' . $scan->score . '/100 (Grade ' . $scan->grade . '). See the full report.')
+@section('og_description', $scan->host . ' scored ' . $scan->score . '/100 (Grade ' . $scan->grade . ') on WebCheckApp. Free security scan covering SSL, headers, DNS, malware, ports, and more.')
 @section('og_url', route('scan.show', $scan))
+@section('structured_data')
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Security Report: {{ $scan->host }}",
+  "description": "Security scan for {{ $scan->host }} — Score {{ $scan->score }}/100, Grade {{ $scan->grade }}",
+  "url": "{{ route('scan.show', $scan) }}",
+  "datePublished": "{{ $scan->completed_at->toIso8601String() }}",
+  "publisher": {
+    "@type": "Organization",
+    "name": "WebCheckApp",
+    "url": "{{ url('/') }}"
+  }
+}
+</script>
+@endsection
 @endif
 
 @section('content')
@@ -65,6 +84,33 @@
                     <span class="text-gray-600">· {{ $scan->created_at->diffInSeconds($scan->completed_at) }}s scan time</span>
                     @endif
                 </p>
+
+                {{-- Cached result notice --}}
+                @if($scan->completed_at < now()->subMinutes(5))
+                <div class="flex items-center gap-2 mt-2">
+                    <span class="inline-flex items-center gap-1.5 text-xs text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Cached result
+                    </span>
+                    <form action="{{ route('scan.store') }}" method="POST" class="inline"
+                          x-data @submit.prevent="$dispatch('scan-start', { url: '{{ addslashes($scan->url) }}', form: $el })">
+                        @csrf
+                        <input type="hidden" name="url" value="{{ $scan->url }}">
+                        <button type="submit" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                            Run fresh scan &rarr;
+                        </button>
+                    </form>
+                </div>
+                @endif
+
+                @isset($newerScan)
+                <div class="mt-2 text-xs text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
+                    A newer scan is available.
+                    <a href="{{ route('scan.show', $newerScan) }}" class="underline hover:text-white">View latest &rarr;</a>
+                </div>
+                @endisset
 
                 {{-- Share buttons --}}
                 <div class="flex items-center gap-2 mt-3" x-data="{ copied: false }">
@@ -1011,6 +1057,51 @@
                 </svg>
                 Scan another website
             </a>
+        </div>
+
+        {{-- Embed badge section --}}
+        <div class="mt-10 border border-white/8 rounded-2xl p-6 bg-white/2"
+             x-data="{ open: false }">
+            <button @click="open = !open"
+                    class="flex items-center justify-between w-full text-left">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                        </svg>
+                    </div>
+                    <span class="font-semibold text-sm">Add a security badge to your website</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-500 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div x-show="open" x-collapse class="mt-5">
+                <p class="text-sm text-gray-400 mb-4">Show visitors your security score with an embeddable badge. It updates automatically when you rescan.</p>
+
+                {{-- Badge preview --}}
+                <div class="flex items-center gap-4 mb-5">
+                    <a href="{{ route('scan.show', $scan) }}" target="_blank">
+                        <img src="{{ route('scan.badge', $scan) }}" alt="WebCheckApp security badge" class="h-5">
+                    </a>
+                    <span class="text-xs text-gray-500">Preview</span>
+                </div>
+
+                {{-- HTML snippet --}}
+                <div x-data="{ copied: false }" class="relative">
+                    <pre class="text-xs bg-gray-900 border border-white/10 rounded-xl p-4 overflow-x-auto text-gray-300 leading-relaxed"><code>&lt;a href="{{ route('scan.show', $scan) }}"&gt;
+  &lt;img src="{{ route('scan.badge', $scan) }}" alt="Security score: {{ $scan->score }}/100"&gt;
+&lt;/a&gt;</code></pre>
+                    <button
+                        @click="navigator.clipboard.writeText(`<a href='{{ route('scan.show', $scan) }}'>\n  <img src='{{ route('scan.badge', $scan) }}' alt='Security score: {{ $scan->score }}/100'>\n</a>`); copied = true; setTimeout(() => copied = false, 2000)"
+                        class="absolute top-3 right-3 text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition"
+                    >
+                        <span x-show="!copied">Copy</span>
+                        <span x-show="copied" class="text-green-400">Copied!</span>
+                    </button>
+                </div>
+            </div>
         </div>
 
     </div>

@@ -1,0 +1,35 @@
+name: Security Score Check
+
+on:
+  schedule:
+    # Run every Monday at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: URL to scan
+        required: true
+        default: 'https://example.com'
+      min_score:
+        description: Minimum acceptable score
+        required: false
+        default: '60'
+
+jobs:
+  security-scan:
+    name: WebCheckApp Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scan website
+        id: scan
+        uses: ./   # Replace with: budgetpixels/webcheckapp-action@v1 once published
+        with:
+          url: ${{ github.event.inputs.url || vars.SITE_URL }}
+          min_score: ${{ github.event.inputs.min_score || '60' }}
+
+      - name: Print result
+        run: |
+          echo "Score:  ${{ steps.scan.outputs.score }}/100"
+          echo "Grade:  ${{ steps.scan.outputs.grade }}"
+          echo "Report: ${{ steps.scan.outputs.report_url }}"

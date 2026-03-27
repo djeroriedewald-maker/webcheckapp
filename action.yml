@@ -1,0 +1,81 @@
+name: WebCheckApp Security Score
+description: Scan a website with WebCheckApp and fail CI if the security score is below a threshold.
+author: BudgetPixels.nl
+
+branding:
+  icon: shield
+  color: indigo
+
+inputs:
+  url:
+    description: The domain or URL to scan (e.g. example.com or https://example.com)
+    required: true
+  min_score:
+    description: Minimum acceptable security score (0–100). The step fails if the score is below this value.
+    required: false
+    default: '60'
+  api_base:
+    description: Base URL of the WebCheckApp API (override for self-hosted instances)
+    required: false
+    default: 'https://webcheckapp.com'
+
+outputs:
+  score:
+    description: The overall security score (0–100)
+    value: ${{ steps.scan.outputs.score }}
+  grade:
+    description: The letter grade (A+, A, B, C, D, F …)
+    value: ${{ steps.scan.outputs.grade }}
+  report_url:
+    description: URL to the full security report
+    value: ${{ steps.scan.outputs.report_url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Scan with WebCheckApp
+      id: scan
+      shell: bash
+      run: |
+        set -e
+
+        URL="${{ inputs.url }}"
+        API_BASE="${{ inputs.api_base }}"
+        MIN_SCORE="${{ inputs.min_score }}"
+
+        echo "Scanning ${URL} via ${API_BASE}/api/v1/scan ..."
+
+        RESPONSE=$(curl -sf --max-time 120 \
+          "${API_BASE}/api/v1/scan?url=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "$URL")" \
+          || { echo "::error::WebCheckApp API request failed. Is the URL reachable?"; exit 1; })
+
+        SCORE=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('score',''))")
+        GRADE=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('grade',''))")
+        REPORT_URL=$(echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('report_url',''))")
+
+        if [ -z "$SCORE" ]; then
+          echo "::error::Could not parse score from API response."
+          exit 1
+        fi
+
+        echo "score=${SCORE}" >> "$GITHUB_OUTPUT"
+        echo "grade=${GRADE}" >> "$GITHUB_OUTPUT"
+        echo "report_url=${REPORT_URL}" >> "$GITHUB_OUTPUT"
+
+        echo "### WebCheckApp Security Scan" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Domain | Score | Grade |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| ${URL} | ${SCORE}/100 | ${GRADE} |" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "[View full report](${REPORT_URL})" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "Security score: ${SCORE}/100 (${GRADE})"
+        echo "Full report: ${REPORT_URL}"
+
+        if [ "$SCORE" -lt "$MIN_SCORE" ]; then
+          echo "::error::Security score ${SCORE} is below the minimum threshold of ${MIN_SCORE}. See ${REPORT_URL}"
+          exit 1
+        fi
+
+        echo "Score ${SCORE} meets or exceeds the minimum threshold of ${MIN_SCORE}."
