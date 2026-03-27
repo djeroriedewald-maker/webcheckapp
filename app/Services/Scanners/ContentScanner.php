@@ -291,13 +291,13 @@ class ContentScanner
 
             if (in_array($code, [200, 206]) && $body) {
                 $bodyLower = strtolower($body);
-            }
-            if (in_array($code, [200, 206]) && $body && (
-                str_contains($bodyLower, 'index of /') ||
-                str_contains($bodyLower, 'directory listing for') ||
-                str_contains($bodyLower, '<title>index of')
-            )) {
-                return true;
+                if (
+                    str_contains($bodyLower, 'index of /') ||
+                    str_contains($bodyLower, 'directory listing for') ||
+                    str_contains($bodyLower, '<title>index of')
+                ) {
+                    return true;
+                }
             }
         }
 

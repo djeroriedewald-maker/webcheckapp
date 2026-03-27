@@ -273,8 +273,9 @@ class TrustScanner
         )));
 
         try {
-            $now     = new \DateTime();
-            $regDate = new \DateTime($registered);
+            $utc     = new \DateTimeZone('UTC');
+            $now     = new \DateTime('now', $utc);
+            $regDate = new \DateTime($registered, $utc);
             $ageDays = (int) $now->diff($regDate)->days;
 
             $result = [
@@ -287,7 +288,7 @@ class TrustScanner
             ];
 
             if ($expires) {
-                $expDate          = new \DateTime($expires);
+                $expDate          = new \DateTime($expires, $utc);
                 $expDiff          = $now->diff($expDate);
                 $expiresInDays    = $expDate > $now ? (int) $expDiff->days : -(int) $expDiff->days;
 
@@ -299,7 +300,7 @@ class TrustScanner
             }
 
             if ($updated) {
-                $result['updated_formatted'] = (new \DateTime($updated))->format('d M Y');
+                $result['updated_formatted'] = (new \DateTime($updated, $utc))->format('d M Y');
             }
 
             return $result;

@@ -170,7 +170,9 @@ class HeadersScanner
         // --- Check: Referrer-Policy ---
         $maxScore += 15;
         $referrer        = $headers['referrer-policy'] ?? null;
-        $insecureReferrer = ['unsafe-url', 'no-referrer-when-downgrade', 'origin-when-cross-origin', 'origin'];
+        // Only flag values that expose full URL paths cross-origin.
+        // 'origin' and 'origin-when-cross-origin' are acceptable — they only leak the domain, not the path.
+        $insecureReferrer = ['unsafe-url', 'no-referrer-when-downgrade'];
         if ($referrer !== null && ! in_array(strtolower(trim($referrer)), $insecureReferrer)) {
             $score += 15;
             $checks[] = [

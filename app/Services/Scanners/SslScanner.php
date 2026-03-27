@@ -319,10 +319,20 @@ class SslScanner
     private function checkOldTls(string $host): array
     {
         $supported = [];
-        $versions  = [
-            'TLS 1.0' => STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT,
-            'TLS 1.1' => STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT,
-        ];
+
+        // These constants were deprecated in modern OpenSSL and may not exist on all builds.
+        // Build the list dynamically to avoid fatal errors on servers where they are undefined.
+        $versions = [];
+        if (defined('STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT')) {
+            $versions['TLS 1.0'] = STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT;
+        }
+        if (defined('STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT')) {
+            $versions['TLS 1.1'] = STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT;
+        }
+
+        if (empty($versions)) {
+            return []; // Cannot check on this server build — treat as no deprecated versions found
+        }
 
         foreach ($versions as $name => $method) {
             $context = stream_context_create([
