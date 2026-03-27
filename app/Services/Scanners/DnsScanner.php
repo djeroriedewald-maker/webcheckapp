@@ -10,16 +10,29 @@ class DnsScanner
         $score    = 0;
         $maxScore = 0;
 
+        // SPF, DMARC and CAA always live on the apex domain, never on www.
+        // Strip the www. prefix so scans of www.example.com check the right place.
+        $apexHost = preg_replace('/^www\./i', '', $host);
+
         // --- Check 1: SPF record (email spoofing protection) ---
         $maxScore += 35;
-        $spf = $this->safe(fn() => $this->checkSpf($host), ['found' => false]);
-        if ($spf['found']) {
+        $spf = $this->safe(fn() => $this->checkSpf($apexHost), ['found' => false]);
+        if ($spf['found'] && empty($spf['permissive'])) {
             $score += 35;
             $checks[] = [
                 'id'          => 'dns_spf',
                 'label'       => 'SPF record configured',
                 'status'      => 'pass',
                 'description' => "SPF record found: \"{$spf['value']}\".",
+            ];
+        } elseif ($spf['found'] && !empty($spf['permissive'])) {
+            // +all means anyone can send — record exists but offers no protection
+            $checks[] = [
+                'id'             => 'dns_spf',
+                'label'          => 'SPF record configured',
+                'status'         => 'fail',
+                'description'    => "SPF record uses \"+all\" which allows any server to send email as your domain. This provides no protection against spoofing: \"{$spf['value']}\".",
+                'recommendation' => 'Replace \"+all\" with \"~all\" (softfail) or \"-all\" (hard fail) to restrict which servers may send mail for your domain.',
             ];
         } else {
             $checks[] = [
@@ -33,7 +46,7 @@ class DnsScanner
 
         // --- Check 2: DMARC record (email authentication policy) ---
         $maxScore += 35;
-        $dmarc = $this->safe(fn() => $this->checkDmarc($host), ['found' => false, 'policy' => null]);
+        $dmarc = $this->safe(fn() => $this->checkDmarc($apexHost), ['found' => false, 'policy' => null]);
         if ($dmarc['found']) {
             $score += $dmarc['policy'] === 'none' ? 15 : 35;
             $status = $dmarc['policy'] === 'none' ? 'warn' : 'pass';
@@ -58,14 +71,14 @@ class DnsScanner
                 'id'             => 'dns_dmarc',
                 'label'          => 'DMARC record configured',
                 'status'         => 'fail',
-                'description'    => 'No DMARC record found at _dmarc.' . $host . '.',
-                'recommendation' => 'Add a TXT record to _dmarc.' . $host . ': v=DMARC1; p=quarantine; rua=mailto:dmarc@' . $host,
+                'description'    => 'No DMARC record found at _dmarc.' . $apexHost . '.',
+                'recommendation' => 'Add a TXT record to _dmarc.' . $apexHost . ': v=DMARC1; p=quarantine; rua=mailto:dmarc@' . $apexHost,
             ];
         }
 
         // --- Check 3: CAA record (restricts who can issue SSL certs) ---
         $maxScore += 30;
-        $caa = $this->safe(fn() => $this->checkCaa($host), ['found' => false, 'checked' => true]);
+        $caa = $this->safe(fn() => $this->checkCaa($apexHost), ['found' => false, 'checked' => true]);
         if ($caa['found']) {
             $score += 30;
             $checks[] = [
@@ -97,7 +110,7 @@ class DnsScanner
         // We show it as informational only. Most systems will report not confirmed,
         // even for domains that do have DNSSEC, because php dns_get_record uses the
         // system resolver which strips DNSSEC records.
-        $dnssec = $this->safe(fn() => $this->checkDnssec($host), false);
+        $dnssec = $this->safe(fn() => $this->checkDnssec($apexHost), false);
         $checks[] = [
             'id'          => 'dns_dnssec',
             'label'       => 'DNSSEC',
@@ -126,7 +139,9 @@ class DnsScanner
         foreach ($records as $record) {
             $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
             if (str_starts_with($txt, 'v=spf1')) {
-                return ['found' => true, 'value' => $txt];
+                // +all means "any server is allowed to send" — effectively no protection
+                $dangerouslyPermissive = (bool) preg_match('/\+all\b/i', $txt);
+                return ['found' => true, 'value' => $txt, 'permissive' => $dangerouslyPermissive];
             }
         }
 
