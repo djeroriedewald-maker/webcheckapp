@@ -4,15 +4,15 @@ namespace App\Services\Scanners;
 
 class SslScanner
 {
-    private const TIMEOUT = 6;
+    private const TIMEOUT = 8;
 
     public function scan(string $host): array
     {
-        $checks = [];
-        $score  = 0;
+        $checks   = [];
+        $score    = 0;
         $maxScore = 0;
 
-        $defaultCert = [
+        $certInfo = $this->safe(fn() => $this->getCertificateInfo($host), [
             'reachable'    => false,
             'valid'        => false,
             'expires_soon' => false,
@@ -20,9 +20,7 @@ class SslScanner
             'days_left'    => null,
             'error'        => 'Could not connect.',
             'hsts'         => ['present' => false, 'max_age' => 0, 'includes_subdomains' => false],
-        ];
-
-        $certInfo = $this->safe(fn() => $this->getCertificateInfo($host), $defaultCert);
+        ]);
 
         // --- Check 1: HTTPS available ---
         $maxScore += 30;
@@ -93,8 +91,8 @@ class SslScanner
                 'id'             => 'ssl_redirect',
                 'label'          => 'HTTP redirects to HTTPS',
                 'status'         => 'warn',
-                'description'    => 'HTTP redirects to HTTPS, but not via a permanent (301) redirect.',
-                'recommendation' => 'Use a 301 permanent redirect from HTTP to HTTPS for better SEO and caching.',
+                'description'    => 'HTTP redirects to HTTPS, but not via a fully permanent redirect chain.',
+                'recommendation' => 'Use 301 permanent redirects at every step from HTTP to HTTPS for better SEO and caching.',
             ];
         } else {
             $checks[] = [
@@ -145,20 +143,32 @@ class SslScanner
         ];
     }
 
+    /**
+     * Try the given host, then www.{host} as fallback.
+     * Many sites have SSL only on www and port 443 is not open on the apex domain.
+     */
     private function getCertificateInfo(string $host): array
     {
-        $default = [
-            'reachable'    => false,
-            'valid'        => false,
-            'expires_soon' => false,
-            'expires'      => null,
-            'days_left'    => null,
-            'error'        => 'Could not connect.',
-            'hsts'         => ['present' => false, 'max_age' => 0, 'includes_subdomains' => false],
-        ];
+        $info = $this->fetchSslInfo($host);
+        if ($info['reachable']) {
+            return $info;
+        }
 
-        // Capture only the headers of the final (non-redirect) response
+        // Fallback: try www prefix if not already present
+        if (! str_starts_with($host, 'www.')) {
+            $www = $this->fetchSslInfo("www.{$host}");
+            if ($www['reachable']) {
+                return $www;
+            }
+        }
+
+        return $info; // return last failed result for error reporting
+    }
+
+    private function fetchSslInfo(string $host): array
+    {
         $responseHeaders = '';
+
         $ch = curl_init("https://{$host}");
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -167,23 +177,34 @@ class SslScanner
             CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_FOLLOWLOCATION => false, // Do NOT follow — check the host the user gave us
+            CURLOPT_FOLLOWLOCATION => true,   // follow HTTPS→HTTPS redirects (e.g. apex → www)
+            CURLOPT_MAXREDIRS      => 5,
             CURLOPT_CERTINFO       => true,
             CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$responseHeaders) {
+                if (str_starts_with(trim($header), 'HTTP/')) {
+                    $responseHeaders = ''; // reset — keep only the final response headers
+                }
+                $responseHeaders .= $header;
+                return strlen($header);
+            },
         ]);
-        // Use HEADERFUNCTION so we always have the headers of the actual response
-        curl_setopt($ch, CURLOPT_HEADERFUNCTION, function ($ch, $header) use (&$responseHeaders) {
-            $responseHeaders .= $header;
-            return strlen($header);
-        });
 
         curl_exec($ch);
-        $errno    = curl_errno($ch);
-        $certInfo = curl_getinfo($ch, CURLINFO_CERTINFO);
+        $errno       = curl_errno($ch);
+        $certInfoRaw = curl_getinfo($ch, CURLINFO_CERTINFO);
         curl_close($ch);
 
         if ($errno) {
-            return array_merge($default, ['error' => 'SSL connection failed or certificate is invalid.']);
+            return [
+                'reachable'    => false,
+                'valid'        => false,
+                'expires_soon' => false,
+                'expires'      => null,
+                'days_left'    => null,
+                'error'        => 'SSL connection failed or certificate is invalid.',
+                'hsts'         => ['present' => false, 'max_age' => 0, 'includes_subdomains' => false],
+            ];
         }
 
         $result = [
@@ -196,23 +217,23 @@ class SslScanner
             'hsts'         => ['present' => false, 'max_age' => 0, 'includes_subdomains' => false],
         ];
 
-        // Parse certificate expiry date
-        $expireRaw = $certInfo[0]['Expire date'] ?? $certInfo[0]['expire date'] ?? null;
+        // Parse certificate expiry
+        $expireRaw = $certInfoRaw[0]['Expire date'] ?? $certInfoRaw[0]['expire date'] ?? null;
         if ($expireRaw && ($expiresAt = strtotime($expireRaw)) && $expiresAt > 0) {
-            $daysLeft             = (int) round(($expiresAt - time()) / 86400);
-            $result['expires']    = date('Y-m-d', $expiresAt);
-            $result['days_left']  = $daysLeft;
-            $result['valid']      = $daysLeft > 30;
+            $daysLeft               = (int) round(($expiresAt - time()) / 86400);
+            $result['expires']      = date('Y-m-d', $expiresAt);
+            $result['days_left']    = $daysLeft;
+            $result['valid']        = $daysLeft > 30;
             $result['expires_soon'] = $daysLeft > 0 && $daysLeft <= 30;
         } else {
-            // Reachable over HTTPS with valid SSL = cert is at minimum trusted
+            // Reachable over HTTPS with no parse error = cert is at minimum trusted by curl
             $result['valid'] = true;
         }
 
-        // Parse HSTS from the response headers (captured via HEADERFUNCTION — correct response only)
+        // Parse HSTS from final response headers
         if (preg_match('/^strict-transport-security:\s*([^\r\n]+)/im', $responseHeaders, $m)) {
-            $value   = trim($m[1]);
-            $maxAge  = 0;
+            $value  = trim($m[1]);
+            $maxAge = 0;
             $subdoms = false;
             if (preg_match('/max-age\s*=\s*(\d+)/i', $value, $ageM)) {
                 $maxAge = (int) $ageM[1];
@@ -226,29 +247,43 @@ class SslScanner
         return $result;
     }
 
+    /**
+     * Follow the full redirect chain from http:// and check whether it ends at https://.
+     * This correctly handles multi-hop chains like:
+     *   http://domain.com → http://www.domain.com → https://www.domain.com
+     */
     private function checkHttpsRedirect(string $host): array
     {
+        $hasTemporaryRedirect = false;
+
         $ch = curl_init("http://{$host}");
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 5,
             CURLOPT_TIMEOUT        => self::TIMEOUT,
             CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
             CURLOPT_NOBODY         => true,
             CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$hasTemporaryRedirect) {
+                // Track any temporary (302/307) redirect in the chain
+                if (preg_match('/^HTTP\/\S+\s+(302|307)\b/i', $header)) {
+                    $hasTemporaryRedirect = true;
+                }
+                return strlen($header);
+            },
         ]);
+
         curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $location = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        $finalUrl = (string) curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         curl_close($ch);
 
-        $isRedirect  = in_array($httpCode, [301, 302, 307, 308]);
-        $toHttps     = str_starts_with((string) $location, 'https://');
-        $isPermanent = in_array($httpCode, [301, 308]);
+        $endsOnHttps  = str_starts_with($finalUrl, 'https://');
+        $wasRedirected = rtrim($finalUrl, '/') !== "http://{$host}";
 
         return [
-            'redirects' => $isRedirect && $toHttps,
-            'permanent' => $isRedirect && $toHttps && $isPermanent,
+            'redirects' => $endsOnHttps && $wasRedirected,
+            'permanent' => $endsOnHttps && $wasRedirected && ! $hasTemporaryRedirect,
         ];
     }
 
