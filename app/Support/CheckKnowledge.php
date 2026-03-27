@@ -153,7 +153,7 @@ class CheckKnowledge
             'content_wp' => [
                 'what' => 'The WordPress version number is visible in the HTML source — either in the generator meta tag (<meta name="generator" content="WordPress 6.2">) or in script/style URLs as ?ver=6.2.',
                 'why'  => 'Knowing the exact WordPress version allows attackers to look up known CVEs (Common Vulnerabilities and Exposures) for that version and target known exploits. Version disclosure is an information leak that makes targeted attacks easier.',
-                'how'  => "Remove the generator meta tag by adding to functions.php:\nremove_action('wp_head', 'wp_generator');\n\nRemove ?ver= query strings from URLs:\nfunction remove_version_strings($src) {\n  if (strpos($src, '?ver=') !== false) {\n    $src = remove_query_arg('ver', $src);\n  }\n  return $src;\n}\nadd_filter('style_loader_src', 'remove_version_strings');\nadd_filter('script_loader_src', 'remove_version_strings');\n\nAlternatively use a security plugin like Wordfence or iThemes Security which does this automatically.",
+                'how'  => "Remove the generator meta tag by adding to functions.php:\nremove_action('wp_head', 'wp_generator');\n\nRemove ?ver= query strings from URLs:\nfunction remove_version_strings(\$src) {\n  if (strpos(\$src, '?ver=') !== false) {\n    \$src = remove_query_arg('ver', \$src);\n  }\n  return \$src;\n}\nadd_filter('style_loader_src', 'remove_version_strings');\nadd_filter('script_loader_src', 'remove_version_strings');\n\nAlternatively use a security plugin like Wordfence or iThemes Security which does this automatically.",
             ],
 
             'content_dirlisting' => [
