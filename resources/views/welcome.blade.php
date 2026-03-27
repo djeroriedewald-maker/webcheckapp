@@ -244,42 +244,5 @@
     </div>
 </section>
 
-{{-- Recent scans --}}
-@if($recentScans->count() > 0)
-<section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-white/5">
-    <div class="flex items-end justify-between mb-10">
-        <div>
-            <h2 class="text-3xl font-bold mb-2">Recent scans</h2>
-            <p class="text-gray-400">Live results from our community — click any to view the full report.</p>
-        </div>
-        <div class="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Live
-        </div>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        @foreach($recentScans as $recent)
-        <a href="{{ route('scan.show', $recent) }}"
-           class="group bg-white/3 border border-white/8 rounded-xl p-4 hover:bg-white/6 hover:border-white/15 transition-all flex items-center gap-4">
-            {{-- Grade circle --}}
-            <div class="w-12 h-12 rounded-xl {{ $recent->score >= 75 ? 'bg-green-500/10 border border-green-500/20' : ($recent->score >= 50 ? 'bg-yellow-500/10 border border-yellow-500/20' : 'bg-red-500/10 border border-red-500/20') }} flex items-center justify-center shrink-0">
-                <span class="text-lg font-black {{ $recent->getGradeColorClass() }}">{{ $recent->grade }}</span>
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-sm font-medium text-white truncate group-hover:text-indigo-300 transition">{{ $recent->host }}</p>
-                <div class="flex items-center gap-2 mt-1">
-                    <div class="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full {{ $recent->score >= 75 ? 'bg-green-500' : ($recent->score >= 50 ? 'bg-yellow-500' : 'bg-red-500') }}"
-                             style="width: {{ $recent->score }}%"></div>
-                    </div>
-                    <span class="text-xs text-gray-500 shrink-0">{{ $recent->score }}/100</span>
-                </div>
-                <p class="text-xs text-gray-600 mt-1">{{ $recent->completed_at->diffForHumans() }}</p>
-            </div>
-        </a>
-        @endforeach
-    </div>
-</section>
-@endif
 
 @endsection

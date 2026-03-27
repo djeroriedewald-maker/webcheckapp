@@ -11,15 +11,9 @@ class ScanController extends Controller
 {
     public function index()
     {
-        $scanCount   = Scan::where('status', 'completed')->count() + 2_406_521;
-        $recentScans = Scan::where('status', 'completed')
-            ->whereNotNull('score')
-            ->whereNotNull('host')
-            ->orderBy('completed_at', 'desc')
-            ->limit(12)
-            ->get(['host', 'grade', 'score', 'uid', 'completed_at']);
+        $scanCount = Scan::where('status', 'completed')->count() + 2_406_521;
 
-        return view('welcome', compact('scanCount', 'recentScans'));
+        return view('welcome', compact('scanCount'));
     }
 
     public function store(Request $request)
