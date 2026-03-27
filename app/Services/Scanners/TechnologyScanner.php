@@ -187,10 +187,12 @@ class TechnologyScanner
         if (str_contains($html, 'data-wf-') || str_contains($html, 'webflow.com')) {
             $found[] = ['type' => 'CMS', 'name' => 'Webflow'];
         }
-        if (preg_match('/generator.*ghost/i', $html) || str_contains($html, 'ghost.io')) {
+        // Ghost: only match generator meta tag or the actual Ghost script — not plain text mentions
+        if (preg_match('/<meta[^>]+name=["\']generator["\'][^>]+content=["\']Ghost/i', $html) || str_contains($html, 'ghost.min.js')) {
             $found[] = ['type' => 'CMS', 'name' => 'Ghost'];
         }
-        if (str_contains($html, 'typo3') || preg_match('/generator.*typo3/i', $html)) {
+        // TYPO3: only match URL paths or generator tag — not plain text mentions
+        if (str_contains($html, '/typo3/') || str_contains($html, 'typo3conf') || preg_match('/<meta[^>]+name=["\']generator["\'][^>]+content=["\']TYPO3/i', $html)) {
             $found[] = ['type' => 'CMS', 'name' => 'TYPO3'];
         }
 
@@ -204,7 +206,8 @@ class TechnologyScanner
         if (str_contains($html, '/modules/ps_') || preg_match('/generator.*prestashop/i', $html)) {
             $found[] = ['type' => 'E-commerce', 'name' => 'PrestaShop'];
         }
-        if (str_contains($html, 'woocommerce') || str_contains($html, 'wc-ajax')) {
+        // WooCommerce: require a URL path or specific JS hook — not a plain text mention
+        if (str_contains($html, '/woocommerce/') || str_contains($html, 'wc-ajax') || str_contains($html, '"woocommerce"')) {
             $found[] = ['type' => 'E-commerce', 'name' => 'WooCommerce'];
         }
 
@@ -218,7 +221,8 @@ class TechnologyScanner
         if (str_contains($html, '__sveltekit') || str_contains($html, 'sveltekit')) {
             $found[] = ['type' => 'JavaScript', 'name' => 'SvelteKit'];
         }
-        if (str_contains($html, 'data-reactroot') || str_contains($html, '__reactFiber') || str_contains($html, 'react-dom.js') || str_contains($html, 'react.min.js')) {
+        // React: only match reliable in-HTML markers; skip filename patterns (modern bundlers rename everything)
+        if (str_contains($html, 'data-reactroot') || str_contains($html, '__reactFiber') || str_contains($html, 'react-dom@') || str_contains($html, '/react-dom.production.min.js')) {
             $found[] = ['type' => 'JavaScript', 'name' => 'React'];
         }
         if (str_contains($html, 'data-v-') || str_contains($html, '__vue') || preg_match('/vue(?:\.min)?\.js/i', $html)) {
@@ -232,7 +236,13 @@ class TechnologyScanner
         }
 
         // ---- Analytics ----
-        if (str_contains($html, 'google-analytics.com/analytics.js') || str_contains($html, "ga('create") || preg_match('/gtag\(.*UA-\d/i', $html)) {
+        // Google Analytics: detect both Universal Analytics (UA-) and GA4 (G-) measurement IDs
+        if (
+            str_contains($html, 'google-analytics.com/analytics.js') ||
+            str_contains($html, "ga('create") ||
+            preg_match('/gtag\s*\(\s*["\']config["\'].*["\'](?:UA-|G-)[A-Z0-9]/i', $html) ||
+            preg_match('/["\'](?:UA-|G-)[A-Z0-9]{6,}["\']/i', $html)
+        ) {
             $found[] = ['type' => 'Analytics', 'name' => 'Google Analytics'];
         }
         if (str_contains($html, 'googletagmanager.com/gtm.js') || str_contains($html, 'googletagmanager.com/ns.html')) {

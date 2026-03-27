@@ -4,69 +4,81 @@
 
 @section('content')
 
-<section class="relative overflow-hidden">
+<section class="relative overflow-hidden min-h-[600px] flex items-center">
+    {{-- Background gradient --}}
     <div class="absolute inset-0 bg-gradient-to-br from-indigo-950 via-gray-950 to-gray-950 pointer-events-none"></div>
-    <div class="absolute -top-40 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-20 left-1/3 w-72 h-72 bg-purple-600/8 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 text-center">
+    {{-- Hero image (right side, desktop only) --}}
+    <div class="absolute inset-y-0 right-0 w-1/2 hidden lg:block pointer-events-none">
+        <img src="/hero.jpg" alt="" class="w-full h-full object-cover object-center opacity-40">
+        {{-- Gradient fade from left so image blends into the dark background --}}
+        <div class="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/60 to-transparent"></div>
+        {{-- Subtle fade at bottom --}}
+        <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-gray-950 to-transparent"></div>
+    </div>
 
-        <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-8">
-            <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
-            Free instant security scan
-        </div>
+    <div class="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+        <div class="max-w-2xl">
 
-        <h1 class="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-tight">
-            Is your website
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"> secure?</span>
-        </h1>
-
-        <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-            Scan any website in seconds. Get a detailed security report with your score, detected issues and clear recommendations to fix them.
-        </p>
-
-        <form action="{{ route('scan.store') }}" method="POST" x-data="{ loading: false }" @submit="loading = true">
-            @csrf
-            <div class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
-                <div class="flex-1 relative">
-                    <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-                        </svg>
-                    </div>
-                    <input
-                        type="text"
-                        name="url"
-                        placeholder="example.com or https://example.com"
-                        value="{{ old('url') }}"
-                        class="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-lg"
-                        autofocus
-                    >
-                </div>
-                <button
-                    type="submit"
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-lg flex items-center justify-center gap-2 min-w-[160px] disabled:opacity-70"
-                    :disabled="loading"
-                >
-                    <span x-show="!loading">Scan now</span>
-                    <span x-show="loading" class="flex items-center gap-2">
-                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                        Scanning...
-                    </span>
-                </button>
+            <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-8">
+                <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
+                Free instant security scan
             </div>
 
-            @error('url')
-                <p class="mt-3 text-red-400 text-sm">{{ $message }}</p>
-            @enderror
-        </form>
+            <h1 class="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-tight">
+                Is your website
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"> secure?</span>
+            </h1>
 
-        <p class="mt-5 text-sm text-gray-600">
-            We check SSL, security headers, DNS records, performance and more.
-        </p>
+            <p class="text-xl text-gray-400 mb-10 max-w-xl">
+                Scan any website in seconds. Get a detailed security report with your score, detected issues and clear recommendations to fix them.
+            </p>
+
+            <form action="{{ route('scan.store') }}" method="POST" x-data="{ loading: false }" @submit="loading = true">
+                @csrf
+                <div class="flex flex-col sm:flex-row gap-3 max-w-xl">
+                    <div class="flex-1 relative">
+                        <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            name="url"
+                            placeholder="example.com or https://example.com"
+                            value="{{ old('url') }}"
+                            class="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-lg"
+                            autofocus
+                        >
+                    </div>
+                    <button
+                        type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-lg flex items-center justify-center gap-2 min-w-[160px] disabled:opacity-70"
+                        :disabled="loading"
+                    >
+                        <span x-show="!loading">Scan now</span>
+                        <span x-show="loading" class="flex items-center gap-2">
+                            <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                            Scanning...
+                        </span>
+                    </button>
+                </div>
+
+                @error('url')
+                    <p class="mt-3 text-red-400 text-sm">{{ $message }}</p>
+                @enderror
+            </form>
+
+            <p class="mt-5 text-sm text-gray-600">
+                We check SSL, security headers, DNS records, performance and more.
+            </p>
+        </div>
     </div>
 </section>
 
