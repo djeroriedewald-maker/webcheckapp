@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessScan;
 use App\Models\Scan;
+use App\Services\ScanService;
 use Illuminate\Http\Request;
 
 class ScanController extends Controller
@@ -29,11 +29,24 @@ class ScanController extends Controller
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,
-            'status'     => 'pending',
+            'status'     => 'running',
             'ip_address' => $request->ip(),
         ]);
 
-        ProcessScan::dispatch($scan);
+        try {
+            set_time_limit(120);
+            $results = app(ScanService::class)->run($host);
+
+            $scan->update([
+                'status'       => 'completed',
+                'score'        => $results['score'],
+                'grade'        => $results['grade'],
+                'results'      => $results['categories'],
+                'completed_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            $scan->update(['status' => 'failed']);
+        }
 
         return redirect()->route('scan.show', $scan);
     }
