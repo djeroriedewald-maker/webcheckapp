@@ -115,14 +115,15 @@ class HeadersScanner
     {
         $ch = curl_init("https://{$host}");
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER         => true,
-            CURLOPT_NOBODY         => true,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 5,
-            CURLOPT_USERAGENT      => 'WebCheckApp/1.0 Security Scanner',
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_HEADER          => true,
+            CURLOPT_NOBODY          => true,
+            CURLOPT_TIMEOUT         => 5,
+            CURLOPT_CONNECTTIMEOUT  => 5,
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_FOLLOWLOCATION  => true,
+            CURLOPT_MAXREDIRS       => 3,
+            CURLOPT_USERAGENT       => 'WebCheckApp/1.0 Security Scanner',
         ]);
         $response = curl_exec($ch);
         curl_close($ch);

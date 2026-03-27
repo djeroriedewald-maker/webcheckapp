@@ -12,7 +12,7 @@ class ProcessScan implements ShouldQueue
 {
     use Queueable;
 
-    public int $timeout = 120;
+    public int $timeout = 90;
     public int $tries = 1;
 
     public function __construct(public readonly Scan $scan) {}

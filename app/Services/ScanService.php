@@ -23,11 +23,31 @@ class ScanService
     {
         $results = [];
 
-        $results['ssl']         = (new SslScanner())->scan($host);
-        $results['headers']     = (new HeadersScanner())->scan($host);
-        $results['dns']         = (new DnsScanner())->scan($host);
-        $results['performance'] = (new PerformanceScanner())->scan($host);
-        $results['content']     = (new ContentScanner())->scan($host);
+        $scanners = [
+            'ssl'         => fn() => (new SslScanner())->scan($host),
+            'headers'     => fn() => (new HeadersScanner())->scan($host),
+            'dns'         => fn() => (new DnsScanner())->scan($host),
+            'performance' => fn() => (new PerformanceScanner())->scan($host),
+            'content'     => fn() => (new ContentScanner())->scan($host),
+        ];
+
+        foreach ($scanners as $key => $scanner) {
+            try {
+                $results[$key] = $scanner();
+            } catch (\Throwable $e) {
+                $results[$key] = [
+                    'category' => ucfirst($key),
+                    'icon'     => 'exclamation-triangle',
+                    'score'    => 0,
+                    'checks'   => [[
+                        'id'          => "{$key}_error",
+                        'label'       => 'Scanner error',
+                        'status'      => 'fail',
+                        'description' => 'This check could not be completed.',
+                    ]],
+                ];
+            }
+        }
 
         $overallScore = $this->calculateOverallScore($results);
         $grade = $this->scoreToGrade($overallScore);

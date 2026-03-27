@@ -4,15 +4,19 @@ namespace App\Services\Scanners;
 
 class SslScanner
 {
+    private const TIMEOUT = 5;
+
     public function scan(string $host): array
     {
         $checks = [];
         $score = 0;
         $maxScore = 0;
 
-        // Check if HTTPS is available
+        // Check if HTTPS is available + get cert info in one curl call
         $maxScore += 30;
-        $httpsAvailable = $this->checkHttps($host);
+        $certInfo = $this->getCertificateInfo($host);
+        $httpsAvailable = $certInfo['reachable'];
+
         if ($httpsAvailable) {
             $score += 30;
             $checks[] = [
@@ -31,17 +35,15 @@ class SslScanner
             ];
         }
 
-        // Check SSL certificate validity
+        // SSL certificate validity
         $maxScore += 30;
-        $certInfo = $this->getCertificateInfo($host);
         if ($certInfo['valid']) {
             $score += 30;
             $checks[] = [
                 'id'          => 'ssl_valid',
                 'label'       => 'SSL certificate valid',
                 'status'      => 'pass',
-                'description' => "Certificate is valid and expires on {$certInfo['expires']}.",
-                'detail'      => $certInfo,
+                'description' => "Certificate is valid and expires on {$certInfo['expires']} ({$certInfo['days_left']} days left).",
             ];
         } elseif ($certInfo['expires_soon']) {
             $score += 15;
@@ -49,9 +51,8 @@ class SslScanner
                 'id'          => 'ssl_valid',
                 'label'       => 'SSL certificate valid',
                 'status'      => 'warn',
-                'description' => "Certificate expires soon: {$certInfo['expires']}.",
+                'description' => "Certificate expires soon: {$certInfo['expires']} ({$certInfo['days_left']} days left).",
                 'recommendation' => 'Renew your SSL certificate before it expires.',
-                'detail'      => $certInfo,
             ];
         } else {
             $checks[] = [
@@ -60,11 +61,10 @@ class SslScanner
                 'status'      => 'fail',
                 'description' => $certInfo['error'] ?? 'Could not validate SSL certificate.',
                 'recommendation' => 'Install a valid SSL certificate from a trusted Certificate Authority.',
-                'detail'      => $certInfo,
             ];
         }
 
-        // Check HTTP → HTTPS redirect
+        // HTTP → HTTPS redirect
         $maxScore += 20;
         $redirects = $this->checkHttpsRedirect($host);
         if ($redirects) {
@@ -85,9 +85,9 @@ class SslScanner
             ];
         }
 
-        // Check HSTS header
+        // HSTS (reuse headers from cert check)
         $maxScore += 20;
-        $hsts = $this->checkHsts($host);
+        $hsts = $certInfo['hsts'];
         if ($hsts['present'] && $hsts['max_age'] >= 31536000) {
             $score += 20;
             $checks[] = [
@@ -116,85 +116,87 @@ class SslScanner
         }
 
         return [
-            'category'  => 'SSL & HTTPS',
-            'icon'      => 'shield-check',
-            'score'     => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
-            'checks'    => $checks,
+            'category' => 'SSL & HTTPS',
+            'icon'     => 'shield-check',
+            'score'    => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
+            'checks'   => $checks,
         ];
-    }
-
-    private function checkHttps(string $host): bool
-    {
-        $context = stream_context_create([
-            'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
-            'http' => ['timeout' => 10, 'ignore_errors' => true],
-        ]);
-
-        $handle = @fopen("https://{$host}", 'r', false, $context);
-        if ($handle) {
-            fclose($handle);
-            return true;
-        }
-
-        return false;
     }
 
     private function getCertificateInfo(string $host): array
     {
-        $context = stream_context_create([
-            'ssl' => [
-                'capture_peer_cert' => true,
-                'verify_peer'       => true,
-                'verify_peer_name'  => true,
-            ],
+        $default = [
+            'reachable'   => false,
+            'valid'       => false,
+            'expires_soon' => false,
+            'expires'     => null,
+            'days_left'   => null,
+            'error'       => 'Could not connect.',
+            'hsts'        => ['present' => false, 'max_age' => 0],
+        ];
+
+        $ch = curl_init("https://{$host}");
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_HEADER          => true,
+            CURLOPT_NOBODY          => true,
+            CURLOPT_TIMEOUT         => self::TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT  => self::TIMEOUT,
+            CURLOPT_SSL_VERIFYPEER  => true,
+            CURLOPT_SSL_VERIFYHOST  => 2,
+            CURLOPT_FOLLOWLOCATION  => true,
+            CURLOPT_MAXREDIRS       => 3,
+            CURLOPT_CERTINFO        => true,
+            CURLOPT_USERAGENT       => 'WebCheckApp/1.0',
         ]);
 
-        $handle = @stream_socket_client(
-            "ssl://{$host}:443",
-            $errno,
-            $errstr,
-            10,
-            STREAM_CLIENT_CONNECT,
-            $context
-        );
+        $response = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $certInfo = curl_getinfo($ch, CURLINFO_CERTINFO);
+        curl_close($ch);
 
-        if (! $handle) {
-            return ['valid' => false, 'expires_soon' => false, 'error' => $errstr];
+        if ($errno || $response === false) {
+            return $default;
         }
 
-        $params = stream_context_get_params($handle);
-        fclose($handle);
+        $result = ['reachable' => true, 'valid' => false, 'expires_soon' => false, 'expires' => null, 'days_left' => null, 'error' => null];
 
-        $cert = openssl_x509_parse($params['options']['ssl']['peer_certificate']);
-        if (! $cert) {
-            return ['valid' => false, 'expires_soon' => false, 'error' => 'Could not parse certificate.'];
+        // Parse cert expiry from CURLINFO_CERTINFO
+        if (! empty($certInfo[0]['Expire date'])) {
+            $expiresAt = strtotime($certInfo[0]['Expire date']);
+            $daysLeft = (int) round(($expiresAt - time()) / 86400);
+            $result['expires'] = date('Y-m-d', $expiresAt);
+            $result['days_left'] = $daysLeft;
+            $result['valid'] = $daysLeft > 30;
+            $result['expires_soon'] = $daysLeft > 0 && $daysLeft <= 30;
+        } else {
+            $result['valid'] = true; // reachable with SSL = cert is valid enough
+            $result['expires'] = 'Unknown';
+            $result['days_left'] = null;
         }
 
-        $expiresAt = $cert['validTo_time_t'];
-        $now = time();
-        $daysLeft = (int) round(($expiresAt - $now) / 86400);
-        $expiresDate = date('Y-m-d', $expiresAt);
+        // Parse HSTS from response headers
+        $hsts = ['present' => false, 'max_age' => 0];
+        if (preg_match('/strict-transport-security:\s*([^\r\n]+)/i', $response, $m)) {
+            $value = trim($m[1]);
+            preg_match('/max-age=(\d+)/i', $value, $ageM);
+            $hsts = ['present' => true, 'max_age' => isset($ageM[1]) ? (int) $ageM[1] : 0];
+        }
+        $result['hsts'] = $hsts;
 
-        return [
-            'valid'       => $expiresAt > $now,
-            'expires_soon' => $daysLeft <= 30 && $expiresAt > $now,
-            'expires'     => $expiresDate,
-            'days_left'   => $daysLeft,
-            'issuer'      => $cert['issuer']['O'] ?? 'Unknown',
-            'subject'     => $cert['subject']['CN'] ?? $host,
-        ];
+        return $result;
     }
 
     private function checkHttpsRedirect(string $host): bool
     {
         $ch = curl_init("http://{$host}");
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_HEADER         => true,
-            CURLOPT_NOBODY         => true,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_FOLLOWLOCATION  => false,
+            CURLOPT_TIMEOUT         => self::TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT  => self::TIMEOUT,
+            CURLOPT_NOBODY          => true,
+            CURLOPT_SSL_VERIFYPEER  => false,
         ]);
         curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -202,33 +204,5 @@ class SslScanner
         curl_close($ch);
 
         return in_array($httpCode, [301, 302, 307, 308]) && str_starts_with($location, 'https://');
-    }
-
-    private function checkHsts(string $host): array
-    {
-        $ch = curl_init("https://{$host}");
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER         => true,
-            CURLOPT_NOBODY         => true,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 5,
-        ]);
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        if (preg_match('/strict-transport-security:\s*(.+)/i', $response, $matches)) {
-            $value = trim($matches[1]);
-            preg_match('/max-age=(\d+)/i', $value, $ageMatches);
-            return [
-                'present'  => true,
-                'value'    => $value,
-                'max_age'  => isset($ageMatches[1]) ? (int) $ageMatches[1] : 0,
-            ];
-        }
-
-        return ['present' => false, 'value' => null, 'max_age' => 0];
     }
 }

@@ -118,12 +118,13 @@ class ContentScanner
     {
         $ch = curl_init("https://{$host}");
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 5,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_TIMEOUT         => 8,
+            CURLOPT_CONNECTTIMEOUT  => 5,
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_FOLLOWLOCATION  => true,
+            CURLOPT_MAXREDIRS       => 3,
+            CURLOPT_USERAGENT       => 'Mozilla/5.0 WebCheckApp/1.0',
         ]);
         $html = curl_exec($ch);
         curl_close($ch);
@@ -149,11 +150,12 @@ class ContentScanner
         foreach ($paths as $path) {
             $ch = curl_init("https://{$host}{$path}");
             curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_NOBODY         => true,
-                CURLOPT_TIMEOUT        => 5,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_NOBODY          => true,
+                CURLOPT_TIMEOUT         => 3,
+                CURLOPT_CONNECTTIMEOUT  => 3,
+                CURLOPT_SSL_VERIFYPEER  => false,
+                CURLOPT_FOLLOWLOCATION  => false,
             ]);
             curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

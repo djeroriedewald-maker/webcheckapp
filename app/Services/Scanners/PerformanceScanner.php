@@ -117,11 +117,12 @@ class PerformanceScanner
     {
         $ch = curl_init("https://{$host}");
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_TIMEOUT         => 8,
+            CURLOPT_CONNECTTIMEOUT  => 5,
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_FOLLOWLOCATION  => true,
+            CURLOPT_MAXREDIRS       => 3,
         ]);
         curl_exec($ch);
         $time = curl_getinfo($ch, CURLINFO_TOTAL_TIME);
@@ -138,9 +139,10 @@ class PerformanceScanner
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER         => true,
             CURLOPT_NOBODY         => true,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_HTTPHEADER     => ['Accept-Encoding: gzip, deflate, br'],
+            CURLOPT_TIMEOUT         => 5,
+            CURLOPT_CONNECTTIMEOUT  => 5,
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_HTTPHEADER      => ['Accept-Encoding: gzip, deflate, br'],
         ]);
         $response = curl_exec($ch);
         curl_close($ch);
@@ -156,10 +158,11 @@ class PerformanceScanner
     {
         $ch = curl_init("https://{$host}/robots.txt");
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 10,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_NOBODY         => true,
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_TIMEOUT         => 5,
+            CURLOPT_CONNECTTIMEOUT  => 5,
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_NOBODY          => true,
         ]);
         curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
