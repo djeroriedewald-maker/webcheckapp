@@ -4,24 +4,20 @@ namespace App\Services\Scanners;
 
 class ContentScanner
 {
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
+    private const TIMEOUT = 6;
 
     public function scan(string $host): array
     {
-        $checks = [];
-        $score = 0;
+        $checks   = [];
+        $score    = 0;
         $maxScore = 0;
 
         $html = $this->safe(fn() => $this->fetchHtml($host), '');
 
-        // Mixed content
+        // --- Check 1: Mixed content ---
+        // Mixed content = resources (not navigation links) loaded over HTTP on an HTTPS page.
+        // We check: src= (scripts/images/iframes), action= (forms), <link href= (stylesheets).
+        // We do NOT flag <a href="http://..."> — those are navigation links, not mixed content.
         $maxScore += 30;
         $mixedContent = $this->safe(fn() => $this->checkMixedContent($html, $host), ['found' => false, 'count' => 0]);
         if (! $mixedContent['found']) {
@@ -30,19 +26,19 @@ class ContentScanner
                 'id'          => 'content_mixed',
                 'label'       => 'No mixed content detected',
                 'status'      => 'pass',
-                'description' => 'No insecure HTTP resources found in the page HTML. Note: dynamically loaded resources are not checked.',
+                'description' => 'No insecure HTTP resources (scripts, images, stylesheets) found in the page HTML.',
             ];
         } else {
             $checks[] = [
-                'id'          => 'content_mixed',
-                'label'       => 'No mixed content',
-                'status'      => 'fail',
-                'description' => "Found {$mixedContent['count']} insecure resource(s) loaded over HTTP.",
-                'recommendation' => 'Update all resource URLs to use HTTPS to prevent mixed content warnings.',
+                'id'             => 'content_mixed',
+                'label'          => 'No mixed content detected',
+                'status'         => 'fail',
+                'description'    => "Found {$mixedContent['count']} resource(s) loaded over HTTP on this HTTPS page. Browsers will block or warn about these.",
+                'recommendation' => 'Update all resource URLs (src, action, stylesheet href) to use HTTPS.',
             ];
         }
 
-        // Admin panel exposure
+        // --- Check 2: CMS admin panel exposure ---
         $maxScore += 25;
         $adminExposed = $this->safe(fn() => $this->checkAdminExposure($host), ['exposed' => false, 'path' => null]);
         if (! $adminExposed['exposed']) {
@@ -51,37 +47,37 @@ class ContentScanner
                 'id'          => 'content_admin',
                 'label'       => 'CMS admin panel not publicly accessible',
                 'status'      => 'pass',
-                'description' => 'No CMS admin panel (WordPress, Joomla) found at common public paths.',
+                'description' => 'No publicly accessible CMS admin interface found at common paths.',
             ];
         } else {
             $checks[] = [
-                'id'          => 'content_admin',
-                'label'       => 'CMS admin panel not publicly accessible',
-                'status'      => 'warn',
-                'description' => "A CMS admin panel was found at {$adminExposed['path']}. Ensure it is protected by strong authentication.",
-                'recommendation' => 'Consider restricting admin access by IP address, or add two-factor authentication.',
+                'id'             => 'content_admin',
+                'label'          => 'CMS admin panel not publicly accessible',
+                'status'         => 'warn',
+                'description'    => "A CMS admin panel is directly accessible at {$adminExposed['path']}. Ensure it requires strong authentication.",
+                'recommendation' => 'Restrict admin access by IP address, or add two-factor authentication.',
             ];
         }
 
-        // WordPress detection
+        // --- Check 3: CMS / WordPress version exposure ---
         $maxScore += 20;
-        $wordpress = $this->safe(fn() => $this->detectWordPress($html, $host), ['detected' => false]);
+        $wordpress = $this->safe(fn() => $this->detectWordPress($html), ['detected' => false]);
         if ($wordpress['detected']) {
             if ($wordpress['version_exposed']) {
                 $checks[] = [
-                    'id'          => 'content_wp',
-                    'label'       => 'WordPress version not exposed',
-                    'status'      => 'warn',
-                    'description' => "WordPress detected. Version {$wordpress['version']} may be exposed in meta tags or script URLs.",
-                    'recommendation' => 'Remove the WordPress version from meta tags and script/style URLs.',
+                    'id'             => 'content_wp',
+                    'label'          => 'CMS version not exposed',
+                    'status'         => 'warn',
+                    'description'    => "WordPress detected. Version \"{$wordpress['version']}\" is exposed in the page source, which helps attackers target known vulnerabilities.",
+                    'recommendation' => 'Remove the generator meta tag and strip ?ver= parameters from script/style URLs.',
                 ];
             } else {
                 $score += 20;
                 $checks[] = [
                     'id'          => 'content_wp',
-                    'label'       => 'WordPress version not exposed',
+                    'label'       => 'CMS version not exposed',
                     'status'      => 'pass',
-                    'description' => 'WordPress detected but version is not publicly exposed.',
+                    'description' => 'WordPress detected but no version information is exposed in the page source.',
                 ];
             }
         } else {
@@ -90,11 +86,11 @@ class ContentScanner
                 'id'          => 'content_wp',
                 'label'       => 'CMS version not exposed',
                 'status'      => 'pass',
-                'description' => 'No CMS version information found in page source.',
+                'description' => 'No CMS version information found in the page source.',
             ];
         }
 
-        // Directory listing
+        // --- Check 4: Directory listing ---
         $maxScore += 25;
         $dirListing = $this->safe(fn() => $this->checkDirectoryListing($host), false);
         if (! $dirListing) {
@@ -103,15 +99,15 @@ class ContentScanner
                 'id'          => 'content_dirlisting',
                 'label'       => 'Directory listing disabled',
                 'status'      => 'pass',
-                'description' => 'Directory listing is not enabled on the web server.',
+                'description' => 'Directory listing is not enabled — files cannot be browsed directly.',
             ];
         } else {
             $checks[] = [
-                'id'          => 'content_dirlisting',
-                'label'       => 'Directory listing disabled',
-                'status'      => 'fail',
-                'description' => 'Directory listing appears to be enabled.',
-                'recommendation' => 'Disable directory listing in your web server configuration (Options -Indexes for Apache).',
+                'id'             => 'content_dirlisting',
+                'label'          => 'Directory listing disabled',
+                'status'         => 'fail',
+                'description'    => 'Directory listing is enabled — anyone can browse your server files.',
+                'recommendation' => 'Disable directory listing: add "Options -Indexes" to your Apache config, or "autoindex off" in Nginx.',
             ];
         }
 
@@ -127,27 +123,46 @@ class ContentScanner
     {
         $ch = curl_init("https://{$host}");
         curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER  => true,
-            CURLOPT_TIMEOUT         => 8,
-            CURLOPT_CONNECTTIMEOUT  => 5,
-            CURLOPT_SSL_VERIFYPEER  => false,
-            CURLOPT_FOLLOWLOCATION  => true,
-            CURLOPT_MAXREDIRS       => 3,
-            CURLOPT_USERAGENT       => 'Mozilla/5.0 WebCheckApp/1.0',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 8,
+            CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            // Limit download size to 500KB — enough for checking HTML source
+            CURLOPT_BUFFERSIZE     => 512000,
         ]);
         $html = curl_exec($ch);
         curl_close($ch);
 
-        return $html ?: '';
+        // Only return the first 500KB to avoid memory issues with very large pages
+        return $html ? substr($html, 0, 512000) : '';
     }
 
     private function checkMixedContent(string $html, string $host): array
     {
-        // Only flag external HTTP resources (not same-host relative or protocol-relative URLs)
-        $count = preg_match_all(
-            '/(?:src|href|action)=["\']http:\/\/(?!' . preg_quote($host, '/') . ')[^"\']+["\']/i',
-            $html,
-            $matches
+        // Only flag active/passive resource-loading over HTTP, NOT navigation links (<a href>).
+        // Patterns checked:
+        //   - src="http://..."         (scripts, images, iframes, audio, video)
+        //   - action="http://..."      (form submissions)
+        //   - <link ... href="http://..." (stylesheets, preloads)
+        //
+        // We exclude http://host (same-host references are not external mixed content).
+
+        $escapedHost = preg_quote($host, '/');
+        $count = 0;
+
+        // src= and action= attributes (all elements)
+        $count += preg_match_all(
+            '/(?:src|action)=["\']http:\/\/(?!' . $escapedHost . ')[^"\']*["\']/i',
+            $html
+        );
+
+        // <link href="http://..."> — only <link> elements (stylesheets, preloads), not <a href>
+        $count += preg_match_all(
+            '/<link[^>]+href=["\']http:\/\/(?!' . $escapedHost . ')[^"\']*["\']/i',
+            $html
         );
 
         return ['found' => $count > 0, 'count' => $count];
@@ -155,26 +170,24 @@ class ContentScanner
 
     private function checkAdminExposure(string $host): array
     {
-        // Only check paths that are exclusively used as admin panels (not login pages).
-        // A 200 response on these paths means the admin interface itself is reachable.
-        // Redirects (301/302) are normal behaviour and not flagged.
+        // Only check CMS-specific admin panel paths.
+        // We flag only HTTP 200 — redirects (to login pages) are normal and NOT an issue.
         $paths = ['/wp-admin', '/wp-login.php', '/administrator'];
 
         foreach ($paths as $path) {
             $ch = curl_init("https://{$host}{$path}");
             curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER  => true,
-                CURLOPT_NOBODY          => true,
-                CURLOPT_TIMEOUT         => 3,
-                CURLOPT_CONNECTTIMEOUT  => 3,
-                CURLOPT_SSL_VERIFYPEER  => false,
-                CURLOPT_FOLLOWLOCATION  => false,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_NOBODY         => true,
+                CURLOPT_TIMEOUT        => 4,
+                CURLOPT_CONNECTTIMEOUT => 4,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => false,
             ]);
             curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            // Only flag a direct 200 — a redirect to a login page is expected and fine
             if ($code === 200) {
                 return ['exposed' => true, 'path' => $path];
             }
@@ -183,51 +196,67 @@ class ContentScanner
         return ['exposed' => false, 'path' => null];
     }
 
-    private function detectWordPress(string $html, string $host): array
+    private function detectWordPress(string $html): array
     {
-        $isWordPress = str_contains($html, 'wp-content') || str_contains($html, 'wp-includes');
+        $isWordPress = str_contains($html, '/wp-content/') || str_contains($html, '/wp-includes/');
 
         if (! $isWordPress) {
             return ['detected' => false];
         }
 
-        $versionExposed = false;
-        $version = null;
-
-        if (preg_match('/<meta name=["\']generator["\'] content=["\']WordPress ([\d.]+)/i', $html, $m)) {
-            $versionExposed = true;
-            $version = $m[1];
-        } elseif (preg_match('/\?ver=([\d.]+)/i', $html, $m)) {
-            $versionExposed = true;
-            $version = $m[1];
+        // Check for version in generator meta tag
+        if (preg_match('/<meta[^>]+name=["\']generator["\'][^>]+content=["\']WordPress\s*([\d.]+)/i', $html, $m)) {
+            return ['detected' => true, 'version_exposed' => true, 'version' => $m[1]];
         }
 
-        return ['detected' => true, 'version_exposed' => $versionExposed, 'version' => $version];
+        // Check for version in script/style URLs (?ver=x.x.x)
+        // Limit this to wp-content paths to avoid false positives from other scripts
+        if (preg_match('/\/wp-(?:content|includes)\/[^"\']*\?ver=([\d.]+)/i', $html, $m)) {
+            return ['detected' => true, 'version_exposed' => true, 'version' => $m[1]];
+        }
+
+        return ['detected' => true, 'version_exposed' => false, 'version' => null];
     }
 
     private function checkDirectoryListing(string $host): bool
     {
-        $testPaths = ['/images/', '/assets/', '/css/', '/js/'];
+        // Test common static asset directories for open directory listings.
+        // We check for Apache/Nginx directory listing signatures.
+        $paths = ['/images/', '/assets/', '/uploads/', '/files/'];
 
-        foreach ($testPaths as $path) {
+        foreach ($paths as $path) {
             $ch = curl_init("https://{$host}{$path}");
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 5,
+                CURLOPT_TIMEOUT        => 4,
+                CURLOPT_CONNECTTIMEOUT => 4,
                 CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => false,
+                // Only download enough to detect the listing signature
+                CURLOPT_RANGE          => '0-4095',
             ]);
             $body = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            if ($code === 200 && (
+            if (in_array($code, [200, 206]) && $body && (
                 str_contains($body, 'Index of /') ||
-                str_contains($body, 'Directory listing for')
+                str_contains($body, 'Directory listing for') ||
+                str_contains($body, '<title>Index of')
             )) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function safe(callable $fn, mixed $default): mixed
+    {
+        try {
+            return $fn();
+        } catch (\Throwable) {
+            return $default;
+        }
     }
 }
