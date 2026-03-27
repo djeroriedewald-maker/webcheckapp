@@ -5,22 +5,19 @@
 @section('content')
 
 <section class="relative overflow-hidden min-h-[600px] flex items-center">
-    {{-- Background gradient --}}
-    <div class="absolute inset-0 bg-gradient-to-br from-indigo-950 via-gray-950 to-gray-950 pointer-events-none"></div>
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-20 left-1/3 w-72 h-72 bg-purple-600/8 rounded-full blur-3xl pointer-events-none"></div>
-
-    {{-- Hero image (right side, desktop only) --}}
-    <div class="absolute inset-y-0 right-0 w-1/2 hidden lg:block pointer-events-none">
-        <img src="/hero.jpg" alt="" class="w-full h-full object-cover object-center opacity-40">
-        {{-- Gradient fade from left so image blends into the dark background --}}
-        <div class="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/60 to-transparent"></div>
-        {{-- Subtle fade at bottom --}}
-        <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-gray-950 to-transparent"></div>
+    {{-- Hero image full width background --}}
+    <div class="absolute inset-0 pointer-events-none">
+        <img src="/hero.jpg" alt="" class="w-full h-full object-cover object-center opacity-30">
+        {{-- Dark overlay so text stays readable --}}
+        <div class="absolute inset-0 bg-gray-950/60"></div>
+        {{-- Gradient fade at bottom to blend into page --}}
+        <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-gray-950 to-transparent"></div>
+        {{-- Subtle indigo tint top-left --}}
+        <div class="absolute inset-0 bg-gradient-to-br from-indigo-950/60 via-transparent to-transparent"></div>
     </div>
 
-    <div class="relative w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <div class="max-w-2xl">
+    <div class="relative w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 text-center">
+        <div class="">
 
             <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-8">
                 <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
@@ -32,13 +29,13 @@
                 <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"> secure?</span>
             </h1>
 
-            <p class="text-xl text-gray-400 mb-10 max-w-xl">
+            <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
                 Scan any website in seconds. Get a detailed security report with your score, detected issues and clear recommendations to fix them.
             </p>
 
             <form action="{{ route('scan.store') }}" method="POST" x-data="{ loading: false }" @submit="loading = true">
                 @csrf
-                <div class="flex flex-col sm:flex-row gap-3 max-w-xl">
+                <div class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
                     <div class="flex-1 relative">
                         <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
