@@ -87,7 +87,7 @@
 
 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
     <h2 class="text-center text-3xl font-bold mb-4">What we check</h2>
-    <p class="text-center text-gray-400 mb-14">A comprehensive scan across 6 security, performance and technology categories.</p>
+    <p class="text-center text-gray-400 mb-14">A comprehensive scan across 11 security, performance and privacy categories.</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -161,6 +161,86 @@
             <p class="text-sm text-gray-400 leading-relaxed">CMS, web server, CDN, JavaScript frameworks, analytics tools and HTTP/2 support.</p>
         </div>
 
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-6 hover:bg-white/5 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center mb-4">
+                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Malware & Reputation</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">Checked against URLhaus, Google Safe Browsing, OpenDNS and Spamhaus blocklists.</p>
+        </div>
+
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-6 hover:bg-white/5 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center mb-4">
+                <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Open Ports</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">Detects dangerously exposed services like MySQL, Redis, MongoDB and Telnet.</p>
+        </div>
+
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-6 hover:bg-white/5 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center mb-4">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Exposed Files</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">Checks for publicly accessible .env, .git, phpinfo.php and backup files.</p>
+        </div>
+
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-6 hover:bg-white/5 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center mb-4">
+                <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Privacy & GDPR</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">Cookie consent, privacy policy presence and third-party tracker detection.</p>
+        </div>
+
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-6 hover:bg-white/5 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-teal-500/15 flex items-center justify-center mb-4">
+                <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Trust & WHOIS</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">Domain age, registrar, expiry date, nameservers and server location.</p>
+        </div>
+
+    </div>
+</section>
+
+{{-- How it works --}}
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-white/5">
+    <h2 class="text-center text-3xl font-bold mb-4">How it works</h2>
+    <p class="text-center text-gray-400 mb-14">Three steps to a complete security picture.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+        <div class="text-center">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-5">
+                <span class="text-2xl font-black text-indigo-400">1</span>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Enter your URL</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">Paste any domain or URL — no account needed, completely free.</p>
+        </div>
+        <div class="text-center">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-5">
+                <span class="text-2xl font-black text-indigo-400">2</span>
+            </div>
+            <h3 class="font-semibold text-white mb-2">We run 11 scanners</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">SSL, headers, DNS, malware, ports, privacy and more — all in under 30 seconds.</p>
+        </div>
+        <div class="text-center">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto mb-5">
+                <span class="text-2xl font-black text-indigo-400">3</span>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Get your report</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">A clear score, grade and actionable recommendations — shareable via link or PDF.</p>
+        </div>
     </div>
 </section>
 

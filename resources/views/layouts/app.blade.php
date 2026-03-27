@@ -31,7 +31,11 @@
                     </svg>
                     <span class="text-white">WebCheck<span class="text-indigo-400">App</span></span>
                 </a>
-                <a href="{{ route('home') }}" class="text-sm text-gray-400 hover:text-white transition-colors">
+                <a href="{{ route('home') }}"
+                   class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/25 ring-1 ring-indigo-400/20 hover:shadow-indigo-500/40 hover:shadow-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
                     New scan
                 </a>
             </div>
