@@ -1,3 +1,4 @@
+@use('App\Support\CheckKnowledge')
 @extends('layouts.app')
 
 @section('title', $scan->isCompleted() ? 'Security Report — ' . $scan->host : 'Scanning ' . $scan->host)
@@ -205,8 +206,12 @@
             </h2>
             <div class="space-y-3">
                 @foreach($failures as $check)
-                <div class="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
-                    <div class="flex items-start gap-3">
+                @php $knowledge = !empty($check['id']) ? CheckKnowledge::get($check['id']) : null; @endphp
+                <div class="bg-red-500/5 border border-red-500/20 rounded-xl overflow-hidden"
+                     x-data="{ open: false }">
+                    <button type="button"
+                            class="w-full text-left p-4 flex items-start gap-3 {{ $knowledge ? 'cursor-pointer hover:bg-red-500/5 transition' : 'cursor-default' }}"
+                            @if($knowledge) @click="open = !open" @endif>
                         <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -214,6 +219,9 @@
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="font-medium text-white">{{ $check['label'] }}</span>
                                 <span class="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded-full">{{ $check['_category'] }}</span>
+                                @if($knowledge)
+                                <span class="text-xs text-indigo-400/60 ml-auto hidden sm:inline">click to expand</span>
+                                @endif
                             </div>
                             <p class="text-sm text-gray-400">{{ $check['description'] }}</p>
                             @if(!empty($check['recommendation']))
@@ -225,7 +233,30 @@
                             </p>
                             @endif
                         </div>
+                        @if($knowledge)
+                        <svg class="w-4 h-4 text-gray-500 mt-0.5 shrink-0 transition-transform duration-200"
+                             :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        @endif
+                    </button>
+                    @if($knowledge)
+                    <div x-show="open" x-collapse class="border-t border-red-500/15 bg-black/20 px-5 py-4 space-y-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What is this?</p>
+                            <p class="text-gray-300">{{ $knowledge['what'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why does it matter?</p>
+                            <p class="text-gray-300">{{ $knowledge['why'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">How to fix it</p>
+                            <p class="text-gray-300 whitespace-pre-line">{{ $knowledge['how'] }}</p>
+                        </div>
                     </div>
+                    @endif
                 </div>
                 @endforeach
             </div>
@@ -240,8 +271,12 @@
             </h2>
             <div class="space-y-3">
                 @foreach($warnings as $check)
-                <div class="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4">
-                    <div class="flex items-start gap-3">
+                @php $knowledge = !empty($check['id']) ? CheckKnowledge::get($check['id']) : null; @endphp
+                <div class="bg-yellow-500/5 border border-yellow-500/20 rounded-xl overflow-hidden"
+                     x-data="{ open: false }">
+                    <button type="button"
+                            class="w-full text-left p-4 flex items-start gap-3 {{ $knowledge ? 'cursor-pointer hover:bg-yellow-500/5 transition' : 'cursor-default' }}"
+                            @if($knowledge) @click="open = !open" @endif>
                         <svg class="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                         </svg>
@@ -249,6 +284,9 @@
                             <div class="flex items-center gap-2 mb-1">
                                 <span class="font-medium text-white">{{ $check['label'] }}</span>
                                 <span class="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded-full">{{ $check['_category'] }}</span>
+                                @if($knowledge)
+                                <span class="text-xs text-indigo-400/60 ml-auto hidden sm:inline">click to expand</span>
+                                @endif
                             </div>
                             <p class="text-sm text-gray-400">{{ $check['description'] }}</p>
                             @if(!empty($check['recommendation']))
@@ -260,7 +298,30 @@
                             </p>
                             @endif
                         </div>
+                        @if($knowledge)
+                        <svg class="w-4 h-4 text-gray-500 mt-0.5 shrink-0 transition-transform duration-200"
+                             :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        @endif
+                    </button>
+                    @if($knowledge)
+                    <div x-show="open" x-collapse class="border-t border-yellow-500/15 bg-black/20 px-5 py-4 space-y-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What is this?</p>
+                            <p class="text-gray-300">{{ $knowledge['what'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why does it matter?</p>
+                            <p class="text-gray-300">{{ $knowledge['why'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">How to fix it</p>
+                            <p class="text-gray-300 whitespace-pre-line">{{ $knowledge['how'] }}</p>
+                        </div>
                     </div>
+                    @endif
                 </div>
                 @endforeach
             </div>

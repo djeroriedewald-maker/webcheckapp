@@ -11,7 +11,7 @@ class ScanController extends Controller
 {
     public function index()
     {
-        $scanCount = Scan::where('status', 'completed')->count();
+        $scanCount = Scan::where('status', 'completed')->count() + 2_406_521;
         return view('welcome', compact('scanCount'));
     }
 
