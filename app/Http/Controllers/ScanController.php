@@ -10,7 +10,8 @@ class ScanController extends Controller
 {
     public function index()
     {
-        return view('welcome');
+        $scanCount = Scan::where('status', 'completed')->count();
+        return view('welcome', compact('scanCount'));
     }
 
     public function store(Request $request)

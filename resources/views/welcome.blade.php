@@ -75,13 +75,19 @@
             <p class="mt-5 text-sm text-gray-600">
                 We check SSL, security headers, DNS records, performance and more.
             </p>
+
+            @if($scanCount > 0)
+            <p class="mt-3 text-sm text-gray-600">
+                <span class="text-indigo-400 font-semibold">{{ number_format($scanCount) }}</span> scans performed
+            </p>
+            @endif
         </div>
     </div>
 </section>
 
 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
     <h2 class="text-center text-3xl font-bold mb-4">What we check</h2>
-    <p class="text-center text-gray-400 mb-14">A comprehensive scan across 5 security and performance categories.</p>
+    <p class="text-center text-gray-400 mb-14">A comprehensive scan across 6 security, performance and technology categories.</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
@@ -143,6 +149,16 @@
             </div>
             <h3 class="font-semibold text-white mb-2">Score & Grade</h3>
             <p class="text-sm text-gray-400 leading-relaxed">Overall security grade from A+ to F with priority fixes listed.</p>
+        </div>
+
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-6 hover:bg-white/5 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/15 flex items-center justify-center mb-4">
+                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-white mb-2">Technology Detection</h3>
+            <p class="text-sm text-gray-400 leading-relaxed">CMS, web server, CDN, JavaScript frameworks, analytics tools and HTTP/2 support.</p>
         </div>
 
     </div>

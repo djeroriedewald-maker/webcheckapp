@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'WebCheckApp — Website Security Scanner')</title>
     <meta name="description" content="@yield('meta_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
+
+    {{-- Open Graph --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="WebCheckApp">
+    <meta property="og:title" content="@yield('og_title', 'WebCheckApp — Free Website Security Scanner')">
+    <meta property="og:description" content="@yield('og_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
+    <meta property="og:url" content="@yield('og_url', url()->current())">
+
+    {{-- Twitter / X --}}
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="@yield('og_title', 'WebCheckApp — Free Website Security Scanner')">
+    <meta name="twitter:description" content="@yield('og_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full bg-gray-950 text-white antialiased" x-data>
