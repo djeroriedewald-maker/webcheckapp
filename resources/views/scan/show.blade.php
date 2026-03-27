@@ -145,7 +145,7 @@
 
         {{-- Quick scan bar --}}
         <form action="{{ route('scan.store') }}" method="POST" class="mb-8"
-              x-data="{ loading: false }" @submit="loading = true">
+              x-data="{ loading: false }" @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })">
             @csrf
             <div class="flex gap-2">
                 <div class="relative flex-1">
@@ -983,7 +983,8 @@
         {{-- Bottom actions --}}
         <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
             {{-- Re-scan same URL --}}
-            <form action="{{ route('scan.store') }}" method="POST">
+            <form action="{{ route('scan.store') }}" method="POST"
+                  x-data @submit="$dispatch('scan-start', { url: '{{ addslashes($scan->url) }}' })">
                 @csrf
                 <input type="hidden" name="url" value="{{ $scan->url }}">
                 <button type="submit" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition">

@@ -33,7 +33,7 @@
                 Scan any website in seconds. Get a detailed security report with your score, detected issues and clear recommendations to fix them.
             </p>
 
-            <form action="{{ route('scan.store') }}" method="POST" x-data="{ loading: false }" @submit="loading = true">
+            <form action="{{ route('scan.store') }}" method="POST" x-data="{ loading: false }" @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })">
                 @csrf
                 <div class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
                     <div class="flex-1 relative">

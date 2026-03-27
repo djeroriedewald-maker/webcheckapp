@@ -46,6 +46,115 @@
         @yield('content')
     </main>
 
+    {{-- Global scan loading overlay --}}
+    <div
+        x-data="{
+            show: false,
+            domain: '',
+            scanners: [
+                { name: 'SSL & HTTPS' },
+                { name: 'Security Headers' },
+                { name: 'DNS & Email Security' },
+                { name: 'Performance & SEO' },
+                { name: 'Content & CMS' },
+                { name: 'Technology Stack' },
+                { name: 'Malware & Reputation' },
+                { name: 'Open Ports' },
+                { name: 'Exposed Files' },
+                { name: 'Privacy & GDPR' },
+                { name: 'Trust & WHOIS' },
+            ],
+            activeIdx: 0,
+            doneUpto: -1,
+            _timer: null,
+            start(rawUrl) {
+                let d = rawUrl.trim() || '...';
+                try {
+                    if (!d.startsWith('http')) d = 'https://' + d;
+                    d = new URL(d).hostname.replace(/^www\./i, '');
+                } catch(e) {}
+                this.domain = d;
+                this.activeIdx = 0;
+                this.doneUpto = -1;
+                this.show = true;
+                clearInterval(this._timer);
+                this._timer = setInterval(() => {
+                    this.doneUpto = this.activeIdx;
+                    this.activeIdx++;
+                    if (this.activeIdx >= this.scanners.length) clearInterval(this._timer);
+                }, 2400);
+            }
+        }"
+        @scan-start.window="start($event.detail.url)"
+        x-show="show"
+        x-cloak
+        style="display:none"
+        class="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center px-6"
+    >
+        {{-- Top glow --}}
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative w-full max-w-sm text-center">
+
+            {{-- Logo --}}
+            <div class="flex items-center justify-center gap-2 mb-10 text-lg font-bold">
+                <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <span>WebCheck<span class="text-indigo-400">App</span></span>
+            </div>
+
+            {{-- Title --}}
+            <p class="text-sm text-gray-500 uppercase tracking-widest mb-2">Analyzing security for</p>
+            <h2 class="text-2xl font-bold text-white truncate mb-8" x-text="domain"></h2>
+
+            {{-- Progress bar --}}
+            <div class="w-full h-1 bg-white/5 rounded-full mb-8 overflow-hidden">
+                <div
+                    class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
+                    :style="'width:' + Math.round(((doneUpto + 1) / scanners.length) * 100) + '%'"
+                ></div>
+            </div>
+
+            {{-- Scanner list --}}
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-left mb-10">
+                <template x-for="(scanner, idx) in scanners" :key="idx">
+                    <div class="flex items-center gap-2.5 text-sm">
+                        {{-- Done --}}
+                        <span x-show="idx <= doneUpto" class="flex-shrink-0 w-4 h-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <svg class="w-2.5 h-2.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </span>
+                        {{-- Active --}}
+                        <span x-show="idx === activeIdx && idx > doneUpto" class="flex-shrink-0 w-4 h-4">
+                            <svg class="w-4 h-4 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                            </svg>
+                        </span>
+                        {{-- Pending --}}
+                        <span x-show="idx > activeIdx" class="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                            <span class="w-1.5 h-1.5 rounded-full bg-white/15"></span>
+                        </span>
+                        <span
+                            :class="{
+                                'text-green-400': idx <= doneUpto,
+                                'text-white font-medium': idx === activeIdx && idx > doneUpto,
+                                'text-gray-600': idx > activeIdx
+                            }"
+                            x-text="scanner.name"
+                        ></span>
+                    </div>
+                </template>
+            </div>
+
+            {{-- Footer hint --}}
+            <p class="text-xs text-gray-600">This usually takes 20–40 seconds. Please wait&hellip;</p>
+
+        </div>
+    </div>
+
     <footer class="border-t border-white/5 mt-20 py-10">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
