@@ -49,17 +49,17 @@ class ContentScanner
             $score += 25;
             $checks[] = [
                 'id'          => 'content_admin',
-                'label'       => 'Admin panel not exposed',
+                'label'       => 'CMS admin panel not publicly accessible',
                 'status'      => 'pass',
-                'description' => 'No publicly accessible admin panel found at common paths.',
+                'description' => 'No CMS admin panel (WordPress, Joomla) found at common public paths.',
             ];
         } else {
             $checks[] = [
                 'id'          => 'content_admin',
-                'label'       => 'Admin panel not exposed',
+                'label'       => 'CMS admin panel not publicly accessible',
                 'status'      => 'warn',
-                'description' => "Admin panel accessible at: {$adminExposed['path']}.",
-                'recommendation' => 'Restrict access to admin areas via IP whitelisting or authentication.',
+                'description' => "A CMS admin panel was found at {$adminExposed['path']}. Ensure it is protected by strong authentication.",
+                'recommendation' => 'Consider restricting admin access by IP address, or add two-factor authentication.',
             ];
         }
 
@@ -155,8 +155,10 @@ class ContentScanner
 
     private function checkAdminExposure(string $host): array
     {
-        // Only check CMS-specific admin paths — not generic /login which every site has
-        $paths = ['/wp-admin', '/wp-login.php', '/administrator', '/admin/login', '/admin/dashboard'];
+        // Only check paths that are exclusively used as admin panels (not login pages).
+        // A 200 response on these paths means the admin interface itself is reachable.
+        // Redirects (301/302) are normal behaviour and not flagged.
+        $paths = ['/wp-admin', '/wp-login.php', '/administrator'];
 
         foreach ($paths as $path) {
             $ch = curl_init("https://{$host}{$path}");
@@ -172,7 +174,8 @@ class ContentScanner
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
-            if (in_array($code, [200, 301, 302])) {
+            // Only flag a direct 200 — a redirect to a login page is expected and fine
+            if ($code === 200) {
                 return ['exposed' => true, 'path' => $path];
             }
         }
