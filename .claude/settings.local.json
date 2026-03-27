@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(php artisan:*)",
+      "Bash(/c/Users/Lenovo/Projects/webcheckapp/resources/views/welcome.blade.php:*)",
+      "Bash(python3:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
