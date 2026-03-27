@@ -96,28 +96,77 @@
                 </div>
             </div>
             <div class="flex items-center gap-6">
-                {{-- Score circle --}}
-                <div class="relative w-24 h-24">
+                {{-- Animated score circle --}}
+                <div class="relative w-24 h-24"
+                     x-data="{ score: 0 }"
+                     x-init="setTimeout(() => {
+                         let target = {{ $scan->score }};
+                         let duration = 1200;
+                         let start = performance.now();
+                         let easeOut = t => 1 - Math.pow(1 - t, 3);
+                         let tick = now => {
+                             let p = Math.min((now - start) / duration, 1);
+                             score = Math.round(easeOut(p) * target);
+                             $refs.ring.style.strokeDasharray = (easeOut(p) * {{ round(251.2 * $scan->score / 100) }}).toFixed(1) + ' 251.2';
+                             if (p < 1) requestAnimationFrame(tick);
+                         };
+                         requestAnimationFrame(tick);
+                     }, 200)">
                     <svg class="w-24 h-24 -rotate-90" viewBox="0 0 96 96">
                         <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
-                        <circle cx="48" cy="48" r="40" fill="none"
+                        <circle x-ref="ring" cx="48" cy="48" r="40" fill="none"
                             stroke="{{ $scan->score >= 75 ? '#22c55e' : ($scan->score >= 50 ? '#eab308' : '#ef4444') }}"
                             stroke-width="8"
                             stroke-linecap="round"
-                            stroke-dasharray="{{ round(251.2 * $scan->score / 100) }} 251.2"/>
+                            stroke-dasharray="0 251.2"/>
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                        <span class="text-2xl font-bold">{{ $scan->score }}</span>
+                        <span class="text-2xl font-bold" x-text="score">0</span>
                         <span class="text-xs text-gray-400">/100</span>
                     </div>
                 </div>
-                {{-- Grade badge --}}
+                {{-- Grade badge + percentile --}}
                 <div class="text-center">
                     <div class="text-6xl font-black {{ $scan->getGradeColorClass() }}">{{ $scan->grade }}</div>
                     <div class="text-xs text-gray-500 mt-1">Overall grade</div>
+                    @if(isset($percentile) && $percentile !== null)
+                    <div class="mt-2 text-xs bg-white/5 border border-white/10 rounded-full px-3 py-1 text-gray-400">
+                        Better than <span class="{{ $scan->getGradeColorClass() }} font-semibold">{{ $percentile }}%</span>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
+
+        {{-- Quick scan bar --}}
+        <form action="{{ route('scan.store') }}" method="POST" class="mb-8"
+              x-data="{ loading: false }" @submit="loading = true">
+            @csrf
+            <div class="flex gap-2">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input type="text" name="url"
+                           placeholder="Scan another domain…"
+                           class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                </div>
+                <button type="submit" :disabled="loading"
+                        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/40">
+                    <svg x-show="!loading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <svg x-show="loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                    </svg>
+                    <span x-show="!loading">Scan</span>
+                    <span x-show="loading">Scanning…</span>
+                </button>
+            </div>
+        </form>
 
         {{-- Pre-compute counts for tab badges --}}
         @php

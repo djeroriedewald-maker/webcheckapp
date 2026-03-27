@@ -11,8 +11,15 @@ class ScanController extends Controller
 {
     public function index()
     {
-        $scanCount = Scan::where('status', 'completed')->count() + 2_406_521;
-        return view('welcome', compact('scanCount'));
+        $scanCount   = Scan::where('status', 'completed')->count() + 2_406_521;
+        $recentScans = Scan::where('status', 'completed')
+            ->whereNotNull('score')
+            ->whereNotNull('host')
+            ->orderBy('completed_at', 'desc')
+            ->limit(12)
+            ->get(['host', 'grade', 'score', 'uid', 'completed_at']);
+
+        return view('welcome', compact('scanCount', 'recentScans'));
     }
 
     public function store(Request $request)
@@ -60,7 +67,16 @@ class ScanController extends Controller
 
     public function show(Scan $scan)
     {
-        return view('scan.show', compact('scan'));
+        $percentile = null;
+        if ($scan->isCompleted() && $scan->score !== null) {
+            $total = Scan::where('status', 'completed')->whereNotNull('score')->count();
+            if ($total > 1) {
+                $better     = Scan::where('status', 'completed')->whereNotNull('score')->where('score', '<', $scan->score)->count();
+                $percentile = (int) round($better / $total * 100);
+            }
+        }
+
+        return view('scan.show', compact('scan', 'percentile'));
     }
 
     public function pdf(Scan $scan)
