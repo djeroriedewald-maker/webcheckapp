@@ -28,9 +28,9 @@ class ContentScanner
             $score += 30;
             $checks[] = [
                 'id'          => 'content_mixed',
-                'label'       => 'No mixed content',
+                'label'       => 'No mixed content detected',
                 'status'      => 'pass',
-                'description' => 'No insecure (HTTP) resources found on the HTTPS page.',
+                'description' => 'No insecure HTTP resources found in the page HTML. Note: dynamically loaded resources are not checked.',
             ];
         } else {
             $checks[] = [
@@ -143,8 +143,9 @@ class ContentScanner
 
     private function checkMixedContent(string $html, string $host): array
     {
+        // Only flag external HTTP resources (not same-host relative or protocol-relative URLs)
         $count = preg_match_all(
-            '/(?:src|href|action)=["\']http:\/\/[^"\']+["\']/i',
+            '/(?:src|href|action)=["\']http:\/\/(?!' . preg_quote($host, '/') . ')[^"\']+["\']/i',
             $html,
             $matches
         );
@@ -154,7 +155,8 @@ class ContentScanner
 
     private function checkAdminExposure(string $host): array
     {
-        $paths = ['/wp-admin', '/admin', '/administrator', '/wp-login.php', '/login'];
+        // Only check CMS-specific admin paths — not generic /login which every site has
+        $paths = ['/wp-admin', '/wp-login.php', '/administrator', '/admin/login', '/admin/dashboard'];
 
         foreach ($paths as $path) {
             $ch = curl_init("https://{$host}{$path}");

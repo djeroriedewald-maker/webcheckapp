@@ -11,10 +11,10 @@ class DnsScanner
         $maxScore = 0;
 
         // SPF record
-        $maxScore += 25;
+        $maxScore += 30;
         $spf = $this->safe(fn() => $this->checkSpf($host), ['found' => false]);
         if ($spf['found']) {
-            $score += 25;
+            $score += 30;
             $checks[] = [
                 'id'          => 'dns_spf',
                 'label'       => 'SPF record configured',
@@ -32,10 +32,10 @@ class DnsScanner
         }
 
         // DMARC record
-        $maxScore += 25;
+        $maxScore += 30;
         $dmarc = $this->safe(fn() => $this->checkDmarc($host), ['found' => false]);
         if ($dmarc['found']) {
-            $score += 25;
+            $score += 30;
             $checks[] = [
                 'id'          => 'dns_dmarc',
                 'label'       => 'DMARC record configured',
@@ -52,37 +52,16 @@ class DnsScanner
             ];
         }
 
-        // DNSSEC
-        $maxScore += 25;
-        $dnssec = $this->safe(fn() => $this->checkDnssec($host), false);
-        if ($dnssec) {
-            $score += 25;
-            $checks[] = [
-                'id'          => 'dns_dnssec',
-                'label'       => 'DNSSEC enabled',
-                'status'      => 'pass',
-                'description' => 'DNSSEC is enabled for this domain.',
-            ];
-        } else {
-            $checks[] = [
-                'id'          => 'dns_dnssec',
-                'label'       => 'DNSSEC enabled',
-                'status'      => 'warn',
-                'description' => 'DNSSEC does not appear to be enabled.',
-                'recommendation' => 'Enable DNSSEC through your domain registrar to protect against DNS spoofing.',
-            ];
-        }
-
         // CAA record
-        $maxScore += 25;
+        $maxScore += 20;
         $caa = $this->safe(fn() => $this->checkCaa($host), ['found' => false]);
         if ($caa['found']) {
-            $score += 25;
+            $score += 20;
             $checks[] = [
                 'id'          => 'dns_caa',
                 'label'       => 'CAA record configured',
                 'status'      => 'pass',
-                'description' => 'CAA record found, restricting which CAs can issue certificates.',
+                'description' => 'CAA record found — only authorized Certificate Authorities can issue SSL certificates for this domain.',
             ];
         } else {
             $checks[] = [
@@ -90,7 +69,28 @@ class DnsScanner
                 'label'       => 'CAA record configured',
                 'status'      => 'warn',
                 'description' => 'No CAA record found.',
-                'recommendation' => 'Add a CAA record to specify which Certificate Authorities may issue SSL certificates for your domain.',
+                'recommendation' => 'Add a CAA DNS record to restrict which Certificate Authorities may issue SSL certs for your domain.',
+            ];
+        }
+
+        // DNSSEC — note: basic check via DNS, result is indicative only
+        $maxScore += 20;
+        $dnssec = $this->safe(fn() => $this->checkDnssec($host), false);
+        if ($dnssec) {
+            $score += 20;
+            $checks[] = [
+                'id'          => 'dns_dnssec',
+                'label'       => 'DNSSEC enabled',
+                'status'      => 'pass',
+                'description' => 'DNSSEC records detected for this domain.',
+            ];
+        } else {
+            $checks[] = [
+                'id'          => 'dns_dnssec',
+                'label'       => 'DNSSEC enabled',
+                'status'      => 'warn',
+                'description' => 'DNSSEC could not be confirmed. Check with your domain registrar.',
+                'recommendation' => 'Enable DNSSEC through your domain registrar to protect against DNS spoofing attacks.',
             ];
         }
 
@@ -119,7 +119,7 @@ class DnsScanner
         }
 
         foreach ($records as $record) {
-            $txt = $record['txt'] ?? $record['entries'][0] ?? '';
+            $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
             if (str_starts_with($txt, 'v=spf1')) {
                 return ['found' => true, 'value' => $txt];
             }
@@ -136,7 +136,7 @@ class DnsScanner
         }
 
         foreach ($records as $record) {
-            $txt = $record['txt'] ?? $record['entries'][0] ?? '';
+            $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
             if (str_starts_with($txt, 'v=DMARC1')) {
                 return ['found' => true, 'value' => $txt];
             }
@@ -145,9 +145,32 @@ class DnsScanner
         return ['found' => false];
     }
 
+    private function checkCaa(string $host): array
+    {
+        // Try DNS_CAA directly first (PHP 7.0.16+)
+        if (defined('DNS_CAA')) {
+            $records = @dns_get_record($host, DNS_CAA);
+            if (! empty($records)) {
+                return ['found' => true];
+            }
+        }
+
+        // Fallback: check via dig-style lookup using DNS_ANY
+        $records = @dns_get_record($host, DNS_ANY);
+        if ($records) {
+            foreach ($records as $record) {
+                if (($record['type'] ?? '') === 'CAA') {
+                    return ['found' => true];
+                }
+            }
+        }
+
+        return ['found' => false];
+    }
+
     private function checkDnssec(string $host): bool
     {
-        // Use DNS_ANY and filter manually — DNS_DS/DNS_DNSKEY are not PHP constants
+        // Check for DS records on the parent zone (most reliable via standard PHP DNS)
         $records = @dns_get_record($host, DNS_ANY);
         if (! $records) {
             return false;
@@ -160,24 +183,5 @@ class DnsScanner
         }
 
         return false;
-    }
-
-    private function checkCaa(string $host): array
-    {
-        // DNS_CAA may not be defined in all PHP builds — use DNS_ANY as fallback
-        $type = defined('DNS_CAA') ? DNS_CAA : DNS_ANY;
-        $records = @dns_get_record($host, $type);
-
-        if (! $records) {
-            return ['found' => false];
-        }
-
-        foreach ($records as $record) {
-            if (($record['type'] ?? '') === 'CAA' || $type === DNS_CAA) {
-                return ['found' => true];
-            }
-        }
-
-        return ['found' => false];
     }
 }

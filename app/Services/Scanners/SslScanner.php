@@ -41,11 +41,14 @@ class SslScanner
         $maxScore += 30;
         if ($certInfo['valid']) {
             $score += 30;
+            $description = $certInfo['expires'] && $certInfo['days_left'] !== null
+                ? "Certificate is valid and expires on {$certInfo['expires']} ({$certInfo['days_left']} days left)."
+                : "Certificate is valid.";
             $checks[] = [
                 'id'          => 'ssl_valid',
                 'label'       => 'SSL certificate valid',
                 'status'      => 'pass',
-                'description' => "Certificate is valid and expires on {$certInfo['expires']} ({$certInfo['days_left']} days left).",
+                'description' => $description,
             ];
         } elseif ($certInfo['expires_soon']) {
             $score += 15;
@@ -164,16 +167,18 @@ class SslScanner
         $result = ['reachable' => true, 'valid' => false, 'expires_soon' => false, 'expires' => null, 'days_left' => null, 'error' => null];
 
         // Parse cert expiry from CURLINFO_CERTINFO
-        if (! empty($certInfo[0]['Expire date'])) {
-            $expiresAt = strtotime($certInfo[0]['Expire date']);
+        // The 'Expire date' format varies (e.g. "Jan 15 12:00:00 2026 GMT")
+        $expireRaw = $certInfo[0]['Expire date'] ?? $certInfo[0]['expire date'] ?? null;
+        if ($expireRaw && ($expiresAt = strtotime($expireRaw)) && $expiresAt > 0) {
             $daysLeft = (int) round(($expiresAt - time()) / 86400);
             $result['expires'] = date('Y-m-d', $expiresAt);
             $result['days_left'] = $daysLeft;
-            $result['valid'] = $daysLeft > 30;
+            $result['valid'] = $daysLeft > 0;
             $result['expires_soon'] = $daysLeft > 0 && $daysLeft <= 30;
         } else {
-            $result['valid'] = true; // reachable with SSL = cert is valid enough
-            $result['expires'] = 'Unknown';
+            // CURLOPT_CERTINFO not supported or cert info unavailable — reachable means cert is valid
+            $result['valid'] = true;
+            $result['expires'] = null;
             $result['days_left'] = null;
         }
 
