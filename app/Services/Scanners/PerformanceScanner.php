@@ -23,7 +23,7 @@ class PerformanceScanner
                 'id'          => 'perf_ttfb',
                 'label'       => 'Fast server response time (TTFB)',
                 'status'      => 'pass',
-                'description' => sprintf('Time To First Byte: %.0f ms — server is responding quickly.', $ttfb * 1000),
+                'description' => sprintf('Time To First Byte: %.0f ms (measured from our scanner server).', $ttfb * 1000),
             ];
         } elseif ($ttfb !== null && $ttfb < 2.0) {
             $score += 12;
@@ -31,7 +31,7 @@ class PerformanceScanner
                 'id'             => 'perf_ttfb',
                 'label'          => 'Fast server response time (TTFB)',
                 'status'         => 'warn',
-                'description'    => sprintf('Time To First Byte: %.0f ms — aim for under 800ms.', $ttfb * 1000),
+                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — aim for under 800 ms.', $ttfb * 1000),
                 'recommendation' => 'Improve TTFB via server-side caching, a CDN, or optimizing database queries.',
             ];
         } elseif ($ttfb !== null) {
@@ -39,7 +39,7 @@ class PerformanceScanner
                 'id'             => 'perf_ttfb',
                 'label'          => 'Fast server response time (TTFB)',
                 'status'         => 'fail',
-                'description'    => sprintf('Time To First Byte: %.0f ms — this is very slow.', $ttfb * 1000),
+                'description'    => sprintf('Time To First Byte: %.0f ms (measured from our scanner server) — this is very slow.', $ttfb * 1000),
                 'recommendation' => 'A TTFB above 2 seconds indicates a server performance problem. Investigate caching, hosting, and query performance.',
             ];
         } else {
@@ -153,15 +153,18 @@ class PerformanceScanner
 
     private function checkCompression(string $host): array
     {
+        // Must use GET (not HEAD) — most servers only compress responses that have a body.
+        // We limit the download to the first 4 KB via Range to keep it fast.
         $ch = curl_init("https://{$host}");
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_NOBODY         => true,
             CURLOPT_TIMEOUT        => self::TIMEOUT,
             CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
+            CURLOPT_RANGE          => '0-4095',
+            CURLOPT_HTTPHEADER     => ['Accept-Encoding: gzip, deflate, br'],
         ]);
 
         $encoding = null;
@@ -174,8 +177,6 @@ class PerformanceScanner
             return strlen($header);
         });
 
-        // Send Accept-Encoding so the server knows we support compression
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept-Encoding: gzip, deflate, br']);
         curl_exec($ch);
         curl_close($ch);
 
@@ -206,6 +207,7 @@ class PerformanceScanner
         $urls = [
             "https://{$host}/sitemap.xml",
             "https://{$host}/sitemap_index.xml",
+            "https://{$host}/wp-sitemap.xml",   // WordPress 5.5+ default
         ];
 
         foreach ($urls as $url) {

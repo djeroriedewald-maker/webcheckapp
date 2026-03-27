@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Scan extends Model
 {
     protected $fillable = [
+        'uid',
         'url',
         'host',
         'status',
@@ -16,6 +18,24 @@ class Scan extends Model
         'ip_address',
         'completed_at',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $scan) {
+            if (empty($scan->uid)) {
+                do {
+                    $uid = Str::random(8);
+                } while (static::where('uid', $uid)->exists());
+
+                $scan->uid = $uid;
+            }
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uid';
+    }
 
     protected $casts = [
         'results' => 'array',
