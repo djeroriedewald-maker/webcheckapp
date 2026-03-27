@@ -46,6 +46,12 @@ class CheckKnowledge
                 'how'  => "Add this header to your HTTPS responses:\nStrict-Transport-Security: max-age=31536000; includeSubDomains\n\nNginx: add_header Strict-Transport-Security \"max-age=31536000; includeSubDomains\" always;\nApache: Header always set Strict-Transport-Security \"max-age=31536000; includeSubDomains\"\n\nOnly add HSTS after you are certain your entire site works over HTTPS, including all subdomains if you use includeSubDomains.",
             ],
 
+            'ssl_tls_version' => [
+                'what' => 'TLS (Transport Layer Security) is the encryption protocol used for HTTPS. TLS 1.0 and 1.1 are old versions of this protocol that have known vulnerabilities. TLS 1.2 (2008) and TLS 1.3 (2018) are the secure modern versions.',
+                'why'  => 'TLS 1.0 is vulnerable to attacks like POODLE and BEAST. TLS 1.1 has similar weaknesses. All major browsers removed support for them in 2020. PCI DSS (credit card industry standard) has required disabling TLS 1.0 since 2018. Accepting these old versions is a compliance failure and an unnecessary risk.',
+                'how'  => "Disable TLS 1.0 and 1.1 in your web server config:\n\nNginx (nginx.conf):\nssl_protocols TLSv1.2 TLSv1.3;\n\nApache (ssl.conf or httpd.conf):\nSSLProtocol all -SSLv3 -TLSv1 -TLSv1.1\n\nAfter changing, restart your web server and verify at: ssllabs.com/ssltest",
+            ],
+
             // ── Security Headers ───────────────────────────────────────────
 
             'header_server' => [
@@ -84,6 +90,12 @@ class CheckKnowledge
                 'how'  => "Example header that disables features not needed for most sites:\nPermissions-Policy: camera=(), microphone=(), geolocation=(), payment=()\n\nNginx: add_header Permissions-Policy \"camera=(), microphone=(), geolocation=()\" always;\nApache: Header always set Permissions-Policy \"camera=(), microphone=(), geolocation=()\"\n\nOnly disable features you genuinely don't use. Adding this header is a low-effort, high-value improvement.",
             ],
 
+            'header_cors' => [
+                'what' => 'CORS (Cross-Origin Resource Sharing) controls which external websites are allowed to make requests to your server and read the response. The Access-Control-Allow-Origin header tells the browser which origins are permitted.',
+                'why'  => 'Setting Access-Control-Allow-Origin: * means any website can make requests to your server and read responses. If your site handles any authenticated data or sensitive information, this can allow malicious sites to read that data on behalf of a logged-in user.',
+                'how'  => "Replace the wildcard with specific trusted origins:\nAccess-Control-Allow-Origin: https://yourapp.com\n\nNginx:\nadd_header Access-Control-Allow-Origin \"https://yourapp.com\" always;\n\nApache:\nHeader always set Access-Control-Allow-Origin \"https://yourapp.com\"\n\nIf you need to allow multiple origins, check the request Origin header and echo it back only if it matches an allow-list — a wildcard cannot be combined with credentials.",
+            ],
+
             // ── DNS & Email Security ───────────────────────────────────────
 
             'dns_spf' => [
@@ -108,6 +120,18 @@ class CheckKnowledge
                 'what' => 'DNSSEC (DNS Security Extensions) adds cryptographic signatures to DNS records, allowing resolvers to verify that DNS responses are authentic and have not been tampered with.',
                 'why'  => 'Without DNSSEC, DNS responses can be forged (DNS cache poisoning / BGP hijacking), redirecting your visitors to a fake server without them knowing. DNSSEC ensures the DNS record they receive is the one you published.',
                 'how'  => "DNSSEC must be enabled at both your DNS registrar and your DNS hosting provider:\n1. Enable DNSSEC at your domain registrar (Namecheap, GoDaddy, TransIP, etc.)\n2. Enable DNSSEC signing at your DNS host (Cloudflare enables this automatically)\n3. The registrar publishes DS records pointing to your zone\'s key\n\nIf you use Cloudflare: enable DNSSEC with one click in the DNS tab.\nNote: DNSSEC is difficult to set up incorrectly — misconfiguration can take your domain offline. Follow your registrar\'s guide carefully.",
+            ],
+
+            'dns_mta_sts' => [
+                'what' => 'MTA-STS (Mail Transfer Agent Strict Transport Security) is a standard that forces other mail servers to use encrypted TLS connections when delivering email to your domain. Without it, a network attacker could silently strip TLS from email in transit.',
+                'why'  => 'Email is delivered between servers using SMTP. By default, SMTP tries TLS but falls back to plaintext if TLS is not available — a downgrade attack. MTA-STS prevents this fallback, ensuring all email delivered to your domain is encrypted in transit.',
+                'how'  => "Implementing MTA-STS requires two things:\n\n1. A DNS TXT record at _mta-sts.yourdomain.com:\n   v=STSv1; id=20240101001\n\n2. A policy file hosted at:\n   https://mta-sts.yourdomain.com/.well-known/mta-sts.txt\n\nPolicy file content:\n   version: STSv1\n   mode: enforce\n   mx: mail.yourdomain.com\n   max_age: 86400\n\nStart with mode: testing to see reports before enforcing. Use mta-sts.io for a guided setup.",
+            ],
+
+            'dns_bimi' => [
+                'what' => 'BIMI (Brand Indicators for Message Identification) is an email standard that allows your brand logo to appear next to emails you send in supporting email clients like Gmail, Apple Mail, and Yahoo Mail.',
+                'why'  => 'BIMI increases email trust and brand recognition. Emails with your logo visible are more likely to be opened and less likely to be confused with phishing. BIMI requires strong DMARC enforcement, which also improves overall email security.',
+                'how'  => "BIMI requires DMARC with p=quarantine or p=reject first.\n\nThen:\n1. Prepare an SVG logo in BIMI format (square, specific SVG profile)\n2. Host it at a public HTTPS URL\n3. Add a DNS TXT record at default._bimi.yourdomain.com:\n   v=BIMI1; l=https://yourdomain.com/logo.svg\n\nFor Gmail's verified checkmark, you also need a VMC (Verified Mark Certificate) from DigiCert or Entrust.\n\nUse bimigroup.org for implementation guides and validators.",
             ],
 
             // ── Performance ────────────────────────────────────────────────
@@ -162,6 +186,18 @@ class CheckKnowledge
                 'how'  => "Apache: Add to .htaccess or httpd.conf:\nOptions -Indexes\n\nNginx: In your server block:\nautoindex off;\n\nVerify by visiting a directory path directly in a browser. You should get a 403 Forbidden, a redirect, or your custom 404 — never an auto-generated file list.",
             ],
 
+            'content_xmlrpc' => [
+                'what' => 'WordPress XML-RPC (/xmlrpc.php) is a legacy remote API that predates the REST API. It allows external applications to interact with WordPress over HTTP using XML-encoded requests.',
+                'why'  => 'XML-RPC is widely abused in two ways: (1) credential brute-forcing — attackers use the multicall method to test thousands of username/password combinations in a single request, bypassing rate limits; (2) DDoS amplification — your site can be weaponised to send floods of requests to third-party sites. Modern WordPress sites have no reason to keep XML-RPC enabled.',
+                'how'  => "Block access in .htaccess:\n<Files xmlrpc.php>\n  Order Deny,Allow\n  Deny from all\n</Files>\n\nOr in Nginx:\nlocation = /xmlrpc.php {\n    deny all;\n    return 404;\n}\n\nAlternatively: install the \"Disable XML-RPC\" plugin, or use Wordfence which blocks brute-force attempts automatically.",
+            ],
+
+            'content_wp_users' => [
+                'what' => 'The WordPress REST API exposes a /wp-json/wp/v2/users endpoint that by default lists all registered user accounts, including their usernames and display names.',
+                'why'  => 'Knowing valid usernames makes brute-force login attacks dramatically easier — an attacker no longer needs to guess both the username and password. They can enumerate all users in seconds and then focus password attacks on those known accounts.',
+                'how'  => "Add to your theme's functions.php:\n\nadd_filter('rest_endpoints', function(\$endpoints) {\n    if (isset(\$endpoints['/wp/v2/users'])) {\n        unset(\$endpoints['/wp/v2/users']);\n    }\n    if (isset(\$endpoints['/wp/v2/users/(?P<id>[\\d]+)'])) {\n        unset(\$endpoints['/wp/v2/users/(?P<id>[\\d]+)']);\n    }\n    return \$endpoints;\n});\n\nOr use a security plugin like Wordfence or iThemes Security that includes this option.",
+            ],
+
             // ── Technology ─────────────────────────────────────────────────
 
             // ── Security Headers: Cookies ───────────────────────────────
@@ -202,6 +238,36 @@ class CheckKnowledge
                 'what' => 'wp-config.php.bak is a backup copy of the WordPress configuration file. WordPress itself protects wp-config.php but backup files with .bak, .old, or .orig extensions are served as plain text by most web servers.',
                 'why'  => 'This file contains the MySQL database credentials (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST), authentication secret keys, and the database table prefix. With these credentials an attacker can access your entire WordPress database directly.',
                 'how'  => "Delete the backup file immediately:\nrm /var/www/html/wp-config.php.bak\n\nSearch for other wp-config variants:\nfind /var/www -name 'wp-config*'\n\nTo protect against accidental future exposure, add to .htaccess:\n<Files \"wp-config.php\">\n    Order deny,allow\n    Deny from all\n</Files>",
+            ],
+
+            'exposed_htpasswd' => [
+                'what' => '.htpasswd is the file used by Apache to store usernames and hashed passwords for HTTP Basic Authentication. It normally sits above the web root or is protected by Apache configuration.',
+                'why'  => 'Even though passwords are hashed, exposing this file gives attackers a list of valid usernames and hashes to crack offline. Using tools like Hashcat, weak passwords (under 10 characters) can be cracked in minutes on modern hardware.',
+                'how'  => "Apache normally protects .htpasswd files automatically via a built-in rule. If yours is accessible, your server config may have overridden this protection.\n\nCheck your VirtualHost config and .htaccess for anything that might be serving the file.\n\nAdd an explicit deny:\n<Files \".htpasswd\">\n    Order allow,deny\n    Deny from all\n</Files>\n\nBest practice: store .htpasswd above the web root entirely, not inside it.",
+            ],
+
+            'exposed_webconfig' => [
+                'what' => 'web.config is the IIS (Internet Information Services) configuration file, equivalent to Apache\'s .htaccess. It controls URL routing, authentication, custom errors, and application settings.',
+                'why'  => 'Exposed web.config files frequently contain database connection strings (including passwords), application secrets, custom error paths that reveal server internals, and authentication configurations. This is sensitive infrastructure information.',
+                'how'  => "IIS should not serve web.config by default, but misconfigurations can expose it. Add a URL rewrite rule to block direct access:\n\n<rule name=\"Block web.config\">\n  <match url=\"web\\.config\" />\n  <action type=\"CustomResponse\" statusCode=\"404\" />\n</rule>\n\nVerify the IIS request filtering module is active and blocks config files.",
+            ],
+
+            'exposed_gitconfig' => [
+                'what' => '.git/config is the Git configuration file for your repository. It contains the remote repository URL, branch tracking settings, and sometimes embedded credentials.',
+                'why'  => 'Exposing .git/config lets attackers discover your private Git repository URL (GitHub, GitLab, Bitbucket). If credentials are embedded in the remote URL (e.g. https://username:token@github.com/...), they are directly exposed. The repository URL itself enables cloning your entire codebase.',
+                'how'  => "Block all .git access at the web server level:\n\nNginx:\nlocation ~ /\\.git {\n    deny all;\n    return 404;\n}\n\nApache (.htaccess):\nRedirectMatch 404 /\\.git\n\nOr: never deploy .git directories to production servers. Use a CI/CD pipeline that only copies compiled/built files to the server, not the full git repository.",
+            ],
+
+            'exposed_composerlock' => [
+                'what' => 'composer.lock records the exact version of every PHP dependency installed in your project. It\'s created by Composer when you run `composer install`.',
+                'why'  => 'Exposing composer.lock gives attackers a precise inventory of every library in your application, including its exact version number. They can cross-reference this against CVE databases (cve.mitre.org, packagist advisories) to find unpatched vulnerabilities in your specific versions and craft targeted exploits.',
+                'how'  => "Store composer.json and composer.lock above the web root:\n\nFor Laravel: these files should be in the project root, with only the public/ subdirectory as the web root. Most Forge/Vapor deployments do this correctly by default.\n\nIf your web root is the project root, block access:\nNginx: location ~ /composer\\.(json|lock) { deny all; }\nApache: <FilesMatch \"composer\\.(json|lock)\"> Deny from all </FilesMatch>\n\nThen run: composer audit\nTo check for known vulnerabilities in your current dependencies.",
+            ],
+
+            'exposed_serverstatus' => [
+                'what' => 'Apache\'s mod_status provides a /server-status page that shows real-time server statistics: active requests, client IP addresses, URLs being requested, server version, and performance metrics.',
+                'why'  => 'Exposing server-status leaks live visitor data (IPs, pages they\'re visiting), your exact Apache version, loaded modules, and server performance data. Attackers can use this to identify high-value endpoints, confirm server software, and monitor traffic patterns.',
+                'how'  => "Restrict server-status to localhost only:\n\n<Location /server-status>\n    Require local\n</Location>\n\nOr disable mod_status entirely if you don't need it:\nsudo a2dismod status\nsudo systemctl restart apache2\n\nIf you need remote monitoring access, restrict it to specific trusted IPs:\nRequire ip 192.168.1.0/24",
             ],
 
             // ── Technology ─────────────────────────────────────────────────
@@ -266,6 +332,30 @@ class CheckKnowledge
                 'what' => 'Port 11211 is the default port for Memcached, an in-memory caching system used to speed up web applications by storing frequently accessed data.',
                 'why'  => 'Memcached has no authentication. An exposed instance lets anyone read or manipulate your cache. It is also heavily abused for DDoS amplification attacks — attackers send small spoofed requests to Memcached which generates much larger responses, overwhelming the victim.',
                 'how'  => "Block with UFW:\nsudo ufw deny 11211/tcp\n\nBind to localhost when starting Memcached (in /etc/memcached.conf):\n-l 127.0.0.1\n\nRestart Memcached:\nsudo systemctl restart memcached",
+            ],
+
+            'port_25' => [
+                'what' => 'Port 25 is used by SMTP (Simple Mail Transfer Protocol), the standard protocol for sending email between mail servers. It is expected to be open on dedicated mail servers.',
+                'why'  => 'If this server is not a mail server, an open SMTP port may indicate an unauthorised mail relay or spam-sending software. Open relays — SMTP servers that accept and forward email from anyone — are exploited by spammers to send bulk email through your server, leading to IP blacklisting.',
+                'how'  => "If this server does not send email:\nsudo ufw deny 25/tcp\n\nIf this server runs a mail server (Postfix, Exim, Sendmail):\n1. Verify it is not configured as an open relay:\n   telnet localhost 25\n   EHLO test\n   MAIL FROM: test@external.com\n   RCPT TO: test@another-external.com\n   (should be rejected)\n\n2. Keep your MTA updated and monitor /var/log/mail.log for unusual sending patterns.",
+            ],
+
+            'port_2375' => [
+                'what' => 'Port 2375 is the Docker daemon\'s unencrypted TCP API port. When enabled, it allows remote control of all Docker containers on the server without any authentication.',
+                'why'  => 'Access to the Docker API without TLS is equivalent to root access to the entire server. An attacker can create a privileged container that mounts the host filesystem, read and modify any file on the server, install backdoors, exfiltrate all data, or pivot to other systems on the network. This is one of the most critical misconfigurations possible.',
+                'how'  => "Close port 2375 immediately:\nsudo ufw deny 2375/tcp\n\nDo NOT expose the Docker daemon over TCP without mutual TLS. Use the Unix socket instead for local access:\n/var/run/docker.sock\n\nIf remote Docker API access is needed, use SSH tunneling:\nssh -L 2375:localhost:2375 user@server\n\nOr configure Docker with TLS client certificates (docker --tlsverify).\n\nCheck if it was intentionally opened:\nsudo systemctl cat docker | grep -i tcp",
+            ],
+
+            'port_8080' => [
+                'what' => 'Port 8080 is a common alternative HTTP port, often used for development servers, admin panels, reverse proxies (Nginx/Apache behind an app server), or Java application servers like Tomcat.',
+                'why'  => 'An open port 8080 may expose an admin interface, development build, or staging server that was not intended to be publicly accessible. Development environments often have weaker security settings, disabled authentication, or verbose error messages that reveal internal architecture.',
+                'how'  => "Identify what is running on port 8080:\nsudo ss -tlnp | grep :8080\n\nIf it is a development server or admin panel, restrict access to trusted IPs:\nsudo ufw allow from YOUR_IP to any port 8080\nsudo ufw deny 8080/tcp\n\nIf it is a legitimate proxy or app server, ensure it has authentication enabled and is not exposing internal diagnostic pages.",
+            ],
+
+            'port_8443' => [
+                'what' => 'Port 8443 is a common alternative HTTPS port. It is frequently used for admin panels, development environments, application servers, or services that cannot use the standard port 443.',
+                'why'  => 'Like port 8080, an open 8443 may expose admin interfaces or staging environments. Even with HTTPS, a self-signed certificate or misconfigured service on this port can be a security concern if it provides access to sensitive functionality without proper authentication.',
+                'how'  => "Identify what is running on port 8443:\nsudo ss -tlnp | grep :8443\n\nIf it is an admin panel or dev interface, restrict to trusted IPs:\nsudo ufw allow from YOUR_IP to any port 8443\nsudo ufw deny 8443/tcp\n\nEnsure any service on this port uses a valid SSL certificate and has proper authentication enabled.",
             ],
 
             // ── Malware & Virus Scan ────────────────────────────────────────

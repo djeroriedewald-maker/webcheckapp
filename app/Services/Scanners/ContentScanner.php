@@ -90,6 +90,51 @@ class ContentScanner
             ];
         }
 
+        // --- WordPress-only checks (XML-RPC + user enumeration) ---
+        if ($wordpress['detected'] ?? false) {
+            // Check 3a: XML-RPC endpoint exposure
+            $maxScore += 20;
+            $xmlrpc = $this->safe(fn() => $this->checkXmlRpc($host), false);
+            if ($xmlrpc) {
+                $checks[] = [
+                    'id'             => 'content_xmlrpc',
+                    'label'          => 'WordPress XML-RPC disabled',
+                    'status'         => 'fail',
+                    'description'    => '/xmlrpc.php is publicly accessible. This legacy endpoint is widely abused for credential brute-force attacks and can amplify DDoS traffic by a factor of 1,000×.',
+                    'recommendation' => "Block it in .htaccess:\n<Files xmlrpc.php>\n  Order Deny,Allow\n  Deny from all\n</Files>\nOr use a plugin: Wordfence or Disable XML-RPC.",
+                ];
+            } else {
+                $score += 20;
+                $checks[] = [
+                    'id'          => 'content_xmlrpc',
+                    'label'       => 'WordPress XML-RPC disabled',
+                    'status'      => 'pass',
+                    'description' => 'WordPress XML-RPC endpoint is not publicly accessible.',
+                ];
+            }
+
+            // Check 3b: User enumeration via REST API
+            $maxScore += 15;
+            $userEnum = $this->safe(fn() => $this->checkWpUserEnum($host), false);
+            if ($userEnum) {
+                $checks[] = [
+                    'id'             => 'content_wp_users',
+                    'label'          => 'WordPress user enumeration blocked',
+                    'status'         => 'warn',
+                    'description'    => '/wp-json/wp/v2/users exposes a public list of WordPress usernames. Attackers use these for targeted brute-force and credential-stuffing attacks.',
+                    'recommendation' => "Add to your theme's functions.php:\nadd_filter('rest_endpoints', function(\$e) {\n  unset(\$e['/wp/v2/users'], \$e['/wp/v2/users/(?P<id>[\\d]+)']);\n  return \$e;\n});",
+                ];
+            } else {
+                $score += 15;
+                $checks[] = [
+                    'id'          => 'content_wp_users',
+                    'label'       => 'WordPress user enumeration blocked',
+                    'status'      => 'pass',
+                    'description' => 'WordPress REST API user endpoint is not publicly accessible.',
+                ];
+            }
+        }
+
         // --- Check 4: Directory listing ---
         $maxScore += 25;
         $dirListing = $this->safe(fn() => $this->checkDirectoryListing($host), false);
@@ -257,6 +302,56 @@ class ContentScanner
         }
 
         return false;
+    }
+
+    private function checkXmlRpc(string $host): bool
+    {
+        $ch = curl_init("https://{$host}/xmlrpc.php");
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 4,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_RANGE          => '0-1023',
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+        ]);
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        // Confirm it's the WP XML-RPC endpoint, not a soft 404
+        return $code === 200 && $body && (
+            str_contains($body, '<?xml') ||
+            stripos($body, 'xml-rpc') !== false ||
+            stripos($body, 'xmlrpc') !== false
+        );
+    }
+
+    private function checkWpUserEnum(string $host): bool
+    {
+        $ch = curl_init("https://{$host}/wp-json/wp/v2/users");
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 4,
+            CURLOPT_CONNECTTIMEOUT => 4,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_RANGE          => '0-4095',
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+        ]);
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($code !== 200 || ! $body) {
+            return false;
+        }
+
+        $data = json_decode($body, true);
+
+        // A non-empty JSON array of user objects with a 'slug' field = user enumeration enabled
+        return is_array($data) && ! empty($data) && isset($data[0]['slug']);
     }
 
     private function safe(callable $fn, mixed $default): mixed

@@ -34,6 +34,18 @@ class PortScanner
         11211 => ['label' => 'Memcached',     'dangerous' => true,
                   'desc_open'   => 'Memcached (port 11211) is publicly reachable. Exposed Memcached servers are abused for DDoS amplification attacks and data exfiltration.',
                   'rec'         => 'Block port 11211 in your firewall. Bind Memcached to 127.0.0.1 using the -l 127.0.0.1 flag.'],
+        25    => ['label' => 'SMTP',          'dangerous' => false,
+                  'desc_open'   => 'SMTP (port 25) is publicly reachable. This is expected on mail servers. If this server does not handle email, this port should be closed.',
+                  'rec'         => 'If this server does not run a mail server, block port 25 in your firewall. If it does, ensure your MTA is not configured as an open relay and is up to date.'],
+        2375  => ['label' => 'Docker API',    'dangerous' => true,
+                  'desc_open'   => 'Docker API (port 2375) is publicly accessible without TLS. Anyone on the internet can control all containers on this server — create, delete, and execute commands with full root access.',
+                  'rec'         => 'Close port 2375 immediately. Never expose the Docker daemon on a TCP port without mutual TLS. Use the Unix socket (/var/run/docker.sock) for local access instead.'],
+        8080  => ['label' => 'HTTP (alt)',    'dangerous' => false,
+                  'desc_open'   => 'HTTP alternate port 8080 is open. This commonly indicates a development server, admin panel, or proxy running on a non-standard port.',
+                  'rec'         => 'Verify what service is running on port 8080. If it is a development or admin interface, restrict it to trusted IP addresses via firewall rules.'],
+        8443  => ['label' => 'HTTPS (alt)',   'dangerous' => false,
+                  'desc_open'   => 'HTTPS alternate port 8443 is open. This may be a development environment, staging server, or admin panel with a self-signed certificate.',
+                  'rec'         => 'Verify what service runs on port 8443. Restrict access to trusted IPs if it is an admin or dev interface.'],
     ];
 
     public function scan(string $host): array

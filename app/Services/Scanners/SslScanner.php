@@ -135,6 +135,30 @@ class SslScanner
             ];
         }
 
+        // --- Check 5: TLS 1.0 / 1.1 deprecated versions ---
+        // Only meaningful if HTTPS is reachable at all.
+        if ($certInfo['reachable']) {
+            $maxScore += 15;
+            $oldTls = $this->safe(fn() => $this->checkOldTls($host), []);
+            if (empty($oldTls)) {
+                $score += 15;
+                $checks[] = [
+                    'id'          => 'ssl_tls_version',
+                    'label'       => 'TLS 1.0 and 1.1 disabled',
+                    'status'      => 'pass',
+                    'description' => 'Server only accepts TLS 1.2 or higher. Deprecated TLS versions are not supported.',
+                ];
+            } else {
+                $checks[] = [
+                    'id'             => 'ssl_tls_version',
+                    'label'          => 'TLS 1.0 and 1.1 disabled',
+                    'status'         => 'fail',
+                    'description'    => 'Server still accepts ' . implode(' and ', $oldTls) . '. These protocol versions are deprecated, have known vulnerabilities (POODLE, BEAST), and are banned by PCI DSS since 2018.',
+                    'recommendation' => "Disable TLS 1.0 and 1.1 in your server config:\nNginx: ssl_protocols TLSv1.2 TLSv1.3;\nApache: SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1",
+                ];
+            }
+        }
+
         return [
             'category' => 'SSL & HTTPS',
             'icon'     => 'shield-check',
@@ -285,6 +309,46 @@ class SslScanner
             'redirects' => $endsOnHttps && $wasRedirected,
             'permanent' => $endsOnHttps && $wasRedirected && ! $hasTemporaryRedirect,
         ];
+    }
+
+    /**
+     * Test whether the server accepts a connection with TLS 1.0 or TLS 1.1.
+     * Returns an array of deprecated version names that are still accepted.
+     * A false negative is possible if the scanner's own OpenSSL has these versions compiled out.
+     */
+    private function checkOldTls(string $host): array
+    {
+        $supported = [];
+        $versions  = [
+            'TLS 1.0' => STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT,
+            'TLS 1.1' => STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT,
+        ];
+
+        foreach ($versions as $name => $method) {
+            $context = stream_context_create([
+                'ssl' => [
+                    'verify_peer'      => false,
+                    'verify_peer_name' => false,
+                    'crypto_method'    => $method,
+                ],
+            ]);
+
+            $sock = @stream_socket_client(
+                "ssl://{$host}:443",
+                $errno,
+                $errstr,
+                (float) self::TIMEOUT,
+                STREAM_CLIENT_CONNECT,
+                $context
+            );
+
+            if ($sock) {
+                fclose($sock);
+                $supported[] = $name;
+            }
+        }
+
+        return $supported;
     }
 
     private function safe(callable $fn, mixed $default): mixed

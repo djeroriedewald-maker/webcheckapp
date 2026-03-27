@@ -115,6 +115,44 @@ class DnsScanner
             ];
         }
 
+        // --- Informational: MTA-STS (enforces TLS for incoming email delivery) ---
+        $mtaSts = $this->safe(fn() => $this->checkMtaSts($apexHost), ['found' => false]);
+        if ($mtaSts['found']) {
+            $checks[] = [
+                'id'          => 'dns_mta_sts',
+                'label'       => 'MTA-STS (email transport security)',
+                'status'      => 'pass',
+                'description' => 'MTA-STS record found — sending mail servers are required to use TLS when delivering email to this domain, preventing downgrade attacks.',
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'dns_mta_sts',
+                'label'          => 'MTA-STS (email transport security)',
+                'status'         => 'warn',
+                'description'    => 'No MTA-STS record found at _mta-sts.' . $apexHost . '. Without it, email delivery to your domain could silently fall back to unencrypted connections.',
+                'recommendation' => 'Implement MTA-STS: add a TXT record at _mta-sts.' . $apexHost . ' with value "v=STSv1; id=YYYYMMDD01" and publish a policy file at https://mta-sts.' . $apexHost . '/.well-known/mta-sts.txt',
+            ];
+        }
+
+        // --- Informational: BIMI (brand logo in supporting email clients) ---
+        $bimi = $this->safe(fn() => $this->checkBimi($apexHost), ['found' => false]);
+        if ($bimi['found']) {
+            $checks[] = [
+                'id'          => 'dns_bimi',
+                'label'       => 'BIMI record',
+                'status'      => 'pass',
+                'description' => 'BIMI record found — your brand logo can appear in supporting email clients (Gmail, Apple Mail, Yahoo) next to emails from your domain.',
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'dns_bimi',
+                'label'          => 'BIMI record',
+                'status'         => 'info',
+                'description'    => 'No BIMI record found. BIMI lets your brand logo appear in email clients that support it — a trust and branding signal for recipients.',
+                'recommendation' => 'BIMI requires DMARC with p=quarantine or p=reject. Then add a TXT record at default._bimi.' . $apexHost . ': v=BIMI1; l=https://yourdomain.com/logo.svg',
+            ];
+        }
+
         // --- Informational: DNSSEC (not scored — PHP cannot reliably verify this) ---
         // We show it as informational only. Most systems will report not confirmed,
         // even for domains that do have DNSSEC, because php dns_get_record uses the
@@ -199,6 +237,40 @@ class DnsScanner
         $records = @dns_get_record($host, DNS_CAA);
 
         return ['found' => ! empty($records), 'checked' => true];
+    }
+
+    private function checkMtaSts(string $host): array
+    {
+        $records = @dns_get_record("_mta-sts.{$host}", DNS_TXT);
+        if (! $records) {
+            return ['found' => false];
+        }
+
+        foreach ($records as $record) {
+            $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
+            if (str_starts_with($txt, 'v=STSv1')) {
+                return ['found' => true, 'value' => $txt];
+            }
+        }
+
+        return ['found' => false];
+    }
+
+    private function checkBimi(string $host): array
+    {
+        $records = @dns_get_record("default._bimi.{$host}", DNS_TXT);
+        if (! $records) {
+            return ['found' => false];
+        }
+
+        foreach ($records as $record) {
+            $txt = $record['txt'] ?? ($record['entries'][0] ?? '');
+            if (stripos($txt, 'v=BIMI1') !== false) {
+                return ['found' => true, 'value' => $txt];
+            }
+        }
+
+        return ['found' => false];
     }
 
     private function checkDnssec(string $host): bool

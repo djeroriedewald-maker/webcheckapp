@@ -59,7 +59,12 @@
             <div>
                 <p class="text-sm text-gray-500 mb-1">Security report for</p>
                 <h1 class="text-2xl font-bold text-white">{{ $scan->host }}</h1>
-                <p class="text-sm text-gray-500 mt-1">Scanned {{ $scan->completed_at->diffForHumans() }}</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    Scanned {{ $scan->completed_at->diffForHumans() }}
+                    @if($scan->created_at && $scan->completed_at)
+                    <span class="text-gray-600">· {{ $scan->completed_at->diffInSeconds($scan->created_at) }}s scan time</span>
+                    @endif
+                </p>
 
                 {{-- Share buttons --}}
                 <div class="flex items-center gap-2 mt-3" x-data="{ copied: false }">

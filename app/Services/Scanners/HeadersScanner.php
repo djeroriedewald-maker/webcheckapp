@@ -40,13 +40,38 @@ class HeadersScanner
         // --- Check: Content-Security-Policy ---
         $maxScore += 20;
         if ($csp !== null) {
-            $score += 20;
-            $checks[] = [
-                'id'          => 'header_csp',
-                'label'       => 'Content-Security-Policy',
-                'status'      => 'pass',
-                'description' => "CSP header is enforced: \"{$csp}\".",
-            ];
+            // Quality check: unsafe-inline / unsafe-eval in script context defeats XSS protection.
+            // Check script-src first; fall back to default-src if no explicit script-src exists.
+            $weakDirectives = [];
+            $hasScriptSrc   = (bool) preg_match('/\bscript-src\b/i', $csp);
+            $srcContext     = $hasScriptSrc ? 'script-src' : 'default-src';
+
+            if (preg_match('/\b' . $srcContext . '\b[^;]*\'unsafe-inline\'/i', $csp)) {
+                $weakDirectives[] = "'unsafe-inline'";
+            }
+            if (preg_match('/\b' . $srcContext . '\b[^;]*\'unsafe-eval\'/i', $csp)) {
+                $weakDirectives[] = "'unsafe-eval'";
+            }
+
+            if (! empty($weakDirectives)) {
+                $score += 5;
+                $checks[] = [
+                    'id'             => 'header_csp',
+                    'label'          => 'Content-Security-Policy',
+                    'status'         => 'warn',
+                    'description'    => 'CSP is set but weakened by ' . implode(' and ', $weakDirectives) . ' in ' . $srcContext . '. These directives allow inline scripts and effectively disable XSS injection protection.',
+                    'recommendation' => "Remove 'unsafe-inline' and 'unsafe-eval' from your CSP. Replace inline scripts with external files or use nonces/hashes. Test your policy at https://csp-evaluator.withgoogle.com/",
+                ];
+            } else {
+                $score += 20;
+                $preview  = strlen($csp) <= 100 ? "\"{$csp}\"" : '(policy is set)';
+                $checks[] = [
+                    'id'          => 'header_csp',
+                    'label'       => 'Content-Security-Policy',
+                    'status'      => 'pass',
+                    'description' => "CSP header enforced: {$preview}",
+                ];
+            }
         } elseif ($cspReportOnly !== null) {
             // Report-Only mode monitors but does NOT enforce — partial credit
             $score += 8;
@@ -240,6 +265,25 @@ class HeadersScanner
             ];
         }
 
+        // --- Informational: CORS wildcard (not scored — only warn when misconfigured) ---
+        $cors = $headers['access-control-allow-origin'] ?? null;
+        if ($cors === '*') {
+            $checks[] = [
+                'id'             => 'header_cors',
+                'label'          => 'CORS policy',
+                'status'         => 'warn',
+                'description'    => 'Access-Control-Allow-Origin: * is set. Any website can make cross-origin requests to this server and read the response.',
+                'recommendation' => "Replace the wildcard with specific trusted origins:\nAccess-Control-Allow-Origin: https://yourtrustedapp.com\nOnly use * for fully public APIs that serve no authenticated or user-specific data.",
+            ];
+        } elseif ($cors !== null) {
+            $checks[] = [
+                'id'          => 'header_cors',
+                'label'       => 'CORS policy',
+                'status'       => 'pass',
+                'description'  => "Cross-origin access is restricted to: {$cors}",
+            ];
+        }
+
         return [
             'category' => 'Security Headers',
             'icon'     => 'document-check',
@@ -263,6 +307,8 @@ class HeadersScanner
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 5,
             CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            // Include Origin header so we can capture the CORS response header in one request
+            CURLOPT_HTTPHEADER     => ['Origin: https://cors-probe.webcheckapp.com'],
         ]);
 
         curl_setopt($ch, CURLOPT_HEADERFUNCTION, function ($ch, $header) use (&$lastHeaders) {
