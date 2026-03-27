@@ -289,11 +289,14 @@
                 @endif
             </div>
 
-            {{-- Basic checks grid --}}
-            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-4">
-                <div class="divide-y divide-white/5">
-                    @foreach($basicChecks as $check)
-                    <div class="flex items-center gap-3 px-5 py-3">
+            {{-- Basic checks with expandable details --}}
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-4 divide-y divide-white/5">
+                @foreach($basicChecks as $check)
+                @php $knowledge = CheckKnowledge::get($check['id']); @endphp
+                <div x-data="{ open: false }">
+                    <button type="button"
+                            class="w-full text-left flex items-center gap-3 px-5 py-3.5 {{ $knowledge ? 'cursor-pointer hover:bg-white/3 transition' : 'cursor-default' }}"
+                            @if($knowledge) @click="open = !open" @endif>
                         @if($check['status'] === 'pass')
                             <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         @elseif($check['status'] === 'fail')
@@ -301,11 +304,35 @@
                         @else
                             <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         @endif
-                        <span class="text-sm font-medium text-gray-300 w-40 shrink-0">{{ $check['label'] }}</span>
-                        <span class="text-sm text-gray-500">{{ $check['description'] }}</span>
+                        <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium text-gray-300">{{ $check['label'] }}</span>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $check['description'] }}</p>
+                        </div>
+                        @if($knowledge)
+                        <svg class="w-4 h-4 text-gray-600 shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        @endif
+                    </button>
+                    @if($knowledge)
+                    <div x-show="open" x-collapse class="border-t border-white/5 bg-black/20 px-5 py-4 space-y-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What is this?</p>
+                            <p class="text-gray-300">{{ $knowledge['what'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why does it matter?</p>
+                            <p class="text-gray-300">{{ $knowledge['why'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">How to fix it</p>
+                            <p class="text-gray-300 whitespace-pre-line">{{ $knowledge['how'] }}</p>
+                        </div>
                     </div>
-                    @endforeach
+                    @endif
                 </div>
+                @endforeach
             </div>
 
             {{-- VirusTotal vendor results --}}
@@ -353,8 +380,8 @@
         {{-- Open Ports panel --}}
         @if(!empty($scan->results['ports']))
         @php
-            $ports       = $scan->results['ports'];
-            $openDanger  = $ports['open_danger'] ?? 0;
+            $ports      = $scan->results['ports'];
+            $openDanger = $ports['open_danger'] ?? 0;
         @endphp
         <div class="mb-10">
             <div class="flex items-center gap-3 mb-4">
@@ -368,10 +395,13 @@
                     <span class="text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded-full">No dangerous ports exposed</span>
                 @endif
             </div>
-            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
-                <div class="grid grid-cols-1 sm:grid-cols-2 divide-y divide-white/5 sm:divide-y-0 sm:[&>*:nth-child(odd)]:border-r sm:[&>*:nth-child(odd)]:border-white/5">
-                    @foreach($ports['checks'] as $check)
-                    <div class="flex items-center gap-3 px-5 py-3 {{ !$loop->last && $loop->iteration % 2 === 0 ? 'sm:border-b sm:border-white/5' : '' }} {{ $loop->iteration % 2 === 1 && !$loop->last ? 'border-b border-white/5 sm:border-b-0' : '' }}">
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden divide-y divide-white/5">
+                @foreach($ports['checks'] as $check)
+                @php $knowledge = CheckKnowledge::get($check['id']); @endphp
+                <div x-data="{ open: false }">
+                    <button type="button"
+                            class="w-full text-left flex items-center gap-3 px-5 py-3.5 {{ $knowledge ? 'cursor-pointer hover:bg-white/3 transition' : 'cursor-default' }}"
+                            @if($knowledge) @click="open = !open" @endif>
                         @if($check['status'] === 'pass')
                             <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         @elseif($check['status'] === 'fail')
@@ -379,25 +409,40 @@
                         @else
                             <svg class="w-4 h-4 text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         @endif
-                        <span class="text-sm {{ $check['status'] === 'fail' ? 'text-red-300 font-medium' : ($check['status'] === 'warn' ? 'text-yellow-300' : 'text-gray-400') }}">
-                            {{ $check['label'] }}
-                        </span>
-                    </div>
-                    @endforeach
-                </div>
-                @if(collect($ports['checks'])->where('status', 'fail')->count() > 0)
-                <div class="border-t border-white/5 px-5 py-3 space-y-2">
-                    @foreach(collect($ports['checks'])->where('status', 'fail') as $check)
-                    <div class="text-sm">
-                        <span class="text-red-400 font-medium">{{ $check['label'] }}:</span>
-                        <span class="text-gray-400 ml-1">{{ $check['description'] }}</span>
-                        @if(!empty($check['recommendation']))
-                        <p class="text-xs text-indigo-400 mt-0.5">{{ $check['recommendation'] }}</p>
+                        <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium {{ $check['status'] === 'fail' ? 'text-red-300' : ($check['status'] === 'warn' ? 'text-yellow-300' : 'text-gray-300') }}">
+                                {{ $check['label'] }}
+                            </span>
+                            @if($check['status'] !== 'pass')
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $check['description'] }}</p>
+                            @endif
+                        </div>
+                        @if($knowledge)
+                        <svg class="w-4 h-4 text-gray-600 shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
                         @endif
+                    </button>
+                    @if($knowledge)
+                    <div x-show="open" x-collapse
+                         class="border-t border-white/5 bg-black/20 px-5 py-4 space-y-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What is this?</p>
+                            <p class="text-gray-300">{{ $knowledge['what'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why does it matter?</p>
+                            <p class="text-gray-300">{{ $knowledge['why'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">How to fix it</p>
+                            <p class="text-gray-300 whitespace-pre-line font-mono text-xs leading-relaxed">{{ $knowledge['how'] }}</p>
+                        </div>
                     </div>
-                    @endforeach
+                    @endif
                 </div>
-                @endif
+                @endforeach
             </div>
         </div>
         @endif
@@ -413,27 +458,114 @@
                 </svg>
                 <h2 class="text-lg font-semibold">Privacy &amp; GDPR</h2>
             </div>
-            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
-                <div class="divide-y divide-white/5">
-                    @foreach($privacy['checks'] as $check)
-                    <div class="flex items-start gap-3 px-5 py-4">
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden divide-y divide-white/5">
+                @foreach($privacy['checks'] as $check)
+                @php $knowledge = CheckKnowledge::get($check['id']); @endphp
+                <div x-data="{ open: false }">
+                    <button type="button"
+                            class="w-full text-left flex items-center gap-3 px-5 py-3.5 {{ $knowledge ? 'cursor-pointer hover:bg-white/3 transition' : 'cursor-default' }}"
+                            @if($knowledge) @click="open = !open" @endif>
                         @if($check['status'] === 'pass')
-                            <svg class="w-4 h-4 text-green-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         @elseif($check['status'] === 'fail')
-                            <svg class="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         @else
-                            <svg class="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <svg class="w-4 h-4 text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         @endif
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium {{ $check['status'] === 'fail' ? 'text-red-300' : ($check['status'] === 'warn' ? 'text-yellow-300' : 'text-gray-300') }}">{{ $check['label'] }}</p>
-                            <p class="text-sm text-gray-500 mt-0.5">{{ $check['description'] }}</p>
-                            @if(!empty($check['recommendation']))
-                            <p class="text-xs text-indigo-400 mt-1">{{ $check['recommendation'] }}</p>
-                            @endif
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $check['description'] }}</p>
+                        </div>
+                        @if($knowledge)
+                        <svg class="w-4 h-4 text-gray-600 shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        @endif
+                    </button>
+                    @if($knowledge)
+                    <div x-show="open" x-collapse class="border-t border-white/5 bg-black/20 px-5 py-4 space-y-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What is this?</p>
+                            <p class="text-gray-300">{{ $knowledge['what'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why does it matter?</p>
+                            <p class="text-gray-300">{{ $knowledge['why'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">How to fix it</p>
+                            <p class="text-gray-300 whitespace-pre-line">{{ $knowledge['how'] }}</p>
                         </div>
                     </div>
-                    @endforeach
+                    @endif
                 </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Exposed Files panel --}}
+        @if(!empty($scan->results['exposed_files']))
+        @php
+            $exposedFiles = $scan->results['exposed_files'];
+            $exposedCount = collect($exposedFiles['checks'])->where('status', 'fail')->count();
+        @endphp
+        <div class="mb-10">
+            <div class="flex items-center gap-3 mb-4">
+                <svg class="w-5 h-5 {{ $exposedCount > 0 ? 'text-red-400' : 'text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                </svg>
+                <h2 class="text-lg font-semibold">Exposed Files</h2>
+                @if($exposedCount > 0)
+                    <span class="text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25 px-2 py-0.5 rounded-full">{{ $exposedCount }} file{{ $exposedCount > 1 ? 's' : '' }} exposed</span>
+                @else
+                    <span class="text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded-full">No sensitive files exposed</span>
+                @endif
+            </div>
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden divide-y divide-white/5">
+                @foreach($exposedFiles['checks'] as $check)
+                @php $knowledge = CheckKnowledge::get($check['id']); @endphp
+                <div x-data="{ open: false }">
+                    <button type="button"
+                            class="w-full text-left flex items-center gap-3 px-5 py-3.5 {{ $knowledge ? 'cursor-pointer hover:bg-white/3 transition' : 'cursor-default' }}"
+                            @if($knowledge) @click="open = !open" @endif>
+                        @if($check['status'] === 'pass')
+                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        @else
+                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        @endif
+                        <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium {{ $check['status'] === 'fail' ? 'text-red-300' : 'text-gray-300' }}">{{ $check['label'] }}</span>
+                            @if($check['status'] === 'fail')
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $check['description'] }}</p>
+                            @endif
+                        </div>
+                        @if($knowledge)
+                        <svg class="w-4 h-4 text-gray-600 shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                        @endif
+                    </button>
+                    @if($knowledge)
+                    <div x-show="open" x-collapse class="border-t border-white/5 bg-black/20 px-5 py-4 space-y-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">What is this?</p>
+                            <p class="text-gray-300">{{ $knowledge['what'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Why does it matter?</p>
+                            <p class="text-gray-300">{{ $knowledge['why'] }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">How to fix it</p>
+                            <p class="text-gray-300 whitespace-pre-line font-mono text-xs leading-relaxed">{{ $knowledge['how'] }}</p>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endforeach
             </div>
         </div>
         @endif
@@ -634,6 +766,7 @@
             <h2 class="text-lg font-semibold">Full report</h2>
             @foreach($scan->results as $key => $category)
             @if($category['score'] === null) @continue @endif
+            @if($key === 'exposed_files') @continue @endif {{-- shown in dedicated panel above --}}
             <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-white/5">
                     <h3 class="font-semibold text-white">{{ $category['category'] }}</h3>

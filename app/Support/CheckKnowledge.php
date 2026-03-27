@@ -212,6 +212,108 @@ class CheckKnowledge
                 'how'  => "Nginx (1.9.5+): add http2 to the listen directive:\nlisten 443 ssl http2;\n\nApache (2.4.17+): enable the module and set protocol:\na2enmod http2\nProtocols h2 http/1.1\n\nCloudflare: HTTP/2 is enabled automatically for all sites — no server config needed.\n\nNote: HTTP/2 requires HTTPS. Enable SSL first, then enable HTTP/2.",
             ],
 
+            // ── Open Ports ─────────────────────────────────────────────────
+
+            'port_21' => [
+                'what' => 'Port 21 is used by FTP (File Transfer Protocol), which lets you upload and download files to your server. FTP was designed in the early internet era before encryption existed.',
+                'why'  => 'FTP sends your username, password, and all transferred files in complete plaintext over the network. Anyone intercepting the connection — on the same network or via a man-in-the-middle attack — can read your credentials and every file you transfer.',
+                'how'  => "Disable FTP and switch to SFTP (SSH File Transfer Protocol), which uses the same SSH encryption as terminal access:\n\nFor FileZilla: connect using protocol SFTP and your SSH credentials.\n\nTo disable pure FTP (Ubuntu):\nsudo systemctl stop vsftpd\nsudo systemctl disable vsftpd\n\nIf FTP is absolutely required, use FTPS (FTP over TLS) instead of plain FTP.",
+            ],
+
+            'port_22' => [
+                'what' => 'Port 22 is used by SSH (Secure Shell), the standard encrypted protocol for remote server access. It lets administrators log in to the server and run commands remotely.',
+                'why'  => 'SSH itself is secure, but an open SSH port is a constant target for brute-force attacks — bots continuously try thousands of username/password combinations. If password authentication is enabled, a weak password can lead to full server compromise.',
+                'how'  => "Disable password authentication and use SSH keys only:\n\nEdit /etc/ssh/sshd_config:\nPasswordAuthentication no\nPubkeyAuthentication yes\n\nThen restart SSH:\nsudo systemctl restart sshd\n\nOptional: move SSH to a non-standard port (e.g. 2222) to reduce bot noise:\nPort 2222\n\nOptional: use fail2ban to automatically block IPs with too many failed attempts:\nsudo apt install fail2ban",
+            ],
+
+            'port_23' => [
+                'what' => 'Port 23 is used by Telnet, a very old remote access protocol from the 1960s. Like FTP, it was designed before encryption existed.',
+                'why'  => 'Telnet transmits everything — including your login credentials and every command you run — in complete plaintext. Anyone intercepting the connection sees exactly what you type. There is no situation where Telnet is preferable over SSH on a modern server.',
+                'how'  => "Disable and remove Telnet:\nsudo systemctl stop telnet\nsudo systemctl disable telnet\nsudo apt remove telnetd  # Ubuntu/Debian\n\nIf port 23 is still open after removing Telnet, check what process is using it:\nsudo ss -tlnp | grep :23\n\nUse SSH for all remote access. SSH provides the same functionality with full encryption.",
+            ],
+
+            'port_3306' => [
+                'what' => 'Port 3306 is the default port for MySQL (and MariaDB), the database server that stores your website\'s content, user accounts, orders, and all other data.',
+                'why'  => 'Exposing the MySQL port to the internet allows attackers to directly attempt to log in to your database using brute force or stolen credentials. If they succeed, they have full access to all your data without needing to compromise the website itself.',
+                'how'  => "Block the port with a firewall (UFW on Ubuntu):\nsudo ufw deny 3306/tcp\n\nOr restrict to only your app server IP:\nsudo ufw allow from YOUR_APP_IP to any port 3306\n\nAlso bind MySQL to localhost in /etc/mysql/mysql.conf.d/mysqld.cnf:\nbind-address = 127.0.0.1\n\nThen restart MySQL:\nsudo systemctl restart mysql\n\nFor remote DB management, use an SSH tunnel instead:\nssh -L 3306:127.0.0.1:3306 user@yourserver",
+            ],
+
+            'port_5432' => [
+                'what' => 'Port 5432 is the default port for PostgreSQL, an advanced open-source relational database. Like MySQL, it stores all application data.',
+                'why'  => 'A publicly reachable PostgreSQL port exposes the database directly to brute-force attacks. PostgreSQL also has a history of being exploited when authentication is misconfigured (e.g. trust authentication).',
+                'how'  => "Block with UFW:\nsudo ufw deny 5432/tcp\n\nBind PostgreSQL to localhost in /etc/postgresql/*/main/postgresql.conf:\nlisten_addresses = 'localhost'\n\nRestart PostgreSQL:\nsudo systemctl restart postgresql\n\nFor remote access, use an SSH tunnel:\nssh -L 5432:127.0.0.1:5432 user@yourserver",
+            ],
+
+            'port_6379' => [
+                'what' => 'Port 6379 is the default port for Redis, an in-memory data store commonly used for caching, session storage, and queues. Redis has no authentication by default.',
+                'why'  => 'An exposed Redis instance is one of the most dangerous vulnerabilities a server can have. Attackers can read all cached data (including user sessions), write arbitrary data, use Redis\'s replication feature to write SSH keys to the server and gain root access, or abuse it for DDoS amplification.',
+                'how'  => "Block with UFW immediately:\nsudo ufw deny 6379/tcp\n\nBind Redis to localhost in /etc/redis/redis.conf:\nbind 127.0.0.1\n\nEnable a strong password:\nrequirepass YourStrongPasswordHere\n\nRestart Redis:\nsudo systemctl restart redis\n\nIf Redis must be reachable from another server, use an SSH tunnel or VPN — never expose it directly.",
+            ],
+
+            'port_27017' => [
+                'what' => 'Port 27017 is the default port for MongoDB, a NoSQL document database. MongoDB stores data as JSON-like documents and is popular for modern web applications.',
+                'why'  => 'Hundreds of thousands of MongoDB databases have been wiped by automated attacks — attackers delete all data and leave a ransom note demanding Bitcoin. This happened because many MongoDB installations were publicly accessible with no authentication enabled.',
+                'how'  => "Block with UFW:\nsudo ufw deny 27017/tcp\n\nBind to localhost in /etc/mongod.conf:\nnet:\n  bindIp: 127.0.0.1\n\nEnable authentication:\nsecurity:\n  authorization: enabled\n\nRestart MongoDB:\nsudo systemctl restart mongod",
+            ],
+
+            'port_9200' => [
+                'what' => 'Port 9200 is the default HTTP API port for Elasticsearch, a search and analytics engine. It provides a full REST API for querying and managing data.',
+                'why'  => 'Elasticsearch has no authentication by default. An exposed port gives anyone full read/write access to all indexed data via simple HTTP requests. Exposed Elasticsearch has caused massive data breaches affecting billions of records (medical data, voter records, financial data).',
+                'how'  => "Block with UFW:\nsudo ufw deny 9200/tcp\nsudo ufw deny 9300/tcp  # cluster port\n\nBind to localhost in elasticsearch.yml:\nnetwork.host: 127.0.0.1\n\nIf using Elastic Cloud or a paid licence, enable X-Pack security:\nxpack.security.enabled: true\n\nRestart Elasticsearch:\nsudo systemctl restart elasticsearch",
+            ],
+
+            'port_11211' => [
+                'what' => 'Port 11211 is the default port for Memcached, an in-memory caching system used to speed up web applications by storing frequently accessed data.',
+                'why'  => 'Memcached has no authentication. An exposed instance lets anyone read or manipulate your cache. It is also heavily abused for DDoS amplification attacks — attackers send small spoofed requests to Memcached which generates much larger responses, overwhelming the victim.',
+                'how'  => "Block with UFW:\nsudo ufw deny 11211/tcp\n\nBind to localhost when starting Memcached (in /etc/memcached.conf):\n-l 127.0.0.1\n\nRestart Memcached:\nsudo systemctl restart memcached",
+            ],
+
+            // ── Malware & Virus Scan ────────────────────────────────────────
+
+            'malware_urlhaus' => [
+                'what' => 'URLhaus is a database maintained by abuse.ch that tracks URLs and domains used to distribute malware — exploit kits, ransomware droppers, banking trojans, and other malicious software. It is one of the most comprehensive active malware distribution blocklists.',
+                'why'  => 'A listing in URLhaus means this domain has been observed actively distributing malware to visitors. This could mean your website has been hacked and is serving malicious files, or that your domain was registered specifically for malware distribution.',
+                'how'  => "1. Scan your website files for malware:\n   - Use a hosting panel malware scanner (cPanel/Imunify360)\n   - Use Wordfence (WordPress) or a server-side scanner like ClamAV\n   - Check recently modified files: find /var/www -newer /tmp/ref -type f\n\n2. Check access logs for suspicious uploads or requests\n\n3. Change all passwords (FTP, hosting, CMS admin, database)\n\n4. Request removal from URLhaus:\n   Visit urlhaus.abuse.ch and submit a takedown request once your site is clean",
+            ],
+
+            'malware_opendns' => [
+                'what' => 'Cloudflare\'s Security DNS (1.1.1.2) is a public DNS resolver that automatically blocks domains known to distribute malware, ransomware, and phishing content. When a DNS query returns NXDOMAIN (domain not found) from the security resolver but the domain resolves normally on regular DNS, the domain is being blocked.',
+                'why'  => 'Being blocked by Cloudflare\'s security resolver means the domain has been identified as harmful by Cloudflare\'s threat intelligence. This actively protects millions of internet users from visiting the site, and indicates the domain has been reported or detected as malicious.',
+                'how'  => "If your site is incorrectly blocked:\n1. Check if your site has been hacked and clean any malware\n2. Submit a false positive report to Cloudflare via their security portal\n3. Check other threat databases (VirusTotal, URLhaus) for listings\n\nIf the block is justified:\n1. Clean all malware from your server\n2. Change all credentials\n3. Request removal from Cloudflare's threat database",
+            ],
+
+            'malware_spamhauszen' => [
+                'what' => 'Spamhaus ZEN is a combined IP blocklist maintained by The Spamhaus Project, one of the most authoritative anti-spam and anti-malware organizations. ZEN combines SBL (spam sources), XBL (compromised/infected machines), and CBL (botnet command & control).',
+                'why'  => 'An IP listed in the SBL or XBL zones indicates the server has been identified as sending spam, hosting malware, or being infected by a botnet. This can cause legitimate emails from the server to be rejected by mail providers worldwide.',
+                'how'  => "1. Check which Spamhaus list the IP is on:\n   Visit check.spamhaus.org and enter your IP\n\n2. If listed in SBL (spam source):\n   - Find and remove the software or account sending spam\n   - Check for compromised email accounts\n   - Submit a removal request at spamhaus.org\n\n3. If listed in XBL (compromised machine):\n   - Your server may have malware or be part of a botnet\n   - Run a full malware scan\n   - Check for unauthorized processes: ps aux\n   - Consider rebuilding the server if compromise is confirmed",
+            ],
+
+            'malware_gsb' => [
+                'what' => 'Google Safe Browsing is Google\'s threat detection system that protects users of Chrome, Firefox, Safari, and other browsers from dangerous websites. When a site is flagged, browsers display a full-page warning before allowing access.',
+                'why'  => 'A Google Safe Browsing flag is extremely serious — it actively blocks visitors with a red warning page. This can reduce your traffic by 95%+ overnight. It means Google\'s systems have identified your site as distributing malware, involved in phishing, or hosting unwanted software.',
+                'how'  => "1. Check your status in Google Search Console:\n   security-issues section will show what was detected\n\n2. Clean your site:\n   - Remove all malicious code and files\n   - Update all software (CMS, plugins, themes)\n   - Change all passwords\n   - Check for backdoors: hidden PHP files, base64-encoded code\n\n3. Request a review:\n   In Search Console → Security Issues → Request Review\n   Google typically reviews within 1-3 days",
+            ],
+
+            // ── Privacy & GDPR ──────────────────────────────────────────────
+
+            'privacy_cookie_consent' => [
+                'what' => 'A cookie consent banner is a notice that informs visitors about cookie usage and asks for their consent before non-essential cookies (analytics, marketing, advertising) are set. Under GDPR (EU), PECR (UK), and similar laws, this consent must be freely given, specific, and informed.',
+                'why'  => 'The GDPR (General Data Protection Regulation) requires explicit consent before setting non-essential cookies. Violations can result in fines of up to €20 million or 4% of global annual turnover. Beyond legal requirements, it builds user trust and demonstrates transparency.',
+                'how'  => "Use a consent management platform (CMP):\n\nFree options:\n- CookieYes (cookieyes.com) — free tier available\n- Osano (osano.com) — free for small sites\n- Cookie Consent by Osano (open source)\n\nPremium/advanced:\n- Cookiebot\n- OneTrust\n- Usercentrics\n\nFor WordPress: install a GDPR consent plugin (e.g. Complianz, CookieYes plugin)\n\nEnsure your banner:\n- Does NOT pre-tick consent boxes\n- Makes 'Reject all' as easy as 'Accept all'\n- Lists exactly which cookies are used and why",
+            ],
+
+            'privacy_policy_link' => [
+                'what' => 'A privacy policy is a legal document that explains what personal data you collect from users, why you collect it, how it is used, who it is shared with, and how users can request deletion or access to their data.',
+                'why'  => 'A privacy policy is legally required in most jurisdictions: GDPR (EU/EEA), CCPA (California), LGPD (Brazil), PIPEDA (Canada), and more. Without one, you risk regulatory fines, loss of payment processor accounts (Stripe/PayPal require it), removal from ad platforms, and loss of user trust.',
+                'how'  => "Create a privacy policy and link to it in your footer.\n\nFree generators:\n- TermsFeed (termsfeed.com)\n- Iubenda (iubenda.com) — free tier\n- GetTerms (getterms.io)\n\nYour policy must cover:\n1. What data you collect (name, email, IP, cookies, etc.)\n2. Why you collect it (legal basis under GDPR)\n3. Who you share it with (hosting, analytics, payment processors)\n4. How long you keep it\n5. User rights (access, deletion, portability)\n6. Contact information for a data protection officer or contact\n\nUpdate it whenever you add new services or change data practices.",
+            ],
+
+            'privacy_trackers' => [
+                'what' => 'Tracking scripts are third-party JavaScript snippets embedded in your website that collect data about visitor behaviour — pages visited, time spent, clicks, demographics, purchases, and more. Common examples are Google Analytics, Meta Pixel (Facebook), and Hotjar.',
+                'why'  => 'Under GDPR, tracking scripts that process personal data (IP addresses, device fingerprints, cookies) require a legal basis — usually explicit consent. Loading tracking scripts before consent is obtained is a GDPR violation. Data Protection Authorities across Europe have issued fines specifically for this.',
+                'how'  => "Only load tracking scripts after the user has given consent:\n\n1. Use a tag manager (Google Tag Manager) that is controlled by your consent platform — the CMP fires the tag only after consent\n\n2. Or use a consent-aware loading approach:\nif (userHasConsented()) {\n  // load analytics script\n}\n\n3. Consider privacy-friendly analytics that do not require consent:\n- Plausible Analytics (EU-hosted, no cookies)\n- Fathom Analytics\n- Matomo (self-hosted, can be cookie-free)\n\n4. For Facebook Pixel specifically: only fire events after consent and enable 'Limited Data Use' mode for California users",
+            ],
+
         ];
     }
 }
