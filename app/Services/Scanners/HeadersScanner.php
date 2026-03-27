@@ -193,6 +193,42 @@ class HeadersScanner
             ];
         }
 
+        // --- Check: Cookie Security (HttpOnly, Secure, SameSite) ---
+        $cookies = $headers['set-cookie'] ?? [];
+        if (! empty($cookies)) {
+            $maxScore += 10;
+            $insecure = [];
+            foreach ($cookies as $cookie) {
+                $lower   = strtolower($cookie);
+                $name    = trim(explode('=', $cookie)[0]);
+                $missing = [];
+                if (stripos($lower, 'httponly') === false)  $missing[] = 'HttpOnly';
+                if (stripos($lower, '; secure') === false)  $missing[] = 'Secure';
+                if (stripos($lower, 'samesite') === false)  $missing[] = 'SameSite';
+                if (! empty($missing)) {
+                    $insecure[] = $name . ' (missing: ' . implode(', ', $missing) . ')';
+                }
+            }
+
+            if (empty($insecure)) {
+                $score += 10;
+                $checks[] = [
+                    'id'          => 'header_cookies',
+                    'label'       => 'Cookie security flags',
+                    'status'      => 'pass',
+                    'description' => 'All cookies are set with HttpOnly, Secure, and SameSite flags.',
+                ];
+            } else {
+                $checks[] = [
+                    'id'             => 'header_cookies',
+                    'label'          => 'Cookie security flags',
+                    'status'         => 'fail',
+                    'description'    => 'One or more cookies are missing security flags: ' . implode('; ', $insecure) . '.',
+                    'recommendation' => 'Set HttpOnly (prevents JS access), Secure (HTTPS only), and SameSite=Lax or Strict on all cookies.',
+                ];
+            }
+        }
+
         // --- Informational: X-XSS-Protection (deprecated, not scored) ---
         $xss = $headers['x-xss-protection'] ?? null;
         if ($xss !== null) {
@@ -234,8 +270,14 @@ class HeadersScanner
             if (preg_match('/^HTTP\//i', $header)) {
                 $lastHeaders = [];
             } elseif (str_contains($header, ':')) {
-                [$key, $value]                      = explode(':', $header, 2);
-                $lastHeaders[strtolower(trim($key))] = trim($value);
+                [$key, $value] = explode(':', $header, 2);
+                $keyLower      = strtolower(trim($key));
+                // Set-Cookie can appear multiple times — collect as array
+                if ($keyLower === 'set-cookie') {
+                    $lastHeaders['set-cookie'][] = trim($value);
+                } else {
+                    $lastHeaders[$keyLower] = trim($value);
+                }
             }
             return strlen($header);
         });

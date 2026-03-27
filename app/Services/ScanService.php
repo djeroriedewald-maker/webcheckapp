@@ -10,16 +10,20 @@ use App\Services\Scanners\SslScanner;
 use App\Services\Scanners\TechnologyScanner;
 use App\Services\Scanners\TrustScanner;
 use App\Services\Scanners\MalwareScanner;
+use App\Services\Scanners\ExposedFilesScanner;
+use App\Services\Scanners\PortScanner;
+use App\Services\Scanners\PrivacyScanner;
 
 class ScanService
 {
     // Weights for the overall score calculation
     private array $weights = [
-        'ssl'         => 30,
-        'headers'     => 25,
-        'dns'         => 20,
-        'performance' => 15,
-        'content'     => 10,
+        'ssl'           => 25,
+        'headers'       => 20,
+        'dns'           => 15,
+        'performance'   => 10,
+        'content'       => 10,
+        'exposed_files' => 20,
     ];
 
     public function run(string $host): array
@@ -45,9 +49,12 @@ class ScanService
             'dns'         => fn() => (new DnsScanner())->scan($host),
             'performance' => fn() => (new PerformanceScanner())->scan($canonicalHost),
             'content'     => fn() => (new ContentScanner())->scan($canonicalHost),
-            'technology'  => fn() => (new TechnologyScanner())->scan($canonicalHost),
-            'trust'       => fn() => (new TrustScanner())->scan($canonicalHost),
-            'malware'     => fn() => (new MalwareScanner())->scan($canonicalHost),
+            'technology'    => fn() => (new TechnologyScanner())->scan($canonicalHost),
+            'trust'         => fn() => (new TrustScanner())->scan($canonicalHost),
+            'malware'       => fn() => (new MalwareScanner())->scan($canonicalHost),
+            'exposed_files' => fn() => (new ExposedFilesScanner())->scan($canonicalHost),
+            'ports'         => fn() => (new PortScanner())->scan($canonicalHost),
+            'privacy'       => fn() => (new PrivacyScanner())->scan($canonicalHost),
         ];
 
         foreach ($scanners as $key => $scanner) {

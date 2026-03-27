@@ -164,6 +164,48 @@ class CheckKnowledge
 
             // ── Technology ─────────────────────────────────────────────────
 
+            // ── Security Headers: Cookies ───────────────────────────────
+
+            'header_cookies' => [
+                'what' => 'HTTP cookies can carry security flags: HttpOnly (prevents JavaScript from reading the cookie, blocking XSS-based session theft), Secure (transmits the cookie only over HTTPS, never plain HTTP), and SameSite (controls cross-site submission, blocking CSRF attacks).',
+                'why'  => 'Without HttpOnly, malicious scripts injected via XSS can steal session cookies. Without Secure, cookies can leak over HTTP redirects or mixed-content requests. Without SameSite, cookies are sent with cross-site requests, enabling CSRF attacks that make users perform actions without their knowledge.',
+                'how'  => "Add all three flags when setting cookies:\nSet-Cookie: session=abc123; HttpOnly; Secure; SameSite=Lax\n\nPHP: session_set_cookie_params([\n  'httponly' => true,\n  'secure'   => true,\n  'samesite' => 'Lax',\n]);\n\nLaravel: in config/session.php set:\n'http_only' => true,\n'secure'    => true,\n'same_site' => 'lax',\n\nUse SameSite=Lax for most sites. Use SameSite=Strict if cross-site links to your site don't need to carry the session.",
+            ],
+
+            // ── Exposed Files ────────────────────────────────────────────
+
+            'exposed_env' => [
+                'what' => 'The .env file is a configuration file used by Laravel, Node.js, and many other frameworks to store environment-specific settings such as database credentials, API keys, secret tokens, and application configuration.',
+                'why'  => 'Exposing .env gives attackers your database password, secret keys, and API credentials in a single file. This allows immediate database access, session forgery, and abuse of third-party services billed to you. It is one of the most critical vulnerabilities a web server can have.',
+                'how'  => "Nginx — add to your server block:\nlocation ~ /\\.env {\n    deny all;\n    return 404;\n}\n\nApache — add to .htaccess:\n<Files \".env\">\n    Order allow,deny\n    Deny from all\n</Files>\n\nAlso rotate all credentials immediately: database password, API keys, APP_KEY, etc. Assume they are already compromised.",
+            ],
+
+            'exposed_git' => [
+                'what' => 'The .git directory is the repository created by Git to track version history, branches, commits, and file contents. When exposed via a web server, attackers can reconstruct the entire source code by downloading the repository files.',
+                'why'  => 'A publicly accessible .git directory gives attackers your complete source code including every past commit — even if you deleted sensitive files, they remain in the commit history. Attackers can find hardcoded credentials, API keys, business logic, and vulnerability patterns in the code.',
+                'how'  => "Nginx — block access to .git:\nlocation ~ /\\.git {\n    deny all;\n    return 404;\n}\n\nApache — add to .htaccess:\nRedirectMatch 404 /\\.git\n\nAlternatively, deploy from a build artifact rather than cloning directly to the web root. The .git directory should never exist in a production web root.",
+            ],
+
+            'exposed_phpinfo' => [
+                'what' => 'phpinfo() is a built-in PHP function that outputs a detailed page showing the PHP version, configuration directives, loaded extensions, environment variables, server paths, and build information.',
+                'why'  => 'The phpinfo output gives attackers a detailed map of your server: exact PHP version (for CVE targeting), enabled extensions, file paths, and environment variables (which may include credentials). This is an information disclosure vulnerability that makes all other attacks easier to tailor.',
+                'how'  => "Delete phpinfo.php (and any similar files like info.php, test.php, i.php) from your web root immediately:\nrm /var/www/html/phpinfo.php\n\nSearch for any others:\nfind /var/www -name 'phpinfo.php' -o -name 'info.php'\n\nNever create diagnostic files on production servers. Use staging environments for diagnostics.",
+            ],
+
+            'exposed_backup' => [
+                'what' => 'SQL backup files (backup.sql, dump.sql, database.sql, etc.) are plain-text exports of database content produced by tools like mysqldump. When accessible via HTTP, the entire database can be downloaded.',
+                'why'  => 'A publicly downloadable database backup gives attackers all user data, emails, password hashes (or worse, plaintext passwords), order records, and any other data your application stores. This is a direct GDPR/privacy law violation and gives attackers everything needed to impersonate or contact your users.',
+                'how'  => "Move backups outside the web root:\nmv /var/www/html/backup.sql /var/backups/\n\nSearch for other SQL files:\nfind /var/www -name '*.sql'\n\nStore backups in a non-public location or use encrypted cloud storage (S3 with private ACL). Never store backup files in any publicly accessible directory.",
+            ],
+
+            'exposed_wpconfig' => [
+                'what' => 'wp-config.php.bak is a backup copy of the WordPress configuration file. WordPress itself protects wp-config.php but backup files with .bak, .old, or .orig extensions are served as plain text by most web servers.',
+                'why'  => 'This file contains the MySQL database credentials (DB_NAME, DB_USER, DB_PASSWORD, DB_HOST), authentication secret keys, and the database table prefix. With these credentials an attacker can access your entire WordPress database directly.',
+                'how'  => "Delete the backup file immediately:\nrm /var/www/html/wp-config.php.bak\n\nSearch for other wp-config variants:\nfind /var/www -name 'wp-config*'\n\nTo protect against accidental future exposure, add to .htaccess:\n<Files \"wp-config.php\">\n    Order deny,allow\n    Deny from all\n</Files>",
+            ],
+
+            // ── Technology ─────────────────────────────────────────────────
+
             'tech_http2' => [
                 'what' => 'HTTP/2 is the second major version of the HTTP protocol. It introduces multiplexing (multiple requests over a single connection), header compression, and server push — all without changing how websites work.',
                 'why'  => 'HTTP/1.1 can only process one request at a time per connection, so browsers open 6 parallel connections per domain. HTTP/2 processes many requests simultaneously over one connection, significantly reducing page load time especially for pages with many resources.',

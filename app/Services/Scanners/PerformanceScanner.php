@@ -123,6 +123,26 @@ class PerformanceScanner
             ];
         }
 
+        // --- Check 5: security.txt (informational, not scored) ---
+        // security.txt (RFC 9116) tells security researchers how to report vulnerabilities.
+        $securityTxt = $this->safe(fn() => $this->checkSecurityTxt($host), false);
+        if ($securityTxt) {
+            $checks[] = [
+                'id'          => 'perf_securitytxt',
+                'label'       => 'security.txt present',
+                'status'      => 'pass',
+                'description' => 'A security.txt file was found — provides a clear channel for responsible vulnerability disclosure.',
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'perf_securitytxt',
+                'label'          => 'security.txt present',
+                'status'         => 'warn',
+                'description'    => 'No security.txt file found at /.well-known/security.txt or /security.txt.',
+                'recommendation' => 'Create a security.txt file (RFC 9116) at /.well-known/security.txt to provide security researchers with a responsible disclosure contact.',
+            ];
+        }
+
         return [
             'category' => 'Performance & SEO',
             'icon'     => 'bolt',
@@ -255,6 +275,38 @@ class PerformanceScanner
         curl_close($ch);
 
         return ($code === 200 && $body) ? $body : null;
+    }
+
+    private function checkSecurityTxt(string $host): bool
+    {
+        // RFC 9116 mandates /.well-known/security.txt; /security.txt is a common legacy location
+        $urls = [
+            "https://{$host}/.well-known/security.txt",
+            "https://{$host}/security.txt",
+        ];
+
+        foreach ($urls as $url) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => self::TIMEOUT,
+                CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 3,
+                CURLOPT_RANGE          => '0-1023',
+            ]);
+            $body = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            // Validate it looks like a real security.txt (RFC 9116 requires a Contact: field)
+            if ($code === 200 && $body && stripos($body, 'Contact:') !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function urlReturns200(string $url): bool
