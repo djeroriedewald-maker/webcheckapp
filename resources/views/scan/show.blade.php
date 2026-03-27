@@ -139,19 +139,21 @@
 
         {{-- Trust & Reputation panel --}}
         @if(!empty($scan->results['trust']))
-        @php $trust = $scan->results['trust']; @endphp
+        @php
+            $trust        = $scan->results['trust'];
+            $whois        = $trust['whois'] ?? null;
+            $verdictLevel = $trust['verdict']['level'] ?? 'safe';
+            $verdictText  = $trust['verdict']['text'] ?? 'Unknown';
+            $verdictColors = [
+                'safe'    => ['bg' => 'bg-emerald-500/10', 'border' => 'border-emerald-500/30', 'text' => 'text-emerald-400', 'icon_color' => 'text-emerald-400'],
+                'warning' => ['bg' => 'bg-yellow-500/10',  'border' => 'border-yellow-500/30',  'text' => 'text-yellow-400',  'icon_color' => 'text-yellow-400'],
+                'danger'  => ['bg' => 'bg-red-500/10',     'border' => 'border-red-500/30',     'text' => 'text-red-400',     'icon_color' => 'text-red-400'],
+            ];
+            $vc = $verdictColors[$verdictLevel] ?? $verdictColors['safe'];
+        @endphp
         <div class="mb-10">
+
             {{-- Verdict banner --}}
-            @php
-                $verdictLevel = $trust['verdict']['level'] ?? 'safe';
-                $verdictText  = $trust['verdict']['text'] ?? 'Unknown';
-                $verdictColors = [
-                    'safe'    => ['bg' => 'bg-emerald-500/10', 'border' => 'border-emerald-500/30', 'text' => 'text-emerald-400', 'icon_color' => 'text-emerald-400'],
-                    'warning' => ['bg' => 'bg-yellow-500/10',  'border' => 'border-yellow-500/30',  'text' => 'text-yellow-400',  'icon_color' => 'text-yellow-400'],
-                    'danger'  => ['bg' => 'bg-red-500/10',     'border' => 'border-red-500/30',     'text' => 'text-red-400',     'icon_color' => 'text-red-400'],
-                ];
-                $vc = $verdictColors[$verdictLevel] ?? $verdictColors['safe'];
-            @endphp
             <div class="{{ $vc['bg'] }} {{ $vc['border'] }} border rounded-2xl p-5 mb-4 flex items-center gap-4">
                 @if($verdictLevel === 'safe')
                     <svg class="w-8 h-8 {{ $vc['icon_color'] }} shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,32 +168,130 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
                     </svg>
                 @endif
-                <div>
+                <div class="flex-1 min-w-0">
                     <p class="text-lg font-bold {{ $vc['text'] }}">{{ $verdictText }}</p>
-                    <div class="flex flex-wrap gap-x-6 gap-y-1 mt-1 text-sm text-gray-400">
+                    <div class="flex flex-wrap gap-x-5 gap-y-1 mt-1 text-sm text-gray-400">
                         @if(!empty($trust['location']['city']) && !empty($trust['location']['country']))
                         <span>
                             <span class="text-gray-500">Server:</span>
                             {{ $trust['location']['city'] }}, {{ $trust['location']['country'] }}
-                            @if(!empty($trust['location']['country_code']))
-                            <span class="ml-1 text-xs text-gray-600">({{ $trust['location']['ip'] }})</span>
+                            @if(!empty($trust['location']['ip']))
+                            <span class="text-xs text-gray-600 ml-1">({{ $trust['location']['ip'] }})</span>
                             @endif
                         </span>
                         @elseif(!empty($trust['location']['ip']))
                         <span><span class="text-gray-500">IP:</span> {{ $trust['location']['ip'] }}</span>
                         @endif
-                        @if(!empty($trust['domain_registered']))
+                        @if($whois)
                         <span>
-                            <span class="text-gray-500">Online since:</span>
-                            {{ $trust['domain_registered'] }}
-                            @if(!empty($trust['domain_age_text']))
-                            <span class="text-gray-600">({{ $trust['domain_age_text'] }})</span>
+                            <span class="text-gray-500">Registered:</span>
+                            {{ $whois['registered'] }}
+                            <span class="text-gray-600">({{ $whois['age_text'] }} ago)</span>
+                        </span>
+                        @if(!empty($whois['expires']))
+                        <span class="{{ ($whois['expires_soon'] ?? false) ? 'text-yellow-400' : '' }}">
+                            <span class="text-gray-500">Expires:</span>
+                            {{ $whois['expires'] }}
+                            @if(!empty($whois['expires_in']))
+                            <span class="{{ ($whois['expires_soon'] ?? false) ? 'text-yellow-500' : 'text-gray-600' }}">
+                                (in {{ $whois['expires_in'] }})
+                            </span>
                             @endif
                         </span>
+                        @endif
                         @endif
                     </div>
                 </div>
             </div>
+
+            {{-- WHOIS / Domain information card --}}
+            @if($whois)
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-4">
+                <div class="px-5 py-3 border-b border-white/5 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Domain Registration (WHOIS)</h3>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 divide-y divide-white/5 sm:divide-y-0">
+                    {{-- Left column --}}
+                    <div class="sm:border-r border-white/5 divide-y divide-white/5">
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Registered</span>
+                            <div>
+                                <span class="text-sm text-gray-200">{{ $whois['registered'] }}</span>
+                                <span class="text-xs text-gray-500 ml-2">{{ $whois['age_text'] }} ago</span>
+                            </div>
+                        </div>
+                        @if(!empty($whois['expires']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Expires</span>
+                            <div>
+                                <span class="text-sm {{ ($whois['expires_soon'] ?? false) ? 'text-yellow-300 font-medium' : 'text-gray-200' }}">{{ $whois['expires'] }}</span>
+                                @if(!empty($whois['expires_in']))
+                                <span class="text-xs {{ ($whois['expires_soon'] ?? false) ? 'text-yellow-500' : 'text-gray-500' }} ml-2">
+                                    {{ $whois['expires_in'] === 'expired' ? 'EXPIRED' : 'in ' . $whois['expires_in'] }}
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
+                        @if(!empty($whois['updated']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Last updated</span>
+                            <span class="text-sm text-gray-200">{{ $whois['updated'] }}</span>
+                        </div>
+                        @endif
+                        @if(!empty($whois['registrar']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Registrar</span>
+                            <span class="text-sm text-gray-200">{{ $whois['registrar'] }}</span>
+                        </div>
+                        @endif
+                    </div>
+                    {{-- Right column --}}
+                    <div class="divide-y divide-white/5">
+                        @if(!empty($whois['nameservers']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Nameservers</span>
+                            <div class="space-y-0.5">
+                                @foreach($whois['nameservers'] as $ns)
+                                <div class="text-sm text-gray-200 font-mono">{{ $ns }}</div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        @if(!empty($trust['location']['org']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Hosting</span>
+                            <span class="text-sm text-gray-200">{{ $trust['location']['org'] }}</span>
+                        </div>
+                        @endif
+                        @if(!empty($whois['status']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Status</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach($whois['status'] as $s)
+                                <span class="text-xs bg-white/5 text-gray-400 border border-white/10 px-2 py-0.5 rounded-full">{{ $s }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        @if(!empty($trust['location']['city']) && !empty($trust['location']['country']))
+                        <div class="flex items-start gap-3 px-5 py-3">
+                            <span class="text-xs text-gray-500 w-24 shrink-0 pt-0.5">Server</span>
+                            <span class="text-sm text-gray-200">
+                                {{ $trust['location']['city'] }}, {{ $trust['location']['country'] }}
+                                @if(!empty($trust['location']['ip']))
+                                <span class="text-xs text-gray-500 ml-1">({{ $trust['location']['ip'] }})</span>
+                                @endif
+                            </span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
 
             {{-- Security database checks --}}
             <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
@@ -201,7 +301,6 @@
                 <div class="divide-y divide-white/5">
                     @foreach($trust['checks'] as $check)
                     @if($check['id'] === 'trust_location') @continue @endif
-                    @if($check['id'] === 'trust_domain_age') @continue @endif
                     <div class="flex items-center gap-3 px-5 py-3">
                         @if($check['status'] === 'pass')
                             <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,49 +319,15 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         @endif
-                        <span class="text-sm font-medium text-gray-300 w-28 shrink-0">{{ $check['label'] }}</span>
-                        <span class="text-sm text-gray-500">{{ $check['description'] }}</span>
+                        <div class="flex-1 min-w-0">
+                            <span class="text-sm font-medium text-gray-300">{{ $check['label'] }}</span>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $check['description'] }}</p>
+                            @if(!empty($check['recommendation']))
+                            <p class="text-xs text-indigo-400 mt-0.5">{{ $check['recommendation'] }}</p>
+                            @endif
+                        </div>
                     </div>
                     @endforeach
-
-                    {{-- Domain age row --}}
-                    @php $ageCheck = collect($trust['checks'])->firstWhere('id', 'trust_domain_age'); @endphp
-                    @if($ageCheck)
-                    <div class="flex items-center gap-3 px-5 py-3">
-                        @if($ageCheck['status'] === 'pass')
-                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        @elseif($ageCheck['status'] === 'fail')
-                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        @elseif($ageCheck['status'] === 'warn')
-                            <svg class="w-4 h-4 text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                        @else
-                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                        @endif
-                        <span class="text-sm font-medium text-gray-300 w-28 shrink-0">Domain age</span>
-                        <span class="text-sm text-gray-500">{{ $ageCheck['description'] }}</span>
-                    </div>
-                    @endif
-
-                    {{-- Server location row --}}
-                    @php $locCheck = collect($trust['checks'])->firstWhere('id', 'trust_location'); @endphp
-                    @if($locCheck)
-                    <div class="flex items-center gap-3 px-5 py-3">
-                        <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <span class="text-sm font-medium text-gray-300 w-28 shrink-0">Server location</span>
-                        <span class="text-sm text-gray-500">{{ $locCheck['description'] }}</span>
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>

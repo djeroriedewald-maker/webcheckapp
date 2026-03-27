@@ -64,6 +64,41 @@ class TrustScanner
             if ($ipqsResult['status'] === 'fail') $threats++;
         }
 
+        // 6. Expiry warning — add as a check if domain expires within 60 days
+        if ($domainAge && isset($domainAge['expires_in_days'])) {
+            $expiresIn = $domainAge['expires_in_days'];
+            if ($expiresIn <= 0) {
+                $expCheck = [
+                    'id'             => 'trust_expiry',
+                    'label'          => 'Domain expiry',
+                    'status'         => 'fail',
+                    'description'    => 'This domain has expired! It may be taken over by a third party at any moment.',
+                    'recommendation' => 'Renew this domain immediately through your registrar.',
+                ];
+                $checks[] = $expCheck;
+                $threats++;
+            } elseif ($expiresIn <= 30) {
+                $expCheck = [
+                    'id'             => 'trust_expiry',
+                    'label'          => 'Domain expiry',
+                    'status'         => 'fail',
+                    'description'    => "Domain expires in {$domainAge['expires_in_text']} ({$domainAge['expires_formatted']}). Domains that lapse are immediately available for others to register.",
+                    'recommendation' => 'Renew this domain immediately to avoid losing it.',
+                ];
+                $checks[] = $expCheck;
+                $threats++;
+            } elseif ($expiresIn <= 60) {
+                $checks[] = [
+                    'id'             => 'trust_expiry',
+                    'label'          => 'Domain expiry',
+                    'status'         => 'warn',
+                    'description'    => "Domain expires in {$domainAge['expires_in_text']} ({$domainAge['expires_formatted']}). Renew soon to avoid accidental loss.",
+                    'recommendation' => 'Log in to your domain registrar and renew for at least one year.',
+                ];
+                $warnings++;
+            }
+        }
+
         return [
             'category'          => 'Trust & Reputation',
             'icon'              => 'shield-check',
@@ -72,6 +107,17 @@ class TrustScanner
             'location'          => $this->buildLocationData($ip, $location),
             'domain_registered' => $domainAge ? $domainAge['registered_formatted'] : null,
             'domain_age_text'   => $domainAge ? $domainAge['age_text'] : null,
+            'whois'             => $domainAge ? [
+                'registered'   => $domainAge['registered_formatted'],
+                'expires'      => $domainAge['expires_formatted'] ?? null,
+                'expires_in'   => $domainAge['expires_in_text'] ?? null,
+                'expires_soon' => isset($domainAge['expires_in_days']) && $domainAge['expires_in_days'] <= 60,
+                'updated'      => $domainAge['updated_formatted'] ?? null,
+                'registrar'    => $domainAge['registrar'] ?? null,
+                'nameservers'  => $domainAge['nameservers'] ?? [],
+                'status'       => $domainAge['status'] ?? [],
+                'age_text'     => $domainAge['age_text'],
+            ] : null,
             'checks'            => $checks,
         ];
     }
@@ -157,26 +203,106 @@ class TrustScanner
         $data = json_decode($body, true);
         if (! $data || empty($data['events'])) return null;
 
+        // ── Parse events ──────────────────────────────────────────────────────
         $registered = null;
+        $expires    = null;
+        $updated    = null;
+
         foreach ($data['events'] as $event) {
-            if (strtolower($event['eventAction'] ?? '') === 'registration') {
-                $registered = $event['eventDate'] ?? null;
-                break;
-            }
+            $action = strtolower($event['eventAction'] ?? '');
+            $date   = $event['eventDate'] ?? null;
+            if (! $date) continue;
+
+            if ($action === 'registration')  $registered = $date;
+            elseif ($action === 'expiration') $expires   = $date;
+            elseif ($action === 'last changed') $updated  = $date;
         }
 
         if (! $registered) return null;
 
-        try {
-            $regDate  = new \DateTime($registered);
-            $now      = new \DateTime();
-            $ageDays  = (int) $now->diff($regDate)->days;
+        // ── Parse registrar (from entities array) ─────────────────────────────
+        $registrar = null;
+        foreach ($data['entities'] ?? [] as $entity) {
+            if (in_array('registrar', $entity['roles'] ?? [], true)) {
+                // vCard fn field holds the registrar name
+                foreach ($entity['vcardArray'][1] ?? [] as $vcard) {
+                    if (($vcard[0] ?? '') === 'fn' && ! empty($vcard[3])) {
+                        $registrar = $vcard[3];
+                        break;
+                    }
+                }
+                // Fallback: publicIds (IANA registrar ID with name)
+                if (! $registrar) {
+                    foreach ($entity['publicIds'] ?? [] as $pub) {
+                        if (($pub['type'] ?? '') === 'IANA Registrar ID') {
+                            $registrar = 'IANA #' . $pub['identifier'];
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+        }
 
-            return [
+        // ── Parse nameservers ─────────────────────────────────────────────────
+        $nameservers = [];
+        foreach ($data['nameservers'] ?? [] as $ns) {
+            if (! empty($ns['ldhName'])) {
+                $nameservers[] = strtolower(rtrim($ns['ldhName'], '.'));
+            }
+        }
+
+        // ── Parse status ──────────────────────────────────────────────────────
+        $statusRaw = $data['status'] ?? [];
+        // Human-readable labels for common RDAP status codes
+        $statusLabels = [
+            'active'                   => 'Active',
+            'inactive'                 => 'Inactive',
+            'clientTransferProhibited' => 'Transfer locked',
+            'clientDeleteProhibited'   => 'Delete locked',
+            'clientUpdateProhibited'   => 'Update locked',
+            'serverTransferProhibited' => 'Transfer locked (registry)',
+            'serverDeleteProhibited'   => 'Delete locked (registry)',
+            'pendingDelete'            => 'Pending deletion',
+            'redemptionPeriod'         => 'Redemption period',
+            'pendingTransfer'          => 'Pending transfer',
+        ];
+        $statusFormatted = array_values(array_filter(array_map(
+            fn($s) => $statusLabels[$s] ?? null,
+            $statusRaw
+        )));
+
+        try {
+            $now     = new \DateTime();
+            $regDate = new \DateTime($registered);
+            $ageDays = (int) $now->diff($regDate)->days;
+
+            $result = [
                 'registered_formatted' => $regDate->format('d M Y'),
                 'age_days'             => $ageDays,
                 'age_text'             => $this->formatAge($ageDays),
+                'registrar'            => $registrar,
+                'nameservers'          => $nameservers,
+                'status'               => $statusFormatted,
             ];
+
+            if ($expires) {
+                $expDate          = new \DateTime($expires);
+                $expDiff          = $now->diff($expDate);
+                $expiresInDays    = $expDate > $now ? (int) $expDiff->days : -(int) $expDiff->days;
+
+                $result['expires_formatted'] = $expDate->format('d M Y');
+                $result['expires_in_days']   = $expiresInDays;
+                $result['expires_in_text']   = $expiresInDays > 0
+                    ? $this->formatAge($expiresInDays)
+                    : 'expired';
+            }
+
+            if ($updated) {
+                $result['updated_formatted'] = (new \DateTime($updated))->format('d M Y');
+            }
+
+            return $result;
         } catch (\Throwable) {
             return null;
         }
