@@ -314,7 +314,7 @@
         </div>
 
         {{-- Bottom actions --}}
-        <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
             {{-- Re-scan same URL --}}
             <form action="{{ route('scan.store') }}" method="POST">
                 @csrf
@@ -326,6 +326,15 @@
                     Re-scan {{ $scan->host }}
                 </button>
             </form>
+
+            {{-- Download PDF --}}
+            <a href="{{ route('scan.pdf', $scan) }}"
+               class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Download PDF
+            </a>
 
             {{-- Scan another --}}
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl transition">

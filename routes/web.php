@@ -7,6 +7,7 @@ Route::get('/', [ScanController::class, 'index'])->name('home');
 Route::post('/scan', [ScanController::class, 'store'])->name('scan.store');
 Route::get('/scan/{scan}', [ScanController::class, 'show'])->name('scan.show');
 Route::get('/scan/{scan}/status', [ScanController::class, 'status'])->name('scan.status');
+Route::get('/scan/{scan}/pdf', [ScanController::class, 'pdf'])->name('scan.pdf');
 
 Route::view('/disclaimer', 'legal.disclaimer')->name('disclaimer');
 Route::view('/privacy', 'legal.privacy')->name('privacy');

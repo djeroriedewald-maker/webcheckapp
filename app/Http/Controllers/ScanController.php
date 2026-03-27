@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Scan;
 use App\Services\ScanService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class ScanController extends Controller
@@ -55,6 +56,18 @@ class ScanController extends Controller
     public function show(Scan $scan)
     {
         return view('scan.show', compact('scan'));
+    }
+
+    public function pdf(Scan $scan)
+    {
+        abort_unless($scan->isCompleted(), 404);
+
+        $pdf = Pdf::loadView('scan.pdf', compact('scan'))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'security-report-' . $scan->host . '-' . $scan->completed_at->format('Y-m-d') . '.pdf';
+
+        return $pdf->download($filename);
     }
 
     public function status(Scan $scan)
