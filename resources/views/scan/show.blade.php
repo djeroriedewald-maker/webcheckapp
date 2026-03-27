@@ -19,7 +19,7 @@
         <h2 class="text-2xl font-bold mb-2">Scanning <span class="text-indigo-400">{{ $scan->host }}</span></h2>
         <p class="text-gray-400">Running security checks... this usually takes 15-30 seconds.</p>
         <div class="mt-8 flex justify-center gap-2">
-            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content'] as $i => $label)
+            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content', 'Technology'] as $i => $label)
             <div class="flex flex-col items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: {{ $i * 0.15 }}s"></div>
                 <span class="text-xs text-gray-600 hidden sm:block">{{ $label }}</span>
@@ -77,9 +77,10 @@
             </div>
         </div>
 
-        {{-- Category scores --}}
+        {{-- Category scores (scored categories only) --}}
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
             @foreach($scan->results as $key => $category)
+            @if($category['score'] !== null)
             <div class="bg-white/3 border border-white/8 rounded-xl p-4">
                 <div class="text-xs text-gray-500 mb-2 truncate">{{ $category['category'] }}</div>
                 <div class="text-2xl font-bold {{ $category['score'] >= 75 ? 'text-green-400' : ($category['score'] >= 50 ? 'text-yellow-400' : 'text-red-400') }}">
@@ -90,12 +91,67 @@
                          style="width: {{ $category['score'] }}%"></div>
                 </div>
             </div>
+            @endif
             @endforeach
         </div>
 
+        {{-- Technology Stack panel --}}
+        @if(!empty($scan->results['technology']))
+        @php $tech = $scan->results['technology']; @endphp
+        <div class="bg-white/2 border border-white/8 rounded-2xl p-5 mb-10">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Detected Technologies</h2>
+            @if(!empty($tech['technologies']))
+            @php
+                $byType = collect($tech['technologies'])->groupBy('type');
+            @endphp
+            <div class="flex flex-wrap gap-4">
+                @foreach($byType as $type => $items)
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-gray-600 w-full sm:w-auto">{{ $type }}</span>
+                    @foreach($items as $item)
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                        {{ $item['name'] }}
+                    </span>
+                    @endforeach
+                </div>
+                @endforeach
+            </div>
+            @else
+            <p class="text-sm text-gray-500">No technologies detected from the page source and response headers.</p>
+            @endif
+
+            {{-- HTTP/2 inline result --}}
+            @foreach($tech['checks'] as $check)
+            <div class="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 text-sm">
+                @if($check['status'] === 'pass')
+                    <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span class="text-green-400 font-medium">{{ $check['label'] }}</span>
+                    <span class="text-gray-500">— {{ $check['description'] }}</span>
+                @elseif($check['status'] === 'warn')
+                    <svg class="w-4 h-4 text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <span class="text-yellow-400 font-medium">{{ $check['label'] }}</span>
+                    <span class="text-gray-500">— {{ $check['description'] }}</span>
+                @else
+                    <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-gray-400">{{ $check['label'] }}</span>
+                @endif
+            </div>
+            @endforeach
+        </div>
+        @endif
+
         {{-- Action items (failures first) --}}
         @php
-            $allChecks = collect($scan->results)->flatMap(fn($c) => collect($c['checks'])->map(fn($ch) => array_merge($ch, ['_category' => $c['category']])));
+            // Only include scored categories in the action items list
+            $allChecks = collect($scan->results)
+                ->filter(fn($c) => $c['score'] !== null)
+                ->flatMap(fn($c) => collect($c['checks'])->map(fn($ch) => array_merge($ch, ['_category' => $c['category']])));
             $failures = $allChecks->where('status', 'fail');
             $warnings = $allChecks->where('status', 'warn');
         @endphp
@@ -170,10 +226,11 @@
         </div>
         @endif
 
-        {{-- All checks per category --}}
+        {{-- All checks per category (scored categories only) --}}
         <div class="space-y-6">
             <h2 class="text-lg font-semibold">Full report</h2>
             @foreach($scan->results as $key => $category)
+            @if($category['score'] === null) @continue @endif
             <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-white/5">
                     <h3 class="font-semibold text-white">{{ $category['category'] }}</h3>
@@ -191,6 +248,10 @@
                         @elseif($check['status'] === 'warn')
                             <svg class="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        @elseif($check['status'] === 'info')
+                            <svg class="w-5 h-5 text-gray-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         @else
                             <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

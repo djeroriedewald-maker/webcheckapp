@@ -7,6 +7,7 @@ use App\Services\Scanners\DnsScanner;
 use App\Services\Scanners\HeadersScanner;
 use App\Services\Scanners\PerformanceScanner;
 use App\Services\Scanners\SslScanner;
+use App\Services\Scanners\TechnologyScanner;
 
 class ScanService
 {
@@ -29,6 +30,7 @@ class ScanService
             'dns'         => fn() => (new DnsScanner())->scan($host),
             'performance' => fn() => (new PerformanceScanner())->scan($host),
             'content'     => fn() => (new ContentScanner())->scan($host),
+            'technology'  => fn() => (new TechnologyScanner())->scan($host),
         ];
 
         foreach ($scanners as $key => $scanner) {
