@@ -105,7 +105,7 @@ class PerformanceScanner
                 'description' => 'An XML sitemap was found.',
             ];
         } else {
-            $checks[] [
+            $checks[] = [
                 'id'          => 'perf_sitemap',
                 'label'       => 'XML sitemap present',
                 'status'      => 'warn',
@@ -185,10 +185,11 @@ class PerformanceScanner
         foreach (["https://{$host}/sitemap.xml", "https://{$host}/sitemap_index.xml"] as $url) {
             $ch = curl_init($url);
             curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 10,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_NOBODY         => true,
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_TIMEOUT         => 5,
+                CURLOPT_CONNECTTIMEOUT  => 5,
+                CURLOPT_SSL_VERIFYPEER  => false,
+                CURLOPT_NOBODY          => true,
             ]);
             curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
