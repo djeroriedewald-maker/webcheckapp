@@ -12,7 +12,7 @@ class DnsScanner
 
         // SPF record
         $maxScore += 25;
-        $spf = $this->checkSpf($host);
+        $spf = $this->safe(fn() => $this->checkSpf($host), ['found' => false]);
         if ($spf['found']) {
             $score += 25;
             $checks[] = [
@@ -33,7 +33,7 @@ class DnsScanner
 
         // DMARC record
         $maxScore += 25;
-        $dmarc = $this->checkDmarc($host);
+        $dmarc = $this->safe(fn() => $this->checkDmarc($host), ['found' => false]);
         if ($dmarc['found']) {
             $score += 25;
             $checks[] = [
@@ -54,7 +54,7 @@ class DnsScanner
 
         // DNSSEC
         $maxScore += 25;
-        $dnssec = $this->checkDnssec($host);
+        $dnssec = $this->safe(fn() => $this->checkDnssec($host), false);
         if ($dnssec) {
             $score += 25;
             $checks[] = [
@@ -75,7 +75,7 @@ class DnsScanner
 
         // CAA record
         $maxScore += 25;
-        $caa = $this->checkCaa($host);
+        $caa = $this->safe(fn() => $this->checkCaa($host), ['found' => false]);
         if ($caa['found']) {
             $score += 25;
             $checks[] = [
@@ -100,6 +100,15 @@ class DnsScanner
             'score'    => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
             'checks'   => $checks,
         ];
+    }
+
+    private function safe(callable $fn, mixed $default): mixed
+    {
+        try {
+            return $fn();
+        } catch (\Throwable) {
+            return $default;
+        }
     }
 
     private function checkSpf(string $host): array
@@ -138,15 +147,35 @@ class DnsScanner
 
     private function checkDnssec(string $host): bool
     {
-        $records = @dns_get_record($host, DNS_DS + DNS_DNSKEY);
-        return ! empty($records);
+        // Use DNS_ANY and filter manually — DNS_DS/DNS_DNSKEY are not PHP constants
+        $records = @dns_get_record($host, DNS_ANY);
+        if (! $records) {
+            return false;
+        }
+
+        foreach ($records as $record) {
+            if (in_array($record['type'] ?? '', ['DS', 'DNSKEY', 'RRSIG'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function checkCaa(string $host): array
     {
-        $records = @dns_get_record($host, DNS_CAA);
-        if (! empty($records)) {
-            return ['found' => true];
+        // DNS_CAA may not be defined in all PHP builds — use DNS_ANY as fallback
+        $type = defined('DNS_CAA') ? DNS_CAA : DNS_ANY;
+        $records = @dns_get_record($host, $type);
+
+        if (! $records) {
+            return ['found' => false];
+        }
+
+        foreach ($records as $record) {
+            if (($record['type'] ?? '') === 'CAA' || $type === DNS_CAA) {
+                return ['found' => true];
+            }
         }
 
         return ['found' => false];

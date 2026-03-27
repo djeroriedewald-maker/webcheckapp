@@ -12,9 +12,11 @@ class SslScanner
         $score = 0;
         $maxScore = 0;
 
+        $defaultCert = ['reachable' => false, 'valid' => false, 'expires_soon' => false, 'expires' => null, 'days_left' => null, 'error' => 'Could not connect.', 'hsts' => ['present' => false, 'max_age' => 0]];
+
         // Check if HTTPS is available + get cert info in one curl call
         $maxScore += 30;
-        $certInfo = $this->getCertificateInfo($host);
+        $certInfo = $this->safe(fn() => $this->getCertificateInfo($host), $defaultCert);
         $httpsAvailable = $certInfo['reachable'];
 
         if ($httpsAvailable) {
@@ -66,7 +68,7 @@ class SslScanner
 
         // HTTP → HTTPS redirect
         $maxScore += 20;
-        $redirects = $this->checkHttpsRedirect($host);
+        $redirects = $this->safe(fn() => $this->checkHttpsRedirect($host), false);
         if ($redirects) {
             $score += 20;
             $checks[] = [
@@ -185,6 +187,15 @@ class SslScanner
         $result['hsts'] = $hsts;
 
         return $result;
+    }
+
+    private function safe(callable $fn, mixed $default): mixed
+    {
+        try {
+            return $fn();
+        } catch (\Throwable) {
+            return $default;
+        }
     }
 
     private function checkHttpsRedirect(string $host): bool

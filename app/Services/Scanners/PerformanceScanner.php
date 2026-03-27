@@ -4,6 +4,15 @@ namespace App\Services\Scanners;
 
 class PerformanceScanner
 {
+    private function safe(callable $fn, mixed $default): mixed
+    {
+        try {
+            return $fn();
+        } catch (\Throwable) {
+            return $default;
+        }
+    }
+
     public function scan(string $host): array
     {
         $checks = [];
@@ -12,7 +21,7 @@ class PerformanceScanner
 
         // Response time
         $maxScore += 25;
-        $responseTime = $this->measureResponseTime($host);
+        $responseTime = $this->safe(fn() => $this->measureResponseTime($host), null);
         if ($responseTime !== null && $responseTime < 1.0) {
             $score += 25;
             $checks[] = [
@@ -44,7 +53,7 @@ class PerformanceScanner
 
         // GZIP / Brotli compression
         $maxScore += 25;
-        $compression = $this->checkCompression($host);
+        $compression = $this->safe(fn() => $this->checkCompression($host), ['enabled' => false, 'encoding' => null]);
         if ($compression['enabled']) {
             $score += 25;
             $checks[] = [
@@ -65,7 +74,7 @@ class PerformanceScanner
 
         // robots.txt
         $maxScore += 25;
-        $robots = $this->checkRobotsTxt($host);
+        $robots = $this->safe(fn() => $this->checkRobotsTxt($host), false);
         if ($robots) {
             $score += 25;
             $checks[] = [
@@ -86,7 +95,7 @@ class PerformanceScanner
 
         // sitemap.xml
         $maxScore += 25;
-        $sitemap = $this->checkSitemap($host);
+        $sitemap = $this->safe(fn() => $this->checkSitemap($host), false);
         if ($sitemap) {
             $score += 25;
             $checks[] = [

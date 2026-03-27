@@ -6,9 +6,18 @@ class HeadersScanner
 {
     private array $headers = [];
 
+    private function safe(callable $fn, mixed $default): mixed
+    {
+        try {
+            return $fn();
+        } catch (\Throwable) {
+            return $default;
+        }
+    }
+
     public function scan(string $host): array
     {
-        $this->headers = $this->fetchHeaders($host);
+        $this->headers = $this->safe(fn() => $this->fetchHeaders($host), []);
         $checks = [];
         $score = 0;
         $maxScore = 0;

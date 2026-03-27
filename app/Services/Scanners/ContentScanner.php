@@ -4,17 +4,26 @@ namespace App\Services\Scanners;
 
 class ContentScanner
 {
+    private function safe(callable $fn, mixed $default): mixed
+    {
+        try {
+            return $fn();
+        } catch (\Throwable) {
+            return $default;
+        }
+    }
+
     public function scan(string $host): array
     {
         $checks = [];
         $score = 0;
         $maxScore = 0;
 
-        $html = $this->fetchHtml($host);
+        $html = $this->safe(fn() => $this->fetchHtml($host), '');
 
         // Mixed content
         $maxScore += 30;
-        $mixedContent = $this->checkMixedContent($html, $host);
+        $mixedContent = $this->safe(fn() => $this->checkMixedContent($html, $host), ['found' => false, 'count' => 0]);
         if (! $mixedContent['found']) {
             $score += 30;
             $checks[] = [
@@ -35,7 +44,7 @@ class ContentScanner
 
         // Admin panel exposure
         $maxScore += 25;
-        $adminExposed = $this->checkAdminExposure($host);
+        $adminExposed = $this->safe(fn() => $this->checkAdminExposure($host), ['exposed' => false, 'path' => null]);
         if (! $adminExposed['exposed']) {
             $score += 25;
             $checks[] = [
@@ -56,7 +65,7 @@ class ContentScanner
 
         // WordPress detection
         $maxScore += 20;
-        $wordpress = $this->detectWordPress($html, $host);
+        $wordpress = $this->safe(fn() => $this->detectWordPress($html, $host), ['detected' => false]);
         if ($wordpress['detected']) {
             if ($wordpress['version_exposed']) {
                 $checks[] = [
@@ -87,7 +96,7 @@ class ContentScanner
 
         // Directory listing
         $maxScore += 25;
-        $dirListing = $this->checkDirectoryListing($host);
+        $dirListing = $this->safe(fn() => $this->checkDirectoryListing($host), false);
         if (! $dirListing) {
             $score += 25;
             $checks[] = [
