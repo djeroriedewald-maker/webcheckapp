@@ -27,7 +27,7 @@
         <h2 class="text-2xl font-bold mb-2">Scanning <span class="text-indigo-400">{{ $scan->host }}</span></h2>
         <p class="text-gray-400">Running security checks... this usually takes 15-30 seconds.</p>
         <div class="mt-8 flex justify-center gap-2">
-            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content', 'Technology'] as $i => $label)
+            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content', 'Technology', 'Trust'] as $i => $label)
             <div class="flex flex-col items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: {{ $i * 0.15 }}s"></div>
                 <span class="text-xs text-gray-600 hidden sm:block">{{ $label }}</span>
@@ -136,6 +136,137 @@
             @endif
             @endforeach
         </div>
+
+        {{-- Trust & Reputation panel --}}
+        @if(!empty($scan->results['trust']))
+        @php $trust = $scan->results['trust']; @endphp
+        <div class="mb-10">
+            {{-- Verdict banner --}}
+            @php
+                $verdictLevel = $trust['verdict']['level'] ?? 'safe';
+                $verdictText  = $trust['verdict']['text'] ?? 'Unknown';
+                $verdictColors = [
+                    'safe'    => ['bg' => 'bg-emerald-500/10', 'border' => 'border-emerald-500/30', 'text' => 'text-emerald-400', 'icon_color' => 'text-emerald-400'],
+                    'warning' => ['bg' => 'bg-yellow-500/10',  'border' => 'border-yellow-500/30',  'text' => 'text-yellow-400',  'icon_color' => 'text-yellow-400'],
+                    'danger'  => ['bg' => 'bg-red-500/10',     'border' => 'border-red-500/30',     'text' => 'text-red-400',     'icon_color' => 'text-red-400'],
+                ];
+                $vc = $verdictColors[$verdictLevel] ?? $verdictColors['safe'];
+            @endphp
+            <div class="{{ $vc['bg'] }} {{ $vc['border'] }} border rounded-2xl p-5 mb-4 flex items-center gap-4">
+                @if($verdictLevel === 'safe')
+                    <svg class="w-8 h-8 {{ $vc['icon_color'] }} shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                @elseif($verdictLevel === 'warning')
+                    <svg class="w-8 h-8 {{ $vc['icon_color'] }} shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                @else
+                    <svg class="w-8 h-8 {{ $vc['icon_color'] }} shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                @endif
+                <div>
+                    <p class="text-lg font-bold {{ $vc['text'] }}">{{ $verdictText }}</p>
+                    <div class="flex flex-wrap gap-x-6 gap-y-1 mt-1 text-sm text-gray-400">
+                        @if(!empty($trust['location']['city']) && !empty($trust['location']['country']))
+                        <span>
+                            <span class="text-gray-500">Server:</span>
+                            {{ $trust['location']['city'] }}, {{ $trust['location']['country'] }}
+                            @if(!empty($trust['location']['country_code']))
+                            <span class="ml-1 text-xs text-gray-600">({{ $trust['location']['ip'] }})</span>
+                            @endif
+                        </span>
+                        @elseif(!empty($trust['location']['ip']))
+                        <span><span class="text-gray-500">IP:</span> {{ $trust['location']['ip'] }}</span>
+                        @endif
+                        @if(!empty($trust['domain_registered']))
+                        <span>
+                            <span class="text-gray-500">Online since:</span>
+                            {{ $trust['domain_registered'] }}
+                            @if(!empty($trust['domain_age_text']))
+                            <span class="text-gray-600">({{ $trust['domain_age_text'] }})</span>
+                            @endif
+                        </span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            {{-- Security database checks --}}
+            <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
+                <div class="px-5 py-3 border-b border-white/5">
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Security Database Checks</h3>
+                </div>
+                <div class="divide-y divide-white/5">
+                    @foreach($trust['checks'] as $check)
+                    @if($check['id'] === 'trust_location') @continue @endif
+                    @if($check['id'] === 'trust_domain_age') @continue @endif
+                    <div class="flex items-center gap-3 px-5 py-3">
+                        @if($check['status'] === 'pass')
+                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @elseif($check['status'] === 'fail')
+                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        @elseif($check['status'] === 'warn')
+                            <svg class="w-4 h-4 text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        @else
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        @endif
+                        <span class="text-sm font-medium text-gray-300 w-28 shrink-0">{{ $check['label'] }}</span>
+                        <span class="text-sm text-gray-500">{{ $check['description'] }}</span>
+                    </div>
+                    @endforeach
+
+                    {{-- Domain age row --}}
+                    @php $ageCheck = collect($trust['checks'])->firstWhere('id', 'trust_domain_age'); @endphp
+                    @if($ageCheck)
+                    <div class="flex items-center gap-3 px-5 py-3">
+                        @if($ageCheck['status'] === 'pass')
+                            <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @elseif($ageCheck['status'] === 'fail')
+                            <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        @elseif($ageCheck['status'] === 'warn')
+                            <svg class="w-4 h-4 text-yellow-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        @else
+                            <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        @endif
+                        <span class="text-sm font-medium text-gray-300 w-28 shrink-0">Domain age</span>
+                        <span class="text-sm text-gray-500">{{ $ageCheck['description'] }}</span>
+                    </div>
+                    @endif
+
+                    {{-- Server location row --}}
+                    @php $locCheck = collect($trust['checks'])->firstWhere('id', 'trust_location'); @endphp
+                    @if($locCheck)
+                    <div class="flex items-center gap-3 px-5 py-3">
+                        <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-300 w-28 shrink-0">Server location</span>
+                        <span class="text-sm text-gray-500">{{ $locCheck['description'] }}</span>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Technology Stack panel --}}
         @if(!empty($scan->results['technology']))
