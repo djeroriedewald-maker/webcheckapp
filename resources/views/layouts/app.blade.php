@@ -218,5 +218,73 @@
         </div>
     </footer>
 
+    {{-- Cookie consent banner --}}
+    <div
+        x-data="{
+            show: false,
+            init() {
+                if (! localStorage.getItem('cookie_consent')) {
+                    setTimeout(() => this.show = true, 800);
+                }
+            },
+            accept() {
+                localStorage.setItem('cookie_consent', 'accepted');
+                this.show = false;
+            },
+            decline() {
+                localStorage.setItem('cookie_consent', 'declined');
+                this.show = false;
+            }
+        }"
+        x-show="show"
+        x-cloak
+        x-transition:enter="transition ease-out duration-500"
+        x-transition:enter-start="opacity-0 translate-y-4"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-300"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-4"
+        style="display:none"
+        class="fixed bottom-0 inset-x-0 z-[9998] p-4"
+    >
+        <div class="max-w-4xl mx-auto bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/40 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+
+            {{-- Cookie icon --}}
+            <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+            </div>
+
+            {{-- Text --}}
+            <div class="flex-1 min-w-0">
+                <p class="text-sm text-gray-300 leading-relaxed">
+                    We use functional cookies to keep your session working and remember your preferences. No tracking or advertising cookies are used.
+                    <a href="{{ route('privacy') }}" class="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors whitespace-nowrap">Privacy Policy</a>
+                </p>
+            </div>
+
+            {{-- Buttons --}}
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <button
+                    @click="decline"
+                    class="text-sm text-gray-500 hover:text-gray-300 transition-colors px-3 py-2"
+                >
+                    Decline
+                </button>
+                <button
+                    @click="accept"
+                    class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all shadow-md shadow-indigo-500/20"
+                >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Accept
+                </button>
+            </div>
+
+        </div>
+    </div>
+
 </body>
 </html>
