@@ -52,7 +52,7 @@
 
     {{-- Completed report --}}
     @if($scan->isCompleted())
-    <div x-show="completed">
+    <div x-show="completed" x-data="{ tab: 'overzicht' }">
 
         {{-- Header with score --}}
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
@@ -119,12 +119,33 @@
             </div>
         </div>
 
+        {{-- Pre-compute counts for tab badges --}}
+        @php
+            $allChecks = collect($scan->results)
+                ->filter(fn($c) => $c['score'] !== null)
+                ->flatMap(fn($c) => collect($c['checks'])->map(fn($ch) => array_merge($ch, ['_category' => $c['category']])));
+            $failures = $allChecks->where('status', 'fail');
+            $warnings = $allChecks->where('status', 'warn');
+            $issueCount   = $failures->count() + $warnings->count();
+            $malwareCount = $scan->results['malware']['threat_count'] ?? 0;
+            $portCount    = $scan->results['ports']['open_danger'] ?? 0;
+            $expCount     = collect($scan->results['exposed_files']['checks'] ?? [])->where('status', 'fail')->count();
+            $secCount     = $portCount + $expCount;
+            $privCount    = collect($scan->results['privacy']['checks'] ?? [])->whereIn('status', ['fail','warn'])->count();
+            // Tab map: which tab does each scored category link to?
+            $tabMap = ['ssl'=>'technologie','headers'=>'technologie','dns'=>'technologie',
+                       'performance'=>'technologie','content'=>'technologie','exposed_files'=>'beveiliging'];
+        @endphp
+
         {{-- Category scores (scored categories only) --}}
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
             @foreach($scan->results as $key => $category)
             @if($category['score'] !== null)
-            <div class="bg-white/3 border border-white/8 rounded-xl p-4">
-                <div class="text-xs text-gray-500 mb-2 truncate">{{ $category['category'] }}</div>
+            @php $goTab = $tabMap[$key] ?? 'technologie'; @endphp
+            <button type="button"
+                    @click="tab = '{{ $goTab }}'"
+                    class="bg-white/3 border border-white/8 rounded-xl p-4 text-left hover:bg-white/6 hover:border-white/15 transition cursor-pointer group">
+                <div class="text-xs text-gray-500 mb-2 truncate group-hover:text-gray-300 transition">{{ $category['category'] }}</div>
                 <div class="text-2xl font-bold {{ $category['score'] >= 75 ? 'text-green-400' : ($category['score'] >= 50 ? 'text-yellow-400' : 'text-red-400') }}">
                     {{ $category['score'] }}<span class="text-sm font-normal text-gray-500">/100</span>
                 </div>
@@ -132,9 +153,38 @@
                     <div class="h-full rounded-full {{ $category['score'] >= 75 ? 'bg-green-500' : ($category['score'] >= 50 ? 'bg-yellow-500' : 'bg-red-500') }}"
                          style="width: {{ $category['score'] }}%"></div>
                 </div>
-            </div>
+            </button>
             @endif
             @endforeach
+        </div>
+
+        {{-- Sticky tab navigation --}}
+        <div class="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
+            <div class="bg-[#0b0b12]/95 backdrop-blur-md border-b border-white/8 px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center gap-1 overflow-x-auto scrollbar-none py-2">
+                    @php
+                        $tabs = [
+                            ['id' => 'overzicht',    'label' => 'Overview',      'count' => $issueCount,   'countColor' => 'bg-red-500/20 text-red-400'],
+                            ['id' => 'trust',        'label' => 'Trust & WHOIS', 'count' => 0,             'countColor' => ''],
+                            ['id' => 'malware',      'label' => 'Malware',       'count' => $malwareCount, 'countColor' => 'bg-red-500/20 text-red-400'],
+                            ['id' => 'beveiliging',  'label' => 'Security',      'count' => $secCount,     'countColor' => 'bg-red-500/20 text-red-400'],
+                            ['id' => 'privacy',      'label' => 'Privacy',       'count' => $privCount,    'countColor' => 'bg-yellow-500/20 text-yellow-400'],
+                            ['id' => 'technologie',  'label' => 'Full Report',   'count' => 0,             'countColor' => ''],
+                        ];
+                    @endphp
+                    @foreach($tabs as $t)
+                    <button type="button"
+                            @click="tab = '{{ $t['id'] }}'"
+                            :class="tab === '{{ $t['id'] }}' ? 'bg-indigo-600 text-white border-transparent' : 'text-gray-400 hover:text-white hover:bg-white/5 border-transparent'"
+                            class="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all whitespace-nowrap">
+                        {{ $t['label'] }}
+                        @if($t['count'] > 0)
+                        <span class="text-xs font-bold {{ $t['countColor'] }} px-1.5 py-0.5 rounded-full">{{ $t['count'] }}</span>
+                        @endif
+                    </button>
+                    @endforeach
+                </div>
+            </div>
         </div>
 
         {{-- Trust & Reputation panel --}}
@@ -151,7 +201,7 @@
             ];
             $vc = $verdictColors[$verdictLevel] ?? $verdictColors['safe'];
         @endphp
-        <div class="mb-10">
+        <div class="mb-10" x-show="tab === 'trust'">
 
             {{-- Verdict banner --}}
             <div class="{{ $vc['bg'] }} {{ $vc['border'] }} border rounded-2xl p-5 mb-4 flex items-center gap-4">
@@ -341,7 +391,7 @@
             $vtCheck     = collect($malware['checks'])->firstWhere('id', 'malware_virustotal');
             $basicChecks = collect($malware['checks'])->filter(fn($c) => $c['id'] !== 'malware_virustotal');
         @endphp
-        <div class="mb-10">
+        <div class="mb-10" x-show="tab === 'malware'">
             <div class="flex items-center gap-3 mb-4">
                 <svg class="w-5 h-5 {{ $hasThreats ? 'text-red-400' : 'text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
@@ -448,7 +498,7 @@
             $ports      = $scan->results['ports'];
             $openDanger = $ports['open_danger'] ?? 0;
         @endphp
-        <div class="mb-10">
+        <div class="mb-10" x-show="tab === 'beveiliging'">
             <div class="flex items-center gap-3 mb-4">
                 <svg class="w-5 h-5 {{ $openDanger > 0 ? 'text-red-400' : 'text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
@@ -515,7 +565,7 @@
         {{-- Privacy & GDPR panel --}}
         @if(!empty($scan->results['privacy']))
         @php $privacy = $scan->results['privacy']; @endphp
-        <div class="mb-10">
+        <div class="mb-10" x-show="tab === 'privacy'">
             <div class="flex items-center gap-3 mb-4">
                 <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -576,7 +626,7 @@
             $exposedFiles = $scan->results['exposed_files'];
             $exposedCount = collect($exposedFiles['checks'])->where('status', 'fail')->count();
         @endphp
-        <div class="mb-10">
+        <div class="mb-10" x-show="tab === 'beveiliging'">
             <div class="flex items-center gap-3 mb-4">
                 <svg class="w-5 h-5 {{ $exposedCount > 0 ? 'text-red-400' : 'text-emerald-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
@@ -635,6 +685,9 @@
         </div>
         @endif
 
+        {{-- ═══ Technologie tab ═══ --}}
+        <div x-show="tab === 'technologie'">
+
         {{-- Technology Stack panel --}}
         @if(!empty($scan->results['technology']))
         @php $tech = $scan->results['technology']; @endphp
@@ -686,16 +739,12 @@
         </div>
         @endif
 
-        {{-- Action items (failures first) --}}
-        @php
-            // Only include scored categories in the action items list
-            $allChecks = collect($scan->results)
-                ->filter(fn($c) => $c['score'] !== null)
-                ->flatMap(fn($c) => collect($c['checks'])->map(fn($ch) => array_merge($ch, ['_category' => $c['category']])));
-            $failures = $allChecks->where('status', 'fail');
-            $warnings = $allChecks->where('status', 'warn');
-        @endphp
+        </div>{{-- end technologie tab --}}
 
+        {{-- ═══ Overzicht tab ═══ --}}
+        <div x-show="tab === 'overzicht'">
+
+        {{-- Action items (failures first) — already computed above as $failures/$warnings --}}
         @if($failures->count() > 0)
         <div class="mb-8">
             <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -826,7 +875,10 @@
         </div>
         @endif
 
-        {{-- All checks per category (scored categories only) --}}
+        </div>{{-- end overzicht tab --}}
+
+        {{-- Full Report — inside technologie tab --}}
+        <div x-show="tab === 'technologie'">
         <div class="space-y-6">
             <h2 class="text-lg font-semibold">Full report</h2>
             @foreach($scan->results as $key => $category)
@@ -872,6 +924,7 @@
             </div>
             @endforeach
         </div>
+        </div>{{-- end technologie (Full Report) --}}
 
         {{-- Bottom actions --}}
         <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
