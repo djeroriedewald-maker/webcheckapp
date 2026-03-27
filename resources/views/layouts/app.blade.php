@@ -52,40 +52,75 @@
             show: false,
             domain: '',
             scanners: [
-                { name: 'SSL & HTTPS' },
-                { name: 'Security Headers' },
-                { name: 'DNS & Email Security' },
-                { name: 'Performance & SEO' },
-                { name: 'Content & CMS' },
-                { name: 'Technology Stack' },
-                { name: 'Malware & Reputation' },
-                { name: 'Open Ports' },
-                { name: 'Exposed Files' },
-                { name: 'Privacy & GDPR' },
-                { name: 'Trust & WHOIS' },
+                'SSL & HTTPS',
+                'Security Headers',
+                'DNS & Email Security',
+                'Performance & SEO',
+                'Content & CMS',
+                'Technology Stack',
+                'Malware & Reputation',
+                'Open Ports',
+                'Exposed Files',
+                'Privacy & GDPR',
+                'Trust & WHOIS',
             ],
             activeIdx: 0,
             doneUpto: -1,
+            targetUrl: null,
             _timer: null,
-            start(rawUrl) {
+
+            start(rawUrl, formEl) {
+                // Parse display domain
                 let d = rawUrl.trim() || '...';
                 try {
                     if (!d.startsWith('http')) d = 'https://' + d;
                     d = new URL(d).hostname.replace(/^www\./i, '');
                 } catch(e) {}
-                this.domain = d;
+                this.domain    = d;
+                this.targetUrl = null;
                 this.activeIdx = 0;
-                this.doneUpto = -1;
-                this.show = true;
+                this.doneUpto  = -1;
+                this.show      = true;
                 clearInterval(this._timer);
+
+                // Animation: advance one scanner every 2400ms.
+                // The LAST scanner stays active (spinning) until the fetch resolves.
                 this._timer = setInterval(() => {
-                    this.doneUpto = this.activeIdx;
-                    this.activeIdx++;
-                    if (this.activeIdx >= this.scanners.length) clearInterval(this._timer);
+                    if (this.activeIdx < this.scanners.length - 1) {
+                        this.doneUpto = this.activeIdx;
+                        this.activeIdx++;
+                    } else if (this.targetUrl) {
+                        // Last scanner done + scan complete → finish & navigate
+                        this.doneUpto = this.activeIdx;
+                        clearInterval(this._timer);
+                        setTimeout(() => { window.location.href = this.targetUrl; }, 500);
+                    }
+                    // else: hold on last scanner, waiting for server response
                 }, 2400);
+
+                // Submit via fetch — prevents the browser navigating before animation ends
+                const data = new FormData(formEl);
+                fetch(formEl.action, { method: 'POST', body: data, redirect: 'follow' })
+                    .then(res => {
+                        const url = res.url;
+                        // Check if we landed on a scan result page
+                        if (/\/scan\/[^\/]+/.test(url)) {
+                            this.targetUrl = url;
+                            // If animation already passed the last scanner, redirect now
+                            if (this.activeIdx >= this.scanners.length - 1) {
+                                this.doneUpto = this.scanners.length - 1;
+                                clearInterval(this._timer);
+                                setTimeout(() => { window.location.href = url; }, 500);
+                            }
+                        } else {
+                            // Validation error or unexpected response — navigate immediately
+                            window.location.href = url;
+                        }
+                    })
+                    .catch(() => { window.location.href = '/'; });
             }
         }"
-        @scan-start.window="start($event.detail.url)"
+        @scan-start.window="start($event.detail.url, $event.detail.form)"
         x-show="show"
         x-cloak
         style="display:none"
@@ -126,7 +161,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                             </svg>
                         </span>
-                        {{-- Active --}}
+                        {{-- Active / spinning --}}
                         <span x-show="idx === activeIdx && idx > doneUpto" class="flex-shrink-0 w-4 h-4">
                             <svg class="w-4 h-4 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -143,14 +178,15 @@
                                 'text-white font-medium': idx === activeIdx && idx > doneUpto,
                                 'text-gray-600': idx > activeIdx
                             }"
-                            x-text="scanner.name"
+                            x-text="scanner"
                         ></span>
                     </div>
                 </template>
             </div>
 
             {{-- Footer hint --}}
-            <p class="text-xs text-gray-600">This usually takes 20–40 seconds. Please wait&hellip;</p>
+            <p class="text-xs text-gray-600" x-show="doneUpto < scanners.length - 1">This usually takes 20–40 seconds. Please wait&hellip;</p>
+            <p class="text-xs text-indigo-400 animate-pulse" x-show="doneUpto >= scanners.length - 1 && !targetUrl">Generating your report&hellip;</p>
 
         </div>
     </div>
