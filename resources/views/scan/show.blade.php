@@ -13,7 +13,7 @@
 @section('structured_data')
 <script type="application/ld+json">
 {
-  "@context": "https://schema.org",
+  "@@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Security Report: {{ $scan->host }}",
   "description": "Security scan for {{ $scan->host }} — Score {{ $scan->score }}/100, Grade {{ $scan->grade }}",
