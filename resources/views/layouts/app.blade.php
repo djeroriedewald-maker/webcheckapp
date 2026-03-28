@@ -36,19 +36,28 @@
                     </svg>
                     <span class="text-white">WebCheck<span class="text-indigo-400">App</span></span>
                 </a>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
                     @auth
                     <a href="{{ route('dashboard') }}"
-                       class="text-sm text-gray-400 hover:text-white transition-colors">
+                       class="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3.5 py-2 rounded-lg transition-all duration-200">
+                        <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        </svg>
                         Dashboard
                     </a>
                     @else
                     <a href="{{ route('login') }}"
-                       class="text-sm text-gray-400 hover:text-white transition-colors">
+                       class="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3.5 py-2 rounded-lg transition-all duration-200">
+                        <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                        </svg>
                         Sign in
                     </a>
                     <a href="{{ route('register') }}"
-                       class="text-sm text-gray-300 hover:text-white border border-white/15 hover:border-white/30 px-3 py-1.5 rounded-lg transition-all">
+                       class="inline-flex items-center gap-1.5 text-sm text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-500/50 hover:border-indigo-400/60 px-3.5 py-2 rounded-lg transition-all duration-200 shadow-sm shadow-indigo-500/20">
+                        <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
                         Register
                     </a>
                     @endauth

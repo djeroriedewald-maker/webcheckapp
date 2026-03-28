@@ -92,8 +92,8 @@
 
                 {{-- Actions --}}
                 <div class="flex items-center gap-2 flex-shrink-0">
-                    @if($site->last_scan_id)
-                    <a href="{{ route('scan.show', $site->last_scan_id) }}"
+                    @if($site->lastScan)
+                    <a href="{{ route('scan.show', $site->lastScan) }}"
                        class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">
                         View report
                     </a>
