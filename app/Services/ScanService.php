@@ -13,6 +13,14 @@ use App\Services\Scanners\MalwareScanner;
 use App\Services\Scanners\ExposedFilesScanner;
 use App\Services\Scanners\PortScanner;
 use App\Services\Scanners\PrivacyScanner;
+use App\Services\Scanners\AccessibilityScanner;
+use App\Services\Scanners\TlsCipherScanner;
+use App\Services\Scanners\RobotsScanner;
+use App\Services\Scanners\ApiSecurityScanner;
+use App\Services\Scanners\CarbonScanner;
+use App\Services\Scanners\BrokenLinksScanner;
+use App\Services\Scanners\BrandingScanner;
+use App\Services\Scanners\SubdomainTakeoverScanner;
 
 class ScanService
 {
@@ -44,17 +52,25 @@ class ScanService
         // DNS scanner always uses the user-supplied host (apex domain),
         // because SPF/DMARC/CAA records live on the apex regardless of www.
         $scanners = [
-            'ssl'         => fn() => (new SslScanner())->scan($canonicalHost),
-            'headers'     => fn() => (new HeadersScanner())->scan($canonicalHost),
-            'dns'         => fn() => (new DnsScanner())->scan($host),
-            'performance' => fn() => (new PerformanceScanner())->scan($canonicalHost),
-            'content'     => fn() => (new ContentScanner())->scan($canonicalHost),
-            'technology'    => fn() => (new TechnologyScanner())->scan($canonicalHost),
-            'trust'         => fn() => (new TrustScanner())->scan($canonicalHost),
-            'malware'       => fn() => (new MalwareScanner())->scan($canonicalHost),
-            'exposed_files' => fn() => (new ExposedFilesScanner())->scan($canonicalHost),
-            'ports'         => fn() => (new PortScanner())->scan($canonicalHost),
-            'privacy'       => fn() => (new PrivacyScanner())->scan($canonicalHost),
+            'ssl'                 => fn() => (new SslScanner())->scan($canonicalHost),
+            'headers'             => fn() => (new HeadersScanner())->scan($canonicalHost),
+            'dns'                 => fn() => (new DnsScanner())->scan($host),
+            'performance'         => fn() => (new PerformanceScanner())->scan($canonicalHost),
+            'content'             => fn() => (new ContentScanner())->scan($canonicalHost),
+            'technology'          => fn() => (new TechnologyScanner())->scan($canonicalHost),
+            'trust'               => fn() => (new TrustScanner())->scan($canonicalHost),
+            'malware'             => fn() => (new MalwareScanner())->scan($canonicalHost),
+            'exposed_files'       => fn() => (new ExposedFilesScanner())->scan($canonicalHost),
+            'ports'               => fn() => (new PortScanner())->scan($canonicalHost),
+            'privacy'             => fn() => (new PrivacyScanner())->scan($canonicalHost),
+            'accessibility'       => fn() => (new AccessibilityScanner())->scan($canonicalHost),
+            'tls'                 => fn() => (new TlsCipherScanner())->scan($canonicalHost),
+            'robots'              => fn() => (new RobotsScanner())->scan($canonicalHost),
+            'api_security'        => fn() => (new ApiSecurityScanner())->scan($canonicalHost),
+            'carbon'              => fn() => (new CarbonScanner())->scan($canonicalHost),
+            'broken_links'        => fn() => (new BrokenLinksScanner())->scan($canonicalHost),
+            'branding'            => fn() => (new BrandingScanner())->scan($canonicalHost),
+            'subdomain_takeover'  => fn() => (new SubdomainTakeoverScanner())->scan($host),
         ];
 
         foreach ($scanners as $key => $scanner) {
