@@ -97,10 +97,9 @@
             ],
             activeIdx: 0,
             doneUpto: -1,
-            targetUrl: null,
             _timer: null,
 
-            start(rawUrl, formEl) {
+            start(rawUrl) {
                 // Parse display domain
                 let d = rawUrl.trim() || '...';
                 try {
@@ -108,54 +107,22 @@
                     d = new URL(d).hostname.replace(/^www\./i, '');
                 } catch(e) {}
                 this.domain    = d;
-                this.targetUrl = null;
                 this.activeIdx = 0;
                 this.doneUpto  = -1;
                 this.show      = true;
                 clearInterval(this._timer);
 
-                // Animation: advance one scanner every 2400ms.
-                // The LAST scanner stays active (spinning) until the fetch resolves.
+                // Advance one scanner every 2400ms, then hold at the last one
+                // until the browser naturally navigates to the scan result page.
                 this._timer = setInterval(() => {
                     if (this.activeIdx < this.scanners.length - 1) {
                         this.doneUpto = this.activeIdx;
                         this.activeIdx++;
-                    } else if (this.targetUrl) {
-                        // Last scanner done + scan complete → finish & navigate
-                        this.doneUpto = this.activeIdx;
-                        clearInterval(this._timer);
-                        setTimeout(() => { window.location.href = this.targetUrl; }, 500);
                     }
-                    // else: hold on last scanner, waiting for server response
                 }, 2400);
-
-                // Submit via fetch — prevents the browser navigating before animation ends
-                const data = new FormData(formEl);
-                fetch(formEl.action, { method: 'POST', body: data, redirect: 'follow' })
-                    .then(res => {
-                        const url = res.url;
-                        // Only trust the response if it's OK (2xx) and on a scan result page
-                        if (res.ok && /\/scan\/[^\/]+/.test(url)) {
-                            this.targetUrl = url;
-                            // If animation already passed the last scanner, redirect now
-                            if (this.activeIdx >= this.scanners.length - 1) {
-                                this.doneUpto = this.scanners.length - 1;
-                                clearInterval(this._timer);
-                                setTimeout(() => { window.location.href = url; }, 500);
-                            }
-                        } else if (res.ok) {
-                            // Validation error or other page — navigate to it
-                            window.location.href = url;
-                        } else {
-                            // Server error (4xx/5xx) — go home rather than navigate to error URL
-                            clearInterval(this._timer);
-                            window.location.href = '/';
-                        }
-                    })
-                    .catch(() => { window.location.href = '/'; });
             }
         }"
-        @scan-start.window="start($event.detail.url, $event.detail.form)"
+        @scan-start.window="start($event.detail.url)"
         x-show="show"
         x-cloak
         style="display:none"

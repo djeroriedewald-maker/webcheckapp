@@ -50,7 +50,7 @@
         {{-- Scan form --}}
         <form action="{{ route('scan.store') }}" method="POST"
               x-data="{ loading: false }"
-              @submit.prevent="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value, form: $el })">
+              @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })">
             @csrf
             <div class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
                 <div class="flex-1 relative">
@@ -267,7 +267,7 @@
                 <p class="text-xs text-gray-600 flex-1">This is a sample report. Run a scan to see real results for your site.</p>
                 <form action="{{ route('scan.store') }}" method="POST"
                       x-data="{ loading: false }"
-                      @submit.prevent="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value, form: $el })"
+                      @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })"
                       class="flex gap-2">
                     @csrf
                     <input type="text" name="url" placeholder="your-domain.com"
@@ -508,7 +508,7 @@
 
             <form action="{{ route('scan.store') }}" method="POST"
                   x-data="{ loading: false }"
-                  @submit.prevent="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value, form: $el })">
+                  @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })">
                 @csrf
                 <div class="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
                     <input type="text" name="url" placeholder="your-domain.com"
