@@ -80,9 +80,6 @@
                 <h1 class="text-2xl font-bold text-white">{{ $scan->host }}</h1>
                 <p class="text-sm text-gray-500 mt-1">
                     Scanned {{ $scan->completed_at->diffForHumans() }}
-                    @if($scan->created_at && $scan->completed_at)
-                    <span class="text-gray-600">· {{ $scan->created_at->diffInSeconds($scan->completed_at) }}s scan time</span>
-                    @endif
                 </p>
 
                 {{-- Cached result notice --}}
