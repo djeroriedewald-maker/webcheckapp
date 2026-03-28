@@ -74,7 +74,7 @@
                     class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 min-w-[160px] shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:shadow-xl"
                 >
                     <span x-show="!loading">Scan now →</span>
-                    <span x-show="loading" class="flex items-center gap-2">
+                    <span x-show="loading" x-cloak class="flex items-center gap-2">
                         <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -275,7 +275,7 @@
                     <button type="submit" :disabled="loading"
                             class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition whitespace-nowrap">
                         <span x-show="!loading">Scan now</span>
-                        <span x-show="loading">…</span>
+                        <span x-show="loading" x-cloak>…</span>
                     </button>
                 </form>
             </div>
@@ -516,7 +516,7 @@
                     <button type="submit" :disabled="loading"
                             class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 whitespace-nowrap">
                         <span x-show="!loading">Scan for free →</span>
-                        <span x-show="loading">Scanning…</span>
+                        <span x-show="loading" x-cloak>Scanning…</span>
                     </button>
                 </div>
             </form>

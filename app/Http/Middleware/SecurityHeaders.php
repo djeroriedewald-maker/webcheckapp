@@ -17,13 +17,6 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        if (! $response->headers->has('Content-Security-Policy')) {
-            $response->headers->set(
-                'Content-Security-Policy',
-                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'"
-            );
-        }
-
         return $response;
     }
 }
