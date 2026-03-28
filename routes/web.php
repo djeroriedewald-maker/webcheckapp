@@ -10,11 +10,11 @@ Route::get('/', [ScanController::class, 'index'])->name('home');
 Route::post('/scan', [ScanController::class, 'store'])->name('scan.store')->middleware('throttle:10,1');
 Route::get('/scan/{scan}', [ScanController::class, 'show'])->name('scan.show');
 Route::get('/scan/{scan}/status', [ScanController::class, 'status'])->name('scan.status');
-Route::get('/scan/{scan}/pdf', [ScanController::class, 'pdf'])->name('scan.pdf');
-Route::get('/scan/{scan}/badge', [ScanController::class, 'badge'])->name('scan.badge');
+Route::get('/scan/{scan}/pdf', [ScanController::class, 'pdf'])->name('scan.pdf')->middleware('throttle:10,1');
+Route::get('/scan/{scan}/badge', [ScanController::class, 'badge'])->name('scan.badge')->middleware('throttle:60,1');
 
 // Compare two domains side by side
-Route::get('/compare', [ScanController::class, 'compare'])->name('scan.compare');
+Route::get('/compare', [ScanController::class, 'compare'])->name('scan.compare')->middleware('throttle:5,1');
 
 // Public JSON API — rate-limited to 5 requests per minute
 Route::get('/api/v1/scan', [ApiController::class, 'scan'])->name('api.scan')->middleware('throttle:5,1');
@@ -35,7 +35,7 @@ Route::middleware('auth')->prefix('dashboard')->name('dashboard')->group(functio
     Route::get('/', [DashboardController::class, 'index']);
     Route::post('/sites', [DashboardController::class, 'addSite'])->name('.addSite');
     Route::delete('/sites/{site}', [DashboardController::class, 'removeSite'])->name('.removeSite');
-    Route::post('/sites/{site}/refresh', [DashboardController::class, 'refreshSite'])->name('.refresh');
+    Route::post('/sites/{site}/refresh', [DashboardController::class, 'refreshSite'])->name('.refresh')->middleware('throttle:5,1');
     Route::patch('/sites/{site}/notifications', [DashboardController::class, 'updateNotifications'])->name('.notifications');
     Route::get('/history/{domain}', [DashboardController::class, 'history'])->name('.history')->where('domain', '.*');
 });

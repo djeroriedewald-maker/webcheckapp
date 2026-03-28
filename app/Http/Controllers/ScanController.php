@@ -134,8 +134,8 @@ class ScanController extends Controller
         $labelWidth = 130;
         $valueWidth = 70;
         $totalWidth = $labelWidth + $valueWidth;
-        $label      = 'WebCheckApp';
-        $value      = "{$grade}  {$score}/100";
+        $label      = htmlspecialchars('WebCheckApp', ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $value      = htmlspecialchars("{$grade}  {$score}/100", ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
         $svg = <<<SVG
         <svg xmlns="http://www.w3.org/2000/svg" width="{$totalWidth}" height="20">

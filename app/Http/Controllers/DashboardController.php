@@ -156,6 +156,18 @@ class DashboardController extends Controller
             return null;
         }
 
-        return strtolower($host);
+        $host = strtolower($host);
+
+        // Must look like a real domain: label.tld (each label 1-63 chars, valid chars)
+        if (! preg_match('/^(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/', $host)) {
+            return null;
+        }
+
+        // Block internal TLDs
+        if (preg_match('/\.(local|internal|test|lan|intranet|corp|home|arpa)$/', $host)) {
+            return null;
+        }
+
+        return $host;
     }
 }

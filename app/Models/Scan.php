@@ -24,7 +24,7 @@ class Scan extends Model
         static::creating(function (self $scan) {
             if (empty($scan->uid)) {
                 do {
-                    $uid = Str::random(8);
+                    $uid = Str::random(16);
                 } while (static::where('uid', $uid)->exists());
 
                 $scan->uid = $uid;

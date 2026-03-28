@@ -136,8 +136,14 @@ class ScanService
         }
 
         $parsed = parse_url($effectiveUrl);
+        $host   = ! empty($parsed['host']) ? $parsed['host'] : null;
 
-        return ! empty($parsed['host']) ? $parsed['host'] : null;
+        // SSRF: verify the redirect target resolves to a public IP
+        if ($host === null || ! $this->isPublicHost($host)) {
+            return null;
+        }
+
+        return $host;
     }
 
     private function calculateOverallScore(array $results): int
@@ -156,33 +162,68 @@ class ScanService
 
     /**
      * Block scanning of private/reserved IP ranges and localhost (SSRF prevention).
+     * Checks both IPv4 (A records) and IPv6 (AAAA records).
      */
     private function isPublicHost(string $host): bool
     {
+        // Strip IPv6 brackets e.g. [::1]
+        $bare = ltrim(rtrim($host, ']'), '[');
+
+        // If the input itself is an IP address, validate it directly
+        if (filter_var($bare, FILTER_VALIDATE_IP)) {
+            return (bool) filter_var(
+                $bare,
+                FILTER_VALIDATE_IP,
+                FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+            );
+        }
+
         $lower = strtolower($host);
 
-        // Block obvious internal names
+        // Block obvious internal hostnames
         if (in_array($lower, ['localhost', '127.0.0.1', '::1', '0.0.0.0'], true)) {
             return false;
         }
 
-        // Block .local / .internal / .test TLDs
-        if (preg_match('/\.(local|internal|test|lan|intranet)$/i', $host)) {
+        // Block internal TLDs
+        if (preg_match('/\.(local|internal|test|lan|intranet|corp|home|arpa)$/i', $host)) {
             return false;
         }
 
-        // Resolve to IP and verify it's a public address
-        $ip = @gethostbyname($host);
-        if ($ip === $host) {
-            // Could not resolve — let scanners report errors naturally
-            return true;
+        // Resolve A + AAAA records and verify every resolved IP is public
+        $records = @dns_get_record($host, DNS_A | DNS_AAAA) ?: [];
+
+        // Fallback to gethostbyname when dns_get_record returns nothing
+        if (empty($records)) {
+            $ip = @gethostbyname($host);
+            if ($ip === $host) {
+                // Unresolvable — allow scanners to report connection errors naturally
+                return true;
+            }
+            $records = [['ip' => $ip]];
         }
 
-        return (bool) filter_var(
-            $ip,
-            FILTER_VALIDATE_IP,
-            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-        );
+        foreach ($records as $record) {
+            $ip = $record['ip'] ?? $record['ipv6'] ?? null;
+            if ($ip === null) {
+                continue;
+            }
+
+            // Explicit IPv6 private/reserved ranges not covered by FILTER_FLAG_NO_PRIV_RANGE
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                // Loopback (::1), link-local (fe80::/10), unique-local (fc00::/7),
+                // IPv4-mapped (::ffff:0:0/96), documentation (2001:db8::/32)
+                if (preg_match('/^(::1|fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|::ffff:|2001:db8:)/i', $ip)) {
+                    return false;
+                }
+            }
+
+            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function scoreToGrade(int $score): string
