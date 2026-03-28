@@ -29,7 +29,7 @@
     $scoreGlow  = $score >= 80 ? 'shadow-green-500/20'  : ($score >= 60 ? 'shadow-amber-500/20'  : 'shadow-red-500/20');
 
     $categories = collect($scan->results ?? [])
-        ->filter(fn($c) => isset($c['score']))
+        ->filter(fn($c) => isset($c['score']) && isset($c['category']))
         ->sortByDesc('score')
         ->take(3)
         ->values();
@@ -79,7 +79,7 @@
                                                  : 'text-red-400 bg-red-500/10 border-red-500/20');
                 @endphp
                 <div class="bg-white/3 border border-white/8 rounded-xl p-3 text-center">
-                    <p class="text-xs text-gray-500 truncate mb-1">{{ Str::before($cat['name'], ' &') }}</p>
+                    <p class="text-xs text-gray-500 truncate mb-1">{{ Str::before($cat['category'], ' &') }}</p>
                     <p class="text-base font-bold {{ explode(' ', $cc)[0] }}">{{ $cs }}</p>
                 </div>
                 @endforeach

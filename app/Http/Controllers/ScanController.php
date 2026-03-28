@@ -249,7 +249,7 @@ class ScanController extends Controller
             $map = [];
             foreach ($categories as $cat) {
                 foreach ($cat['checks'] ?? [] as $check) {
-                    $key       = ($cat['name'] ?? '') . '::' . ($check['label'] ?? '');
+                    $key       = ($cat['category'] ?? '') . '::' . ($check['label'] ?? '');
                     $map[$key] = $check['status'] ?? 'pass';
                 }
             }
