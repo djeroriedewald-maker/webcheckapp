@@ -14,20 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
 
-        $middleware->append(function (\Illuminate\Http\Request $request, \Closure $next) {
-            $response = $next($request);
-            $response->headers->set('X-Content-Type-Options', 'nosniff');
-            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-            $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-            $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-            if (! $response->headers->has('Content-Security-Policy')) {
-                $response->headers->set(
-                    'Content-Security-Policy',
-                    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'"
-                );
-            }
-            return $response;
-        });
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
