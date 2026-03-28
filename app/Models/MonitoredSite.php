@@ -11,6 +11,7 @@ class MonitoredSite extends Model
         'user_id',
         'domain',
         'last_score',
+        'previous_score',
         'last_grade',
         'last_scan_id',
         'last_checked_at',

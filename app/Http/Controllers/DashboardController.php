@@ -18,7 +18,13 @@ class DashboardController extends Controller
             ->with('lastScan')
             ->get();
 
-        return view('dashboard.index', compact('sites'));
+        $stats = [
+            'total'     => $sites->count(),
+            'avg_score' => $sites->whereNotNull('last_score')->avg('last_score'),
+            'critical'  => $sites->where('last_score', '<', 60)->count(),
+        ];
+
+        return view('dashboard.index', compact('sites', 'stats'));
     }
 
     public function addSite(Request $request)
@@ -93,6 +99,59 @@ class DashboardController extends Controller
         return view('dashboard.history', compact('site', 'scans'));
     }
 
+    public function bulkImport(Request $request)
+    {
+        $request->validate([
+            'domains' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $user  = Auth::user();
+        $lines = preg_split('/[\r\n,]+/', $request->input('domains'));
+        $added = 0;
+        $skippedLimit = 0;
+        $skippedInvalid = 0;
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+
+            if ($user->monitoredSites()->count() >= 10) {
+                $skippedLimit++;
+                continue;
+            }
+
+            $domain = $this->normalizeDomain($line);
+
+            if (! $domain) {
+                $skippedInvalid++;
+                continue;
+            }
+
+            $existed = $user->monitoredSites()->where('domain', $domain)->exists();
+            if (! $existed) {
+                $user->monitoredSites()->create(['domain' => $domain]);
+                $added++;
+            }
+        }
+
+        $parts = [];
+        if ($added > 0) {
+            $parts[] = "{$added} " . ($added === 1 ? 'site' : 'sites') . ' toegevoegd';
+        }
+        if ($skippedInvalid > 0) {
+            $parts[] = "{$skippedInvalid} ongeldig";
+        }
+        if ($skippedLimit > 0) {
+            $parts[] = "{$skippedLimit} overgeslagen (limiet van 10 bereikt)";
+        }
+
+        $message = $parts ? implode(', ', $parts) . '.' : 'Geen nieuwe sites toegevoegd.';
+
+        return redirect()->route('dashboard')->with('success', $message);
+    }
+
     private function runScanForSite(MonitoredSite $site): void
     {
         // Check for a recent cached scan first
@@ -132,6 +191,7 @@ class DashboardController extends Controller
             ]);
 
             $site->update([
+                'previous_score'  => $site->last_score,
                 'last_score'      => $results['score'],
                 'last_grade'      => $results['grade'],
                 'last_scan_id'    => $scan->id,

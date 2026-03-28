@@ -90,7 +90,29 @@ class ScanController extends Controller
             ->latest('completed_at')
             ->first();
 
-        return view('scan.show', compact('scan', 'percentile', 'newerScan'));
+        // Previous scan for "wat veranderde" diff
+        $prevScan = null;
+        $diff     = null;
+        if ($scan->isCompleted()) {
+            $prevScan = Scan::where('host', $scan->host)
+                ->where('status', 'completed')
+                ->where('id', '!=', $scan->id)
+                ->where('completed_at', '<', $scan->completed_at)
+                ->latest('completed_at')
+                ->first();
+
+            if ($prevScan && $prevScan->results && $scan->results) {
+                $diff = $this->buildDiff($scan, $prevScan);
+            }
+        }
+
+        return view('scan.show', compact('scan', 'percentile', 'newerScan', 'prevScan', 'diff'));
+    }
+
+    public function card(Scan $scan)
+    {
+        abort_unless($scan->isCompleted(), 404);
+        return view('scan.card', compact('scan'));
     }
 
     public function pdf(Scan $scan)
@@ -218,6 +240,56 @@ class ScanController extends Controller
 
             return null;
         }
+    }
+
+    private function buildDiff(Scan $current, Scan $prev): array
+    {
+        // Flatten checks from both scans keyed by a stable identifier (category + label)
+        $flatten = function (array $categories): array {
+            $map = [];
+            foreach ($categories as $cat) {
+                foreach ($cat['checks'] ?? [] as $check) {
+                    $key       = ($cat['name'] ?? '') . '::' . ($check['label'] ?? '');
+                    $map[$key] = $check['status'] ?? 'pass';
+                }
+            }
+            return $map;
+        };
+
+        $current->results = is_array($current->results) ? $current->results : [];
+        $prev->results    = is_array($prev->results)    ? $prev->results    : [];
+
+        $nowMap  = $flatten($current->results);
+        $prevMap = $flatten($prev->results);
+
+        $fixed    = [];
+        $broken   = [];
+
+        foreach ($nowMap as $key => $nowStatus) {
+            $prevStatus = $prevMap[$key] ?? null;
+            if ($prevStatus === null) continue;
+
+            $wasGood  = $prevStatus === 'pass';
+            $isGood   = $nowStatus  === 'pass';
+
+            // Extract readable label (after '::')
+            $label = substr($key, strpos($key, '::') + 2);
+
+            if (! $wasGood && $isGood) {
+                $fixed[]  = $label;
+            } elseif ($wasGood && ! $isGood) {
+                $broken[] = $label;
+            }
+        }
+
+        return [
+            'score_before' => $prev->score,
+            'score_after'  => $current->score,
+            'score_delta'  => ($current->score ?? 0) - ($prev->score ?? 0),
+            'fixed'        => array_slice($fixed, 0, 10),
+            'broken'       => array_slice($broken, 0, 10),
+            'scan_date'    => $prev->completed_at,
+        ];
     }
 
     private function normalizeUrl(string $url): string

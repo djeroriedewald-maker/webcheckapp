@@ -10,6 +10,7 @@ Route::get('/', [ScanController::class, 'index'])->name('home');
 Route::post('/scan', [ScanController::class, 'store'])->name('scan.store')->middleware('throttle:10,1');
 Route::get('/scan/{scan}', [ScanController::class, 'show'])->name('scan.show');
 Route::get('/scan/{scan}/status', [ScanController::class, 'status'])->name('scan.status');
+Route::get('/scan/{scan}/card', [ScanController::class, 'card'])->name('scan.card');
 Route::get('/scan/{scan}/pdf', [ScanController::class, 'pdf'])->name('scan.pdf')->middleware('throttle:10,1');
 Route::get('/scan/{scan}/badge', [ScanController::class, 'badge'])->name('scan.badge')->middleware('throttle:60,1');
 
@@ -34,6 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::middleware('auth')->prefix('dashboard')->name('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index']);
     Route::post('/sites', [DashboardController::class, 'addSite'])->name('.addSite');
+    Route::post('/sites/bulk', [DashboardController::class, 'bulkImport'])->name('.bulkImport');
     Route::delete('/sites/{site}', [DashboardController::class, 'removeSite'])->name('.removeSite');
     Route::post('/sites/{site}/refresh', [DashboardController::class, 'refreshSite'])->name('.refresh')->middleware('throttle:5,1');
     Route::patch('/sites/{site}/notifications', [DashboardController::class, 'updateNotifications'])->name('.notifications');

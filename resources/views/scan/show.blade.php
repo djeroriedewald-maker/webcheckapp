@@ -141,6 +141,14 @@
                         </svg>
                         LinkedIn
                     </a>
+
+                    <a href="{{ route('scan.card', $scan) }}"
+                       class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Score card
+                    </a>
                 </div>
             </div>
             <div class="flex items-center gap-6">
@@ -215,6 +223,65 @@
                 </button>
             </div>
         </form>
+
+        {{-- What changed since last scan --}}
+        @if(!empty($diff) && ($diff['score_delta'] !== 0 || !empty($diff['fixed']) || !empty($diff['broken'])))
+        <div class="mb-8 bg-white/3 border border-white/8 rounded-2xl overflow-hidden" x-data="{ open: true }">
+            <button @click="open = !open" class="w-full flex items-center justify-between px-5 py-4 text-left">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-semibold text-white">What changed</span>
+                    <span class="text-xs text-gray-500">vs scan from {{ $diff['scan_date']->format('d M Y') }}</span>
+                    @if($diff['score_delta'] > 0)
+                    <span class="text-xs font-medium text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">↑ +{{ $diff['score_delta'] }} pts</span>
+                    @elseif($diff['score_delta'] < 0)
+                    <span class="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full">↓ {{ $diff['score_delta'] }} pts</span>
+                    @else
+                    <span class="text-xs text-gray-600 bg-white/5 px-2 py-0.5 rounded-full">Score unchanged</span>
+                    @endif
+                </div>
+                <svg class="w-4 h-4 text-gray-600 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="open" x-cloak class="border-t border-white/5 px-5 py-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    @if(!empty($diff['fixed']))
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-green-500 mb-2">Fixed</p>
+                        <div class="space-y-1.5">
+                            @foreach($diff['fixed'] as $item)
+                            <div class="flex items-center gap-2 text-sm text-gray-300">
+                                <span class="w-4 h-4 flex-shrink-0 rounded-full bg-green-500/20 flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                </span>
+                                {{ $item }}
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                    @if(!empty($diff['broken']))
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-red-500 mb-2">New issues</p>
+                        <div class="space-y-1.5">
+                            @foreach($diff['broken'] as $item)
+                            <div class="flex items-center gap-2 text-sm text-gray-300">
+                                <span class="w-4 h-4 flex-shrink-0 rounded-full bg-red-500/20 flex items-center justify-center">
+                                    <svg class="w-2.5 h-2.5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </span>
+                                {{ $item }}
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+                    @if(empty($diff['fixed']) && empty($diff['broken']))
+                    <div class="sm:col-span-2 text-sm text-gray-500">No individual checks changed status since the last scan.</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Pre-compute counts for tab badges --}}
         @php

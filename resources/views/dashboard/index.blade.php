@@ -8,16 +8,46 @@
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
     {{-- Header --}}
-    <div class="flex items-center justify-between mb-10">
+    <div class="flex items-center justify-between mb-8">
         <div>
             <h1 class="text-2xl font-bold">My monitored sites</h1>
-            <p class="text-gray-400 text-sm mt-1">Logged in as {{ auth()->user()->email }}</p>
+            <p class="text-gray-500 text-sm mt-1">{{ auth()->user()->email }}</p>
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
             <button type="submit" class="text-sm text-gray-500 hover:text-gray-300 transition">Sign out</button>
         </form>
     </div>
+
+    {{-- Stats bar --}}
+    @if($stats['total'] > 0)
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        {{-- Average score --}}
+        @php
+            $avg = $stats['avg_score'] ? (int) round($stats['avg_score']) : null;
+            $avgColor = $avg === null ? 'text-gray-400'
+                      : ($avg >= 80 ? 'text-green-400' : ($avg >= 60 ? 'text-amber-400' : 'text-red-400'));
+            $avgBg    = $avg === null ? 'bg-white/3'
+                      : ($avg >= 80 ? 'bg-green-500/8' : ($avg >= 60 ? 'bg-amber-500/8' : 'bg-red-500/8'));
+        @endphp
+        <div class="{{ $avgBg }} border border-white/8 rounded-2xl p-5 text-center">
+            <p class="text-3xl font-black {{ $avgColor }}">{{ $avg ?? '—' }}</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Avg. score</p>
+        </div>
+
+        {{-- Sites count --}}
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-5 text-center">
+            <p class="text-3xl font-black text-white">{{ $stats['total'] }}<span class="text-gray-700 text-lg font-normal">/10</span></p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Sites</p>
+        </div>
+
+        {{-- Critical sites --}}
+        <div class="{{ $stats['critical'] > 0 ? 'bg-red-500/8 border-red-500/20' : 'bg-white/3 border-white/8' }} border rounded-2xl p-5 text-center">
+            <p class="text-3xl font-black {{ $stats['critical'] > 0 ? 'text-red-400' : 'text-gray-400' }}">{{ $stats['critical'] }}</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Need attention</p>
+        </div>
+    </div>
+    @endif
 
     {{-- Flash messages --}}
     @if(session('success'))
@@ -33,9 +63,14 @@
     @endif
 
     {{-- Add site form --}}
-    <div class="bg-white/3 border border-white/8 rounded-2xl p-6 mb-8">
-        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Add a site to monitor</h2>
-        <form action="{{ route('dashboard.addSite') }}" method="POST" class="flex gap-3">
+    <div class="bg-white/3 border border-white/8 rounded-2xl p-6 mb-4" x-data="{ bulk: false }">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Add a site to monitor</h2>
+            <button @click="bulk = !bulk" class="text-xs text-gray-600 hover:text-gray-400 transition" x-text="bulk ? 'Single domain' : 'Import multiple'"></button>
+        </div>
+
+        {{-- Single domain --}}
+        <form x-show="!bulk" action="{{ route('dashboard.addSite') }}" method="POST" class="flex gap-3">
             @csrf
             <input type="text" name="domain" placeholder="example.com" value="{{ old('domain') }}"
                    class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
@@ -44,45 +79,78 @@
                 Add site
             </button>
         </form>
-        <p class="text-xs text-gray-600 mt-2">Up to 10 sites. An initial scan runs immediately after adding.</p>
+
+        {{-- Bulk import --}}
+        <form x-show="bulk" x-cloak action="{{ route('dashboard.bulkImport') }}" method="POST">
+            @csrf
+            <textarea name="domains" rows="4" placeholder="example.com&#10;mysite.nl&#10;another-domain.com"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm mb-3"></textarea>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-gray-600">One domain per line. No scans run immediately on bulk import.</p>
+                <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2.5 rounded-xl transition text-sm whitespace-nowrap">
+                    Import sites
+                </button>
+            </div>
+        </form>
+
+        <p class="text-xs text-gray-700 mt-3" x-show="!bulk">Up to 10 sites. An initial scan runs immediately after adding.</p>
     </div>
 
     {{-- Site list --}}
     @if($sites->isEmpty())
-    <div class="text-center py-16 text-gray-600">
-        <svg class="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="text-center py-20 text-gray-600">
+        <svg class="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
-        <p>No sites added yet. Add your first site above.</p>
+        <p class="text-sm">No sites added yet. Add your first site above.</p>
     </div>
     @else
-    <div class="space-y-4">
+    <div class="space-y-3">
         @foreach($sites as $site)
-        <div class="bg-white/3 border border-white/8 rounded-2xl p-5" x-data="{ open: false }">
+        @php
+            $s     = $site->last_score;
+            $sBg   = $s !== null ? ($s >= 80 ? 'bg-green-500/15 border-green-500/20' : ($s >= 60 ? 'bg-amber-500/15 border-amber-500/20' : 'bg-red-500/15 border-red-500/20')) : 'bg-white/5 border-white/8';
+            $sTxt  = $s !== null ? ($s >= 80 ? 'text-green-400' : ($s >= 60 ? 'text-amber-400' : 'text-red-400')) : 'text-gray-600';
+            $sSub  = $s !== null ? ($s >= 80 ? 'text-green-500' : ($s >= 60 ? 'text-amber-500' : 'text-red-500')) : '';
+
+            $delta = ($site->previous_score !== null && $site->last_score !== null)
+                   ? $site->last_score - $site->previous_score
+                   : null;
+        @endphp
+        <div class="bg-white/3 border border-white/8 rounded-2xl p-5 hover:bg-white/4 transition-colors" x-data="{ open: false }">
             <div class="flex items-center justify-between gap-4">
 
-                {{-- Domain + score --}}
+                {{-- Score badge --}}
                 <div class="flex items-center gap-4 min-w-0">
-                    @if($site->last_score !== null)
-                    <div class="flex-shrink-0 w-14 h-14 rounded-xl flex flex-col items-center justify-center {{ $site->last_score >= 80 ? 'bg-green-500/15' : ($site->last_score >= 60 ? 'bg-amber-500/15' : 'bg-red-500/15') }}">
-                        <span class="text-xl font-black {{ $site->last_score >= 80 ? 'text-green-400' : ($site->last_score >= 60 ? 'text-amber-400' : 'text-red-400') }}">
-                            {{ $site->last_grade }}
-                        </span>
-                        <span class="text-xs {{ $site->last_score >= 80 ? 'text-green-500' : ($site->last_score >= 60 ? 'text-amber-500' : 'text-red-500') }}">
-                            {{ $site->last_score }}
-                        </span>
-                    </div>
-                    @else
-                    <div class="flex-shrink-0 w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center">
+                    <div class="flex-shrink-0 w-14 h-14 rounded-xl border {{ $sBg }} flex flex-col items-center justify-center">
+                        @if($s !== null)
+                        <span class="text-xl font-black {{ $sTxt }} leading-none">{{ $site->last_grade }}</span>
+                        <span class="text-[10px] {{ $sSub }} mt-0.5">{{ $s }}</span>
+                        @else
                         <span class="text-gray-600 text-xs">–</span>
+                        @endif
                     </div>
-                    @endif
 
                     <div class="min-w-0">
-                        <p class="font-semibold text-white truncate">{{ $site->domain }}</p>
-                        <p class="text-xs text-gray-500 mt-0.5">
+                        <div class="flex items-center gap-2">
+                            <p class="font-semibold text-white truncate">{{ $site->domain }}</p>
+                            {{-- Trend arrow --}}
+                            @if($delta !== null)
+                                @if($delta > 0)
+                                <span class="inline-flex items-center gap-0.5 text-xs text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-md font-medium flex-shrink-0">
+                                    ↑ +{{ $delta }}
+                                </span>
+                                @elseif($delta < 0)
+                                <span class="inline-flex items-center gap-0.5 text-xs text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-md font-medium flex-shrink-0">
+                                    ↓ {{ $delta }}
+                                </span>
+                                @endif
+                            @endif
+                        </div>
+                        <p class="text-xs text-gray-600 mt-0.5">
                             @if($site->last_checked_at)
-                                Last checked {{ $site->last_checked_at->diffForHumans() }}
+                                Checked {{ $site->last_checked_at->diffForHumans() }}
                             @else
                                 Not yet scanned
                             @endif
@@ -95,7 +163,11 @@
                     @if($site->lastScan)
                     <a href="{{ route('scan.show', $site->lastScan) }}"
                        class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">
-                        View report
+                        Report
+                    </a>
+                    <a href="{{ route('scan.card', $site->lastScan) }}"
+                       class="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">
+                        Share
                     </a>
                     @endif
                     <a href="{{ route('dashboard.history', $site->domain) }}"
@@ -113,7 +185,7 @@
 
                     <button @click="open = !open"
                             class="text-xs text-gray-500 hover:text-gray-300 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">
-                        Settings
+                        ···
                     </button>
 
                     <form action="{{ route('dashboard.removeSite', $site) }}" method="POST"
@@ -144,7 +216,7 @@
                         <input type="checkbox" name="notify_cert_expiry" value="1"
                                {{ $site->notify_cert_expiry ? 'checked' : '' }}
                                class="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500">
-                        Alert me when certificate expires within 30 days
+                        Alert me 30 days before SSL expiry
                     </label>
                     <button type="submit"
                             class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">
