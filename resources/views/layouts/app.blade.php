@@ -134,8 +134,8 @@
                 fetch(formEl.action, { method: 'POST', body: data, redirect: 'follow' })
                     .then(res => {
                         const url = res.url;
-                        // Check if we landed on a scan result page
-                        if (/\/scan\/[^\/]+/.test(url)) {
+                        // Only trust the response if it's OK (2xx) and on a scan result page
+                        if (res.ok && /\/scan\/[^\/]+/.test(url)) {
                             this.targetUrl = url;
                             // If animation already passed the last scanner, redirect now
                             if (this.activeIdx >= this.scanners.length - 1) {
@@ -143,9 +143,13 @@
                                 clearInterval(this._timer);
                                 setTimeout(() => { window.location.href = url; }, 500);
                             }
-                        } else {
-                            // Validation error or unexpected response — navigate immediately
+                        } else if (res.ok) {
+                            // Validation error or other page — navigate to it
                             window.location.href = url;
+                        } else {
+                            // Server error (4xx/5xx) — go home rather than navigate to error URL
+                            clearInterval(this._timer);
+                            window.location.href = '/';
                         }
                     })
                     .catch(() => { window.location.href = '/'; });
