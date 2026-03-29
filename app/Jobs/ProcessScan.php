@@ -37,6 +37,17 @@ class ProcessScan implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        $this->scan->update(['status' => 'failed']);
+        \Illuminate\Support\Facades\Log::error('ProcessScan job failed', [
+            'scan_id' => $this->scan->id,
+            'host'    => $this->scan->host,
+            'error'   => $exception->getMessage(),
+            'class'   => get_class($exception),
+            'file'    => $exception->getFile() . ':' . $exception->getLine(),
+        ]);
+
+        $this->scan->update([
+            'status'     => 'failed',
+            'results'    => ['_error' => $exception->getMessage()],
+        ]);
     }
 }

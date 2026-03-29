@@ -186,13 +186,19 @@ class ScanController extends Controller
 
     public function status(Scan $scan)
     {
+        $error = null;
+        if ($scan->isFailed() && is_array($scan->results) && isset($scan->results['_error'])) {
+            $error = $scan->results['_error'];
+        }
+
         return response()->json([
             'status'             => $scan->status,
             'score'              => $scan->score,
             'grade'              => $scan->grade,
             'completed'          => $scan->isCompleted(),
             'failed'             => $scan->isFailed(),
-            'completed_scanners' => is_array($scan->results) ? count($scan->results) : 0,
+            'completed_scanners' => is_array($scan->results) ? count(array_filter(array_keys($scan->results ?? []), fn($k) => $k !== '_error')) : 0,
+            'error'              => $error,
         ]);
     }
 
