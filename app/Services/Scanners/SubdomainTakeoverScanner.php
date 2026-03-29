@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class SubdomainTakeoverScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 5;
 
     /**
@@ -158,12 +159,4 @@ class SubdomainTakeoverScanner
         return '';
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class ExposedFilesScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 6;
 
     // Files to probe with content fingerprints to avoid custom-404 false positives
@@ -182,12 +183,4 @@ class ExposedFilesScanner
         return false;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

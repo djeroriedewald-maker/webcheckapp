@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class RobotsScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 6;
 
     public function scan(string $host): array
@@ -177,12 +178,4 @@ class RobotsScanner
         return ($code >= 200 && $code < 400 && $body) ? $body : null;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class TrustScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 7;
 
     public function scan(string $host): array
@@ -190,7 +191,7 @@ class TrustScanner
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 8,
             CURLOPT_CONNECTTIMEOUT => 8,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
         ]);
@@ -376,7 +377,7 @@ class TrustScanner
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => self::TIMEOUT,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_HTTPHEADER     => ['Accept: application/dns-json'],
             CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
         ]);
@@ -488,7 +489,7 @@ class TrustScanner
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => self::TIMEOUT,
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => true,
         ]);
         $body = curl_exec($ch);
         curl_close($ch);
@@ -567,12 +568,4 @@ class TrustScanner
         ];
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

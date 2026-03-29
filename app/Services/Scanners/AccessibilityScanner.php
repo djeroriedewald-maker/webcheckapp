@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class AccessibilityScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 8;
 
     public function scan(string $host): array
@@ -242,12 +243,4 @@ class AccessibilityScanner
         return $body ?: '';
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

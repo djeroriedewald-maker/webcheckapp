@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class HeadersScanner
 {
+    use HasSafeCall;
     public function scan(string $host): array
     {
         $checks   = [];
@@ -336,12 +337,4 @@ class HeadersScanner
         return $lastHeaders;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

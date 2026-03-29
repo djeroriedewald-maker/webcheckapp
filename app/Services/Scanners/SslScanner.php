@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class SslScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 8;
 
     public function scan(string $host): array
@@ -421,12 +422,4 @@ class SslScanner
         return $supported;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

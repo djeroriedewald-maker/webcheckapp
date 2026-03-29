@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class PrivacyScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 8;
 
     public function scan(string $host): array
@@ -178,12 +179,4 @@ class PrivacyScanner
         return $found;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

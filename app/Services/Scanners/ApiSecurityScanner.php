@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class ApiSecurityScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 5;
 
     /** Endpoints to probe and the signatures that indicate they are API/docs */
@@ -213,12 +214,4 @@ class ApiSecurityScanner
         return is_array($data) && ! empty($data) && isset($data[0]['name']);
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

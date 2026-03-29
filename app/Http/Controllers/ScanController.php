@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessScan;
 use App\Models\Scan;
 use App\Services\ScanService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -49,24 +50,11 @@ class ScanController extends Controller
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,
-            'status'     => 'running',
+            'status'     => 'pending',
             'ip_address' => $request->ip(),
         ]);
 
-        try {
-            set_time_limit(120);
-            $results = app(ScanService::class)->run($host);
-
-            $scan->update([
-                'status'       => 'completed',
-                'score'        => $results['score'],
-                'grade'        => $results['grade'],
-                'results'      => $results['categories'],
-                'completed_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            $scan->update(['status' => 'failed']);
-        }
+        ProcessScan::dispatch($scan);
 
         return redirect()->route('scan.show', $scan);
     }
@@ -230,12 +218,18 @@ class ScanController extends Controller
         $scan = Scan::create(['url' => $norm, 'host' => $host, 'status' => 'running', 'ip_address' => $ip]);
 
         try {
-            set_time_limit(120);
             $results = app(ScanService::class)->run($host);
-            $scan->update(['status' => 'completed', 'score' => $results['score'], 'grade' => $results['grade'], 'results' => $results['categories'], 'completed_at' => now()]);
+            $scan->update([
+                'status'       => 'completed',
+                'score'        => $results['score'],
+                'grade'        => $results['grade'],
+                'results'      => $results['categories'],
+                'completed_at' => now(),
+            ]);
 
             return $scan->fresh();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            \Log::error('Compare scan failed', ['host' => $host, 'error' => $e->getMessage()]);
             $scan->update(['status' => 'failed']);
 
             return null;

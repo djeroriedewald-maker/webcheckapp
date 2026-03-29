@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class DnsScanner
 {
+    use HasSafeCall;
     public function scan(string $host): array
     {
         $checks   = [];
@@ -366,12 +367,4 @@ class DnsScanner
         return false;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class PerformanceScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 6;
 
     public function scan(string $host): array
@@ -328,12 +329,4 @@ class PerformanceScanner
         return $code === 200;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

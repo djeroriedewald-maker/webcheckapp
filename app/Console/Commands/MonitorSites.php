@@ -46,6 +46,7 @@ class MonitorSites extends Command
                 $scan->refresh();
 
                 $site->update([
+                    'previous_score'  => $site->last_score,
                     'last_score'      => $results['score'],
                     'last_grade'      => $results['grade'],
                     'last_scan_id'    => $scan->id,
@@ -65,8 +66,7 @@ class MonitorSites extends Command
 
                 // Certificate expiry alert
                 if ($site->notify_cert_expiry) {
-                    $daysLeft = $results['categories']['ssl']['checks'][0]['days_left']
-                        ?? $this->extractCertDaysLeft($results['categories']['ssl'] ?? []);
+                    $daysLeft = $this->extractCertDaysLeft($results['categories']['ssl'] ?? []);
 
                     if ($daysLeft !== null && $daysLeft <= 30 && $daysLeft > 0) {
                         Mail::to($site->user->email)

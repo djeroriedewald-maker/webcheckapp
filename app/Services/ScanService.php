@@ -21,6 +21,7 @@ use App\Services\Scanners\CarbonScanner;
 use App\Services\Scanners\BrokenLinksScanner;
 use App\Services\Scanners\BrandingScanner;
 use App\Services\Scanners\SubdomainTakeoverScanner;
+use Illuminate\Support\Facades\Log;
 
 class ScanService
 {
@@ -77,14 +78,21 @@ class ScanService
             try {
                 $results[$key] = $scanner();
             } catch (\Throwable $e) {
+                Log::warning("Scanner [{$key}] failed for host [{$host}]", [
+                    'scanner' => $key,
+                    'host'    => $host,
+                    'error'   => $e->getMessage(),
+                    'file'    => $e->getFile() . ':' . $e->getLine(),
+                ]);
+
                 $results[$key] = [
-                    'category' => ucfirst($key),
+                    'category' => ucfirst(str_replace('_', ' ', $key)),
                     'icon'     => 'exclamation-triangle',
-                    'score'    => 0,
+                    'score'    => null,
                     'checks'   => [[
                         'id'          => "{$key}_error",
                         'label'       => 'Scanner error',
-                        'status'      => 'fail',
+                        'status'      => 'warn',
                         'description' => 'This check could not be completed.',
                     ]],
                 ];

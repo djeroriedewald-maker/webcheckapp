@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class BrandingScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 6;
 
     public function scan(string $host): array
@@ -235,12 +236,4 @@ class BrandingScanner
         return $body ?: '';
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

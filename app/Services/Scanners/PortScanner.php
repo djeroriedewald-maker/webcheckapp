@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class PortScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 1.0; // seconds per port (float supported by stream_socket_client)
 
     private const PORTS = [
@@ -119,12 +120,4 @@ class PortScanner
         return false;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

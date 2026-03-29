@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class ContentScanner
 {
+    use HasSafeCall;
     private const TIMEOUT = 6;
 
     public function scan(string $host): array
@@ -502,12 +503,4 @@ class ContentScanner
         return is_array($data) && ! empty($data) && isset($data[0]['slug']);
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }

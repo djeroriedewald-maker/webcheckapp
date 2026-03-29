@@ -4,6 +4,7 @@ namespace App\Services\Scanners;
 
 class BrokenLinksScanner
 {
+    use HasSafeCall;
     private const TIMEOUT   = 5;
     private const MAX_LINKS = 15;
     private const MAX_HTML  = 524288; // 512 KB
@@ -169,12 +170,4 @@ class BrokenLinksScanner
         return $code;
     }
 
-    private function safe(callable $fn, mixed $default): mixed
-    {
-        try {
-            return $fn();
-        } catch (\Throwable) {
-            return $default;
-        }
-    }
 }
