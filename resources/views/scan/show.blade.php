@@ -32,28 +32,11 @@
 @section('content')
 
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-     x-data="scanPoller({{ $scan->id }}, '{{ route('scan.status', $scan) }}', {{ $scan->isCompleted() ? 'true' : 'false' }})"
+     x-data="scanPoller({{ $scan->id }}, '{{ route('scan.status', $scan) }}', {{ $scan->isCompleted() ? 'true' : 'false' }}, '{{ $scan->host }}')"
      x-init="init()">
 
-    {{-- Loading state --}}
-    <div x-show="!completed && !failed" class="text-center py-20">
-        <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-6">
-            <svg class="animate-spin w-10 h-10 text-indigo-400" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
-        </div>
-        <h2 class="text-2xl font-bold mb-2">Scanning <span class="text-indigo-400">{{ $scan->host }}</span></h2>
-        <p class="text-gray-400">Running security checks... this usually takes 30-60 seconds.</p>
-        <div class="mt-8 flex justify-center gap-2 flex-wrap max-w-2xl mx-auto">
-            @foreach(['SSL', 'Headers', 'DNS', 'Performance', 'Content', 'Technology', 'Trust', 'Malware', 'Exposed Files', 'Ports', 'Privacy', 'Accessibility', 'TLS', 'Robots', 'API', 'Carbon', 'Links', 'Branding', 'Subdomains'] as $i => $label)
-            <div class="flex flex-col items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: {{ $i * 0.1 }}s"></div>
-                <span class="text-xs text-gray-600 hidden sm:block">{{ $label }}</span>
-            </div>
-            @endforeach
-        </div>
-    </div>
+    {{-- No local loading state: the global overlay (layouts/app.blade.php) is
+         re-triggered in scanPoller.init() when the scan is still pending/running. --}}
 
     {{-- Failed state --}}
     <div x-show="failed" class="text-center py-20">
@@ -1419,7 +1402,7 @@
 </div>
 
 <script>
-function scanPoller(scanId, statusUrl, alreadyCompleted) {
+function scanPoller(scanId, statusUrl, alreadyCompleted, scanHost) {
     return {
         completed: alreadyCompleted,
         failed: false,
@@ -1429,6 +1412,9 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
 
         init() {
             if (!this.completed) {
+                // Re-trigger the global overlay so the user sees the same
+                // beautiful loading screen instead of a second local one.
+                this.$dispatch('scan-start', { url: scanHost });
                 this.interval = setInterval(() => this.poll(), 3000);
             }
         },
@@ -1437,6 +1423,7 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
             this.retries++;
             if (this.retries > this.maxRetries) {
                 clearInterval(this.interval);
+                this.$dispatch('scan-done');
                 this.failed = true;
                 return;
             }
@@ -1450,6 +1437,7 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
                     window.location.reload();
                 } else if (data.failed) {
                     clearInterval(this.interval);
+                    this.$dispatch('scan-done');
                     this.failed = true;
                 }
             } catch (e) {

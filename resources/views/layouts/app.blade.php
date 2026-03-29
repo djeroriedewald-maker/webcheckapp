@@ -94,6 +94,14 @@
                 'Exposed Files',
                 'Privacy & GDPR',
                 'Trust & WHOIS',
+                'Accessibility',
+                'TLS / Cipher Suite',
+                'Robots & Crawling',
+                'API Security',
+                'Carbon Footprint',
+                'Broken Links',
+                'Branding',
+                'Subdomain Takeover',
             ],
             activeIdx: 0,
             doneUpto: -1,
@@ -123,6 +131,7 @@
             }
         }"
         @scan-start.window="start($event.detail.url)"
+        @scan-done.window="show = false; clearInterval(_timer)"
         x-show="show"
         x-cloak
         style="display:none"
