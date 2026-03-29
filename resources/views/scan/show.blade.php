@@ -44,11 +44,11 @@
             </svg>
         </div>
         <h2 class="text-2xl font-bold mb-2">Scanning <span class="text-indigo-400">{{ $scan->host }}</span></h2>
-        <p class="text-gray-400">Running security checks... this usually takes 15-30 seconds.</p>
-        <div class="mt-8 flex justify-center gap-2">
-            @foreach(['SSL & HTTPS', 'Security Headers', 'DNS & Email', 'Performance', 'Content', 'Technology', 'Trust', 'Malware', 'Exposed Files', 'Ports', 'Privacy'] as $i => $label)
+        <p class="text-gray-400">Running security checks... this usually takes 30-60 seconds.</p>
+        <div class="mt-8 flex justify-center gap-2 flex-wrap max-w-2xl mx-auto">
+            @foreach(['SSL', 'Headers', 'DNS', 'Performance', 'Content', 'Technology', 'Trust', 'Malware', 'Exposed Files', 'Ports', 'Privacy', 'Accessibility', 'TLS', 'Robots', 'API', 'Carbon', 'Links', 'Branding', 'Subdomains'] as $i => $label)
             <div class="flex flex-col items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: {{ $i * 0.15 }}s"></div>
+                <div class="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style="animation-delay: {{ $i * 0.1 }}s"></div>
                 <span class="text-xs text-gray-600 hidden sm:block">{{ $label }}</span>
             </div>
             @endforeach
