@@ -5,7 +5,7 @@ namespace App\Services\Scanners;
 class SslScanner
 {
     use HasSafeCall;
-    private const TIMEOUT = 8;
+    private const TIMEOUT = 4;
 
     public function scan(string $host): array
     {
@@ -342,8 +342,6 @@ class SslScanner
      */
     private function checkWeakCiphers(string $host): array
     {
-        // Test groups of historically weak ciphers using curl's cipher negotiation.
-        // curl uses OpenSSL naming; we test the most dangerous known-weak families.
         $weakGroups = [
             'RC4'    => 'RC4-SHA:RC4-MD5',
             '3DES'   => 'DES-CBC3-SHA',
@@ -351,29 +349,41 @@ class SslScanner
             'NULL'   => 'NULL-SHA:NULL-MD5',
         ];
 
-        $accepted = [];
+        // Run all cipher checks in parallel via curl_multi
+        $multi   = curl_multi_init();
+        $handles = [];
+
         foreach ($weakGroups as $name => $cipherList) {
             $ch = curl_init("https://{$host}");
             curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER    => true,
-                CURLOPT_NOBODY            => true,
-                CURLOPT_TIMEOUT           => (float) self::TIMEOUT,
-                CURLOPT_CONNECTTIMEOUT    => (float) self::TIMEOUT,
-                CURLOPT_SSL_VERIFYPEER    => false,
-                CURLOPT_SSL_VERIFYHOST    => 0,
-                CURLOPT_SSL_CIPHER_LIST   => $cipherList,
-                CURLOPT_USERAGENT         => 'Mozilla/5.0 WebCheckApp/1.0',
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_NOBODY          => true,
+                CURLOPT_TIMEOUT         => (float) self::TIMEOUT,
+                CURLOPT_CONNECTTIMEOUT  => (float) self::TIMEOUT,
+                CURLOPT_SSL_VERIFYPEER  => false,
+                CURLOPT_SSL_VERIFYHOST  => 0,
+                CURLOPT_SSL_CIPHER_LIST => $cipherList,
+                CURLOPT_USERAGENT       => 'Mozilla/5.0 WebCheckApp/1.0',
             ]);
-            curl_exec($ch);
-            $errno = curl_errno($ch);
-            curl_close($ch);
-
-            // errno 0 = connection succeeded with the weak cipher
-            if ($errno === 0) {
-                $accepted[] = $name;
-            }
+            curl_multi_add_handle($multi, $ch);
+            $handles[$name] = $ch;
         }
 
+        do {
+            curl_multi_exec($multi, $running);
+            if ($running) curl_multi_select($multi);
+        } while ($running);
+
+        $accepted = [];
+        foreach ($handles as $name => $ch) {
+            if (curl_errno($ch) === 0) {
+                $accepted[] = $name;
+            }
+            curl_multi_remove_handle($multi, $ch);
+            curl_close($ch);
+        }
+
+        curl_multi_close($multi);
         return $accepted;
     }
 
