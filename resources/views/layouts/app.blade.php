@@ -131,7 +131,6 @@
             }
         }"
         @scan-start.window="start($event.detail.url)"
-        @scan-done.window="show = false; clearInterval(_timer)"
         x-show="show"
         x-cloak
         style="display:none"

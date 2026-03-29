@@ -32,11 +32,98 @@
 @section('content')
 
 <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-     x-data="scanPoller({{ $scan->id }}, '{{ route('scan.status', $scan) }}', {{ $scan->isCompleted() ? 'true' : 'false' }}, '{{ $scan->host }}')"
+     x-data="scanPoller({{ $scan->id }}, '{{ route('scan.status', $scan) }}', {{ $scan->isCompleted() ? 'true' : 'false' }})"
      x-init="init()">
 
-    {{-- No local loading state: the global overlay (layouts/app.blade.php) is
-         re-triggered in scanPoller.init() when the scan is still pending/running. --}}
+    {{-- Loading state — server-side rendered so it's immediately visible,
+         no Alpine dependency. Alpine hides it once the scan completes/fails. --}}
+    @if(!$scan->isCompleted() && !$scan->isFailed())
+    <div id="scan-loading" class="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center px-6"
+         x-show="!completed && !failed">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative w-full max-w-sm text-center">
+            <div class="flex items-center justify-center gap-2 mb-10 text-lg font-bold">
+                <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                <span>WebCheck<span class="text-indigo-400">App</span></span>
+            </div>
+
+            <p class="text-sm text-gray-500 uppercase tracking-widest mb-2">Analyzing security for</p>
+            <h2 class="text-2xl font-bold text-white truncate mb-8">{{ $scan->host }}</h2>
+
+            <div class="w-full h-1 bg-white/5 rounded-full mb-8 overflow-hidden">
+                <div id="scan-progress-bar"
+                     class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
+                     style="width: 0%"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-left mb-10" id="scan-checker-list">
+                @foreach(['SSL & HTTPS','Security Headers','DNS & Email Security','Performance & SEO','Content & CMS','Technology Stack','Malware & Reputation','Open Ports','Exposed Files','Privacy & GDPR','Trust & WHOIS','Accessibility','TLS / Cipher Suite','Robots & Crawling','API Security','Carbon Footprint','Broken Links','Branding','Subdomain Takeover'] as $i => $scanner)
+                <div class="flex items-center gap-2.5 text-sm" data-scanner-idx="{{ $i }}">
+                    <span class="checker-pending flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white/15"></span>
+                    </span>
+                    <span class="checker-spin flex-shrink-0 w-4 h-4 hidden">
+                        <svg class="w-4 h-4 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                    </span>
+                    <span class="checker-done flex-shrink-0 w-4 h-4 rounded-full bg-green-500/20 items-center justify-center hidden">
+                        <svg class="w-2.5 h-2.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </span>
+                    <span class="checker-label text-gray-600 text-sm">{{ $scanner }}</span>
+                </div>
+                @endforeach
+            </div>
+
+            <p class="text-xs text-gray-600">This usually takes 30–60 seconds. Please wait&hellip;</p>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var scanners = document.querySelectorAll('#scan-checker-list [data-scanner-idx]');
+        var bar      = document.getElementById('scan-progress-bar');
+        var total    = scanners.length;
+        var active   = 0;
+
+        function advance() {
+            if (active >= total) return;
+            // Mark previous as done
+            if (active > 0) {
+                var prev = scanners[active - 1];
+                prev.querySelector('.checker-spin').classList.add('hidden');
+                var d = prev.querySelector('.checker-done');
+                d.classList.remove('hidden');
+                d.classList.add('flex');
+                prev.querySelector('.checker-label').classList.remove('text-white','font-medium');
+                prev.querySelector('.checker-label').classList.add('text-green-400');
+            }
+            // Activate current
+            var cur = scanners[active];
+            cur.querySelector('.checker-pending').classList.add('hidden');
+            cur.querySelector('.checker-spin').classList.remove('hidden');
+            cur.querySelector('.checker-label').classList.remove('text-gray-600');
+            cur.querySelector('.checker-label').classList.add('text-white','font-medium');
+            bar.style.width = Math.round(((active + 1) / total) * 100) + '%';
+            active++;
+        }
+
+        advance(); // start immediately on first scanner
+        var t = setInterval(function() {
+            if (active < total) {
+                advance();
+            } else {
+                clearInterval(t);
+            }
+        }, 2800);
+    })();
+    </script>
+    @endif
 
     {{-- Failed state --}}
     <div x-show="failed" class="text-center py-20">
@@ -1402,7 +1489,7 @@
 </div>
 
 <script>
-function scanPoller(scanId, statusUrl, alreadyCompleted, scanHost) {
+function scanPoller(scanId, statusUrl, alreadyCompleted) {
     return {
         completed: alreadyCompleted,
         failed: false,
@@ -1412,9 +1499,6 @@ function scanPoller(scanId, statusUrl, alreadyCompleted, scanHost) {
 
         init() {
             if (!this.completed) {
-                // Re-trigger the global overlay so the user sees the same
-                // beautiful loading screen instead of a second local one.
-                this.$dispatch('scan-start', { url: scanHost });
                 this.interval = setInterval(() => this.poll(), 3000);
             }
         },
@@ -1423,7 +1507,6 @@ function scanPoller(scanId, statusUrl, alreadyCompleted, scanHost) {
             this.retries++;
             if (this.retries > this.maxRetries) {
                 clearInterval(this.interval);
-                this.$dispatch('scan-done');
                 this.failed = true;
                 return;
             }
@@ -1437,7 +1520,6 @@ function scanPoller(scanId, statusUrl, alreadyCompleted, scanHost) {
                     window.location.reload();
                 } else if (data.failed) {
                     clearInterval(this.interval);
-                    this.$dispatch('scan-done');
                     this.failed = true;
                 }
             } catch (e) {
