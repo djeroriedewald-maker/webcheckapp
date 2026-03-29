@@ -4,7 +4,7 @@ namespace App\Services\Scanners;
 
 class TlsCipherScanner
 {
-    private const TIMEOUT = 5;
+    private const TIMEOUT = 3;
 
     public function scan(string $host): array
     {

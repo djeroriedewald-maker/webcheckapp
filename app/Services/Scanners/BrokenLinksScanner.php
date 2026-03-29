@@ -5,8 +5,8 @@ namespace App\Services\Scanners;
 class BrokenLinksScanner
 {
     use HasSafeCall;
-    private const TIMEOUT   = 5;
-    private const MAX_LINKS = 15;
+    private const TIMEOUT   = 4;
+    private const MAX_LINKS = 10;
     private const MAX_HTML  = 524288; // 512 KB
 
     public function scan(string $host): array
@@ -47,8 +47,8 @@ class BrokenLinksScanner
         $broken  = [];
         $ok      = 0;
 
-        foreach ($toCheck as $url) {
-            $code = $this->safe(fn() => $this->checkUrl($url), 0);
+        $codes = $this->checkUrlsParallel($toCheck);
+        foreach ($codes as $url => $code) {
             if ($code >= 400) {
                 $broken[] = ['url' => $url, 'code' => $code];
             } elseif ($code >= 200) {
@@ -151,23 +151,42 @@ class BrokenLinksScanner
         return $body ?: '';
     }
 
-    private function checkUrl(string $url): int
+    /** Check all URLs in parallel using curl_multi. Returns [url => http_code]. */
+    private function checkUrlsParallel(array $urls): array
     {
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_NOBODY         => true,
-            CURLOPT_TIMEOUT        => self::TIMEOUT,
-            CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS      => 3,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
-        ]);
-        curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        return $code;
+        $multi   = curl_multi_init();
+        $handles = [];
+
+        foreach ($urls as $url) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_NOBODY         => true,
+                CURLOPT_TIMEOUT        => self::TIMEOUT,
+                CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 2,
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            ]);
+            curl_multi_add_handle($multi, $ch);
+            $handles[$url] = $ch;
+        }
+
+        do {
+            curl_multi_exec($multi, $running);
+            if ($running) curl_multi_select($multi);
+        } while ($running);
+
+        $codes = [];
+        foreach ($handles as $url => $ch) {
+            $codes[$url] = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_multi_remove_handle($multi, $ch);
+            curl_close($ch);
+        }
+
+        curl_multi_close($multi);
+        return $codes;
     }
 
 }

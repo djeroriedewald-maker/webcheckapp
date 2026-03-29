@@ -147,8 +147,8 @@ class ScanService
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_NOBODY         => true,
-            CURLOPT_TIMEOUT        => 8,
-            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT        => 5,
+            CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 5,
