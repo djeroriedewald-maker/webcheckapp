@@ -35,7 +35,7 @@ class ScanService
         'exposed_files' => 20,
     ];
 
-    public function run(string $host): array
+    public function run(string $host, ?callable $onScannerDone = null): array
     {
         // Block SSRF attempts — private IPs, localhost, metadata services
         if (! $this->isPublicHost($host)) {
@@ -96,6 +96,10 @@ class ScanService
                         'description' => 'This check could not be completed.',
                     ]],
                 ];
+            }
+
+            if ($onScannerDone !== null) {
+                $onScannerDone($results);
             }
         }
 

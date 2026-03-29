@@ -187,11 +187,12 @@ class ScanController extends Controller
     public function status(Scan $scan)
     {
         return response()->json([
-            'status'    => $scan->status,
-            'score'     => $scan->score,
-            'grade'     => $scan->grade,
-            'completed' => $scan->isCompleted(),
-            'failed'    => $scan->isFailed(),
+            'status'             => $scan->status,
+            'score'              => $scan->score,
+            'grade'              => $scan->grade,
+            'completed'          => $scan->isCompleted(),
+            'failed'             => $scan->isFailed(),
+            'completed_scanners' => is_array($scan->results) ? count($scan->results) : 0,
         ]);
     }
 

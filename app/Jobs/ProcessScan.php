@@ -21,7 +21,10 @@ class ProcessScan implements ShouldQueue
     {
         $this->scan->update(['status' => 'running']);
 
-        $results = $scanService->run($this->scan->host);
+        $results = $scanService->run(
+            $this->scan->host,
+            fn(array $partial) => $this->scan->update(['results' => $partial]),
+        );
 
         $this->scan->update([
             'status'       => 'completed',

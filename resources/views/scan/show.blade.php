@@ -85,43 +85,43 @@
         </div>
     </div>
     <script>
-    (function() {
-        var scanners = document.querySelectorAll('#scan-checker-list [data-scanner-idx]');
-        var bar      = document.getElementById('scan-progress-bar');
-        var total    = scanners.length;
-        var active   = 0;
+    // updateProgress is called by the scanPoller on every poll response
+    // with the real completed_scanners count from the API.
+    var _lastRendered = -1;
+    function updateProgress(completedCount) {
+        if (completedCount <= _lastRendered) return;
+        var items = document.querySelectorAll('#scan-checker-list [data-scanner-idx]');
+        var bar   = document.getElementById('scan-progress-bar');
+        if (!items.length || !bar) return;
+        var total = items.length;
 
-        function advance() {
-            if (active >= total) return;
-            // Mark previous as done
-            if (active > 0) {
-                var prev = scanners[active - 1];
-                prev.querySelector('.checker-spin').classList.add('hidden');
-                var d = prev.querySelector('.checker-done');
-                d.classList.remove('hidden');
-                d.classList.add('flex');
-                prev.querySelector('.checker-label').classList.remove('text-white','font-medium');
-                prev.querySelector('.checker-label').classList.add('text-green-400');
-            }
-            // Activate current
-            var cur = scanners[active];
+        for (var i = _lastRendered + 1; i < completedCount && i < total; i++) {
+            var item = items[i];
+            // Mark as done
+            item.querySelector('.checker-pending').classList.add('hidden');
+            item.querySelector('.checker-spin').classList.add('hidden');
+            var d = item.querySelector('.checker-done');
+            d.classList.remove('hidden');
+            d.classList.add('flex');
+            item.querySelector('.checker-label').classList.remove('text-gray-600','text-white','font-medium');
+            item.querySelector('.checker-label').classList.add('text-green-400');
+        }
+
+        // Activate next (the one currently running)
+        if (completedCount < total) {
+            var cur = items[completedCount];
             cur.querySelector('.checker-pending').classList.add('hidden');
             cur.querySelector('.checker-spin').classList.remove('hidden');
             cur.querySelector('.checker-label').classList.remove('text-gray-600');
             cur.querySelector('.checker-label').classList.add('text-white','font-medium');
-            bar.style.width = Math.round(((active + 1) / total) * 100) + '%';
-            active++;
         }
 
-        advance(); // start immediately on first scanner
-        var t = setInterval(function() {
-            if (active < total) {
-                advance();
-            } else {
-                clearInterval(t);
-            }
-        }, 2800);
-    })();
+        bar.style.width = Math.round((completedCount / total) * 100) + '%';
+        _lastRendered = completedCount - 1;
+    }
+
+    // Show first scanner as active immediately on page load
+    updateProgress(0);
     </script>
     @endif
 
@@ -1514,6 +1514,10 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
                 const res = await fetch(statusUrl);
                 if (!res.ok) return;
                 const data = await res.json();
+
+                if (typeof updateProgress === 'function' && data.completed_scanners !== undefined) {
+                    updateProgress(data.completed_scanners);
+                }
 
                 if (data.completed) {
                     clearInterval(this.interval);
