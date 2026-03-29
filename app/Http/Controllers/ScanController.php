@@ -71,12 +71,15 @@ class ScanController extends Controller
         }
 
         // Is there a newer completed scan for this host? (someone else triggered a fresh scan)
-        $newerScan = Scan::where('host', $scan->host)
-            ->where('status', 'completed')
-            ->where('id', '!=', $scan->id)
-            ->where('completed_at', '>', $scan->completed_at)
-            ->latest('completed_at')
-            ->first();
+        $newerScan = null;
+        if ($scan->completed_at !== null) {
+            $newerScan = Scan::where('host', $scan->host)
+                ->where('status', 'completed')
+                ->where('id', '!=', $scan->id)
+                ->where('completed_at', '>', $scan->completed_at)
+                ->latest('completed_at')
+                ->first();
+        }
 
         // Previous scan for "wat veranderde" diff
         $prevScan = null;
