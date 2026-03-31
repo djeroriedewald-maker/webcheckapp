@@ -156,9 +156,6 @@
 
     <div class="relative grid grid-cols-1 sm:grid-cols-3 gap-8">
 
-        {{-- Connector line (desktop) --}}
-        <div class="absolute top-10 left-[calc(16.67%+28px)] right-[calc(16.67%+28px)] h-px bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-indigo-500/30 hidden sm:block"></div>
-
         {{-- Step 1 --}}
         <div class="relative text-center px-4">
             <div class="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/25 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/10">
@@ -175,8 +172,8 @@
                 <span class="text-3xl font-black text-purple-400">2</span>
                 <div class="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full"></div>
             </div>
-            <h3 class="font-bold text-white text-lg mb-3">11 scanners run</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">We fire off 11 parallel security scanners — SSL, DNS, headers, malware, exposed files, open ports, privacy and more. Done in under 30 seconds.</p>
+            <h3 class="font-bold text-white text-lg mb-3">19 scanners run</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">We run 19 security scanners — SSL, DNS, headers, malware, exposed files, open ports, privacy, accessibility and more. Done in under 60 seconds.</p>
         </div>
 
         {{-- Step 3 --}}
