@@ -103,7 +103,7 @@
             <div class="w-px h-8 bg-white/8"></div>
             @endif
             <div class="text-center">
-                <p class="text-2xl font-black text-white">11</p>
+                <p class="text-2xl font-black text-white">19</p>
                 <p class="text-xs text-gray-600 mt-0.5 uppercase tracking-wider">Categories</p>
             </div>
             <div class="w-px h-8 bg-white/8"></div>
@@ -290,7 +290,7 @@
     <div class="text-center mb-16">
         <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Comprehensive</p>
         <h2 class="text-4xl font-black mb-4">What we check</h2>
-        <p class="text-gray-400 max-w-xl mx-auto">11 security, performance and privacy categories — 50+ individual checks per scan.</p>
+        <p class="text-gray-400 max-w-xl mx-auto">19 security, performance and privacy categories — 50+ individual checks per scan.</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -340,6 +340,38 @@
             ['Trust & WHOIS',      'teal',    'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
              'Domain age, registrar, expiry date and nameserver information.',
              ['Domain age', 'Expiry date', 'Registrar', 'Name servers']],
+
+            ['Accessibility',      'pink',    'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
+             'Basic accessibility checks for inclusivity and usability compliance.',
+             ['Alt text on images', 'Lang attribute', 'Viewport meta', 'Heading structure']],
+
+            ['TLS / Cipher Suite',  'sky',    'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
+             'Deep dive into TLS protocol versions and cipher suite configuration.',
+             ['TLS 1.2 / 1.3 only', 'ECDHE ciphers', 'Forward secrecy', 'No weak ciphers']],
+
+            ['Robots & Crawling',  'lime',    'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+             'Validates robots.txt rules and checks for sitemap availability.',
+             ['robots.txt present', 'Sitemap.xml', 'Crawl rules', 'Disallow check']],
+
+            ['API Security',       'amber',   'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+             'Detects exposed API endpoints and common security misconfigurations.',
+             ['CORS headers', 'Rate limit headers', 'Error exposure', 'API versioning']],
+
+            ['Carbon Footprint',   'emerald', 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+             'Estimates the environmental impact and green hosting status of the site.',
+             ['CO₂ per visit', 'Green hosting', 'Page weight', 'Efficiency rating']],
+
+            ['Broken Links',       'rose',    'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
+             'Crawls the homepage and checks for broken links and redirect chains.',
+             ['404 detection', 'External links', 'Redirect chains', 'Anchor tags']],
+
+            ['Branding',           'pink',    'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01',
+             'Checks for favicon, Open Graph tags and social media presence.',
+             ['Favicon', 'Open Graph', 'Twitter Card', 'Apple touch icon']],
+
+            ['Subdomain Takeover', 'orange',  'M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9',
+             'Detects dangling DNS records that could be hijacked by attackers.',
+             ['CNAME dangling', 'GitHub Pages', 'Heroku endpoints', 'AWS S3 buckets']],
         ];
 
         $colorMap = [
@@ -354,6 +386,11 @@
             'emerald' => ['icon' => 'text-emerald-400','bg' => 'bg-emerald-500/12','border' => 'border-emerald-500/20','dot' => 'bg-emerald-500'],
             'violet'  => ['icon' => 'text-violet-400', 'bg' => 'bg-violet-500/12', 'border' => 'border-violet-500/20', 'dot' => 'bg-violet-500'],
             'teal'    => ['icon' => 'text-teal-400',   'bg' => 'bg-teal-500/12',   'border' => 'border-teal-500/20',   'dot' => 'bg-teal-500'],
+            'pink'    => ['icon' => 'text-pink-400',   'bg' => 'bg-pink-500/12',   'border' => 'border-pink-500/20',   'dot' => 'bg-pink-500'],
+            'sky'     => ['icon' => 'text-sky-400',    'bg' => 'bg-sky-500/12',    'border' => 'border-sky-500/20',    'dot' => 'bg-sky-500'],
+            'lime'    => ['icon' => 'text-lime-400',   'bg' => 'bg-lime-500/12',   'border' => 'border-lime-500/20',   'dot' => 'bg-lime-500'],
+            'amber'   => ['icon' => 'text-amber-400',  'bg' => 'bg-amber-500/12',  'border' => 'border-amber-500/20',  'dot' => 'bg-amber-500'],
+            'rose'    => ['icon' => 'text-rose-400',   'bg' => 'bg-rose-500/12',   'border' => 'border-rose-500/20',   'dot' => 'bg-rose-500'],
         ];
         @endphp
 
@@ -501,7 +538,7 @@
             </div>
 
             <h2 class="text-4xl font-black mb-4">Scan your website now</h2>
-            <p class="text-gray-400 mb-10 max-w-lg mx-auto">Find out what attackers see when they look at your site. Takes 30 seconds.</p>
+            <p class="text-gray-400 mb-10 max-w-lg mx-auto">Find out what attackers see when they look at your site. Usually done in under 60 seconds.</p>
 
             <form action="{{ route('scan.store') }}" method="POST"
                   x-data="{ loading: false }"
