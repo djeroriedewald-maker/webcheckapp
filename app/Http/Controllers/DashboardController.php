@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessScan;
 use App\Models\MonitoredSite;
 use App\Models\Scan;
 use App\Services\ScanService;
@@ -67,9 +68,27 @@ class DashboardController extends Controller
     {
         abort_unless($site->user_id === Auth::id(), 403);
 
-        $this->runScanForSite($site);
+        // Check for a recent cached scan first
+        $existing = Scan::where('host', $site->domain)
+            ->where('status', 'completed')
+            ->where('completed_at', '>=', now()->subHour())
+            ->latest('completed_at')
+            ->first();
 
-        return redirect()->route('dashboard')->with('success', "Refreshed scan for {$site->domain}.");
+        if ($existing) {
+            return redirect()->route('scan.show', $existing);
+        }
+
+        $scan = Scan::create([
+            'url'        => 'https://' . $site->domain,
+            'host'       => $site->domain,
+            'status'     => 'pending',
+            'ip_address' => request()->ip(),
+        ]);
+
+        ProcessScan::dispatch($scan);
+
+        return redirect()->route('scan.show', $scan);
     }
 
     public function updateNotifications(Request $request, MonitoredSite $site)

@@ -370,7 +370,7 @@
             @if($category['score'] !== null)
             @php $goTab = $tabMap[$key] ?? 'technologie'; @endphp
             <button type="button"
-                    @click="tab = '{{ $goTab }}'"
+                    @click="tab = '{{ $goTab }}'; $nextTick(() => document.getElementById('tab-nav').scrollIntoView({behavior: 'smooth', block: 'start'}))"
                     class="bg-white/3 border border-white/8 rounded-xl p-4 text-left hover:bg-white/6 hover:border-white/15 transition cursor-pointer group">
                 <div class="text-xs text-gray-500 mb-2 truncate group-hover:text-gray-300 transition">{{ $category['category'] }}</div>
                 <div class="text-2xl font-bold {{ $category['score'] >= 75 ? 'text-green-400' : ($category['score'] >= 50 ? 'text-yellow-400' : 'text-red-400') }}">
@@ -386,7 +386,7 @@
         </div>
 
         {{-- Sticky tab navigation --}}
-        <div class="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
+        <div id="tab-nav" class="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
             <div class="bg-[#0b0b12]/95 backdrop-blur-md border-b border-white/8 px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center gap-1 overflow-x-auto scrollbar-none py-2">
                     @php
