@@ -92,8 +92,13 @@
             if (_realPct > 0) { clearInterval(_pseudoTimer); return; }
             if (_pseudoPct < 35) {
                 _pseudoPct += 0.4;
-                var bar = document.getElementById('scan-progress-bar');
-                if (bar) bar.style.width = _pseudoPct.toFixed(1) + '%';
+                var bar     = document.getElementById('scan-progress-bar');
+                var percent = document.getElementById('scan-percent');
+                var label   = document.getElementById('scan-current-label');
+                if (bar)     bar.style.width       = _pseudoPct.toFixed(1) + '%';
+                if (percent) percent.textContent    = Math.round(_pseudoPct) + '%';
+                if (label && label.textContent === 'Starting scan\u2026')
+                    label.textContent = 'Scanning: SSL & HTTPS\u2026';
             } else {
                 clearInterval(_pseudoTimer);
             }
