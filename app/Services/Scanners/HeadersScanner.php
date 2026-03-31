@@ -257,6 +257,48 @@ class HeadersScanner
             }
         }
 
+        // --- Check: Cross-Origin-Opener-Policy (COOP) ---
+        $maxScore += 10;
+        $coop = $headers['cross-origin-opener-policy'] ?? null;
+        if ($coop !== null) {
+            $score += 10;
+            $checks[] = [
+                'id'          => 'header_coop',
+                'label'       => 'Cross-Origin-Opener-Policy',
+                'status'      => 'pass',
+                'description' => "COOP: {$coop} — protects against cross-origin window attacks and Spectre-based data leaks.",
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'header_coop',
+                'label'          => 'Cross-Origin-Opener-Policy',
+                'status'         => 'warn',
+                'description'    => 'No Cross-Origin-Opener-Policy (COOP) header found.',
+                'recommendation' => 'Add Cross-Origin-Opener-Policy: same-origin to isolate your browsing context and protect against cross-origin attacks and Spectre-like vulnerabilities.',
+            ];
+        }
+
+        // --- Check: Cross-Origin-Embedder-Policy (COEP) ---
+        $maxScore += 10;
+        $coep = $headers['cross-origin-embedder-policy'] ?? null;
+        if ($coep !== null) {
+            $score += 10;
+            $checks[] = [
+                'id'          => 'header_coep',
+                'label'       => 'Cross-Origin-Embedder-Policy',
+                'status'      => 'pass',
+                'description' => "COEP: {$coep} — ensures all embedded resources opt-in to being loaded cross-origin.",
+            ];
+        } else {
+            $checks[] = [
+                'id'             => 'header_coep',
+                'label'          => 'Cross-Origin-Embedder-Policy',
+                'status'         => 'warn',
+                'description'    => 'No Cross-Origin-Embedder-Policy (COEP) header found.',
+                'recommendation' => 'Add Cross-Origin-Embedder-Policy: require-corp to enable advanced browser isolation features (required for SharedArrayBuffer and high-resolution timers).',
+            ];
+        }
+
         // --- Informational: X-XSS-Protection (deprecated, not scored) ---
         $xss = $headers['x-xss-protection'] ?? null;
         if ($xss !== null) {

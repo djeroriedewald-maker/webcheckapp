@@ -100,12 +100,69 @@ class TlsCipherScanner
             ];
         }
 
+        // 5. Perfect Forward Secrecy (ECDHE cipher suites)
+        $maxScore += 25;
+        $pfs = $this->safe(fn() => $this->testPerfectForwardSecrecy($host), null);
+        if ($pfs === true) {
+            $score += 25;
+            $checks[] = [
+                'id'          => 'tls_pfs',
+                'label'       => 'Perfect Forward Secrecy (PFS)',
+                'status'      => 'pass',
+                'description' => 'Server supports ECDHE cipher suites — session keys are ephemeral and past sessions cannot be decrypted if the private key is ever compromised.',
+            ];
+        } elseif ($pfs === false) {
+            $checks[] = [
+                'id'             => 'tls_pfs',
+                'label'          => 'Perfect Forward Secrecy (PFS)',
+                'status'         => 'warn',
+                'description'    => 'Server does not appear to support ECDHE cipher suites for Perfect Forward Secrecy. Recorded traffic could be decrypted if the server private key is compromised.',
+                'recommendation' => "Enable ECDHE cipher suites in your server config:\nNginx: ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;\nApache: SSLCipherSuite ECDHE+AESGCM:ECDHE+AES",
+            ];
+        }
+
         return [
             'category' => 'TLS / Cipher',
             'icon'     => 'shield-check',
             'score'    => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
             'checks'   => $checks,
         ];
+    }
+
+    /**
+     * Test whether the server accepts ECDHE cipher suites (Perfect Forward Secrecy).
+     * Returns true if PFS is supported, false if not, null if inconclusive.
+     */
+    private function testPerfectForwardSecrecy(string $host): ?bool
+    {
+        $ecdheCiphers = 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256';
+
+        $ch = curl_init("https://{$host}");
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_NOBODY          => true,
+            CURLOPT_TIMEOUT         => self::TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT  => self::TIMEOUT,
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_SSL_VERIFYHOST  => 0,
+            CURLOPT_SSL_CIPHER_LIST => $ecdheCiphers,
+            CURLOPT_USERAGENT       => 'Mozilla/5.0 WebCheckApp/1.0',
+        ]);
+        curl_exec($ch);
+        $errno = curl_errno($ch);
+        curl_close($ch);
+
+        if ($errno === 0) {
+            return true;
+        }
+
+        // SSL/handshake error means ECDHE ciphers rejected
+        $errMsg = strtolower(curl_strerror($errno));
+        if (str_contains($errMsg, 'ssl') || str_contains($errMsg, 'handshake') || $errno === 35) {
+            return false;
+        }
+
+        return null; // network error — inconclusive
     }
 
     /**

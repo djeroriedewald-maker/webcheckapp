@@ -9,18 +9,22 @@ class ApiSecurityScanner
 
     /** Endpoints to probe and the signatures that indicate they are API/docs */
     private const ENDPOINTS = [
-        '/api/docs'        => 'API documentation',
-        '/swagger-ui.html' => 'Swagger UI',
-        '/swagger-ui/'     => 'Swagger UI',
-        '/api/swagger'     => 'Swagger UI',
-        '/swagger.json'    => 'Swagger spec',
-        '/swagger.yaml'    => 'Swagger spec',
-        '/openapi.json'    => 'OpenAPI spec',
-        '/openapi.yaml'    => 'OpenAPI spec',
-        '/graphiql'        => 'GraphiQL IDE',
-        '/actuator'        => 'Spring Actuator',
-        '/actuator/health' => 'Spring Actuator health',
-        '/_cat/indices'    => 'Elasticsearch API',
+        '/api/docs'                         => 'API documentation',
+        '/swagger-ui.html'                  => 'Swagger UI',
+        '/swagger-ui/'                      => 'Swagger UI',
+        '/api/swagger'                      => 'Swagger UI',
+        '/swagger.json'                     => 'Swagger spec',
+        '/swagger.yaml'                     => 'Swagger spec',
+        '/openapi.json'                     => 'OpenAPI spec',
+        '/openapi.yaml'                     => 'OpenAPI spec',
+        '/graphiql'                         => 'GraphiQL IDE',
+        '/actuator'                         => 'Spring Actuator',
+        '/actuator/health'                  => 'Spring Actuator health',
+        '/_cat/indices'                     => 'Elasticsearch API',
+        '/.well-known/openid-configuration' => 'OpenID Connect metadata',
+        '/api/v1'                           => 'REST API',
+        '/api/v2'                           => 'REST API',
+        '/.well-known/jwks.json'            => 'JSON Web Key Set (JWKS)',
     ];
 
     public function scan(string $host): array
@@ -142,8 +146,9 @@ class ApiSecurityScanner
         }
 
         $authRequired = in_array($code, [401, 403]);
-        $isApiContent = $body && preg_match('/swagger|openapi|graphql|"paths"\s*:|"version"\s*:|__schema/i', $body);
-        $isJson       = $body && str_starts_with(ltrim($body), '{') || str_starts_with(ltrim((string) $body), '[');
+        $isApiContent = $body && (bool) preg_match('/swagger|openapi|graphql|"paths"\s*:|"version"\s*:|__schema/i', $body);
+        $trimmed      = ltrim((string) $body);
+        $isJson       = $body && (str_starts_with($trimmed, '{') || str_starts_with($trimmed, '['));
 
         if (! $authRequired && ! $isApiContent && ! $isJson) {
             return null;

@@ -27,7 +27,7 @@ class TechnologyScanner
             $seen[$key] = $tech;
         }
 
-        $typeOrder = ['CMS', 'E-commerce', 'Web Server', 'CDN / Security', 'Backend', 'JavaScript', 'Analytics'];
+        $typeOrder = ['CMS', 'E-commerce', 'Web Server', 'CDN / Security', 'Backend', 'JavaScript', 'CSS Framework', 'Analytics'];
         $technologies = array_values($seen);
         usort($technologies, fn($a, $b) =>
             (array_search($a['type'], $typeOrder, true) ?: 99) <=> (array_search($b['type'], $typeOrder, true) ?: 99)
@@ -221,6 +221,20 @@ class TechnologyScanner
         }
         if (str_contains($html, '__sveltekit') || str_contains($html, 'sveltekit')) {
             $found[] = ['type' => 'JavaScript', 'name' => 'SvelteKit'];
+        } elseif (str_contains($html, 'svelte-') || preg_match('/svelte(?:\.min)?\.js/i', $html)) {
+            $found[] = ['type' => 'JavaScript', 'name' => 'Svelte'];
+        }
+        if (str_contains($html, '_astro/') || str_contains($html, 'data-astro-cid') || preg_match('/Astro\.build/i', $html)) {
+            $found[] = ['type' => 'JavaScript', 'name' => 'Astro'];
+        }
+        if (str_contains($html, '__remixContext') || str_contains($html, '__remix_manifest') || str_contains($html, '/build/root-')) {
+            $found[] = ['type' => 'JavaScript', 'name' => 'Remix'];
+        }
+        if (str_contains($html, 'q:container') || str_contains($html, 'q:base') || preg_match('/qwik(?:\.min)?\.js/i', $html)) {
+            $found[] = ['type' => 'JavaScript', 'name' => 'Qwik'];
+        }
+        if (str_contains($html, '_$HY') || str_contains($html, 'solid-js') || preg_match('/solid(?:\.min)?\.js/i', $html)) {
+            $found[] = ['type' => 'JavaScript', 'name' => 'Solid.js'];
         }
         // React: only match reliable in-HTML markers; skip filename patterns (modern bundlers rename everything)
         if (str_contains($html, 'data-reactroot') || str_contains($html, '__reactFiber') || str_contains($html, 'react-dom@') || str_contains($html, '/react-dom.production.min.js')) {
@@ -234,6 +248,14 @@ class TechnologyScanner
         }
         if (preg_match('/jquery[.\-][\d.]+(?:\.min)?\.js/i', $html) || str_contains($html, 'jQuery.fn.jquery')) {
             $found[] = ['type' => 'JavaScript', 'name' => 'jQuery'];
+        }
+
+        // ---- CSS Frameworks ----
+        if (preg_match('/bootstrap(?:\.min)?\.(?:css|js)/i', $html) || str_contains($html, 'bootstrap.bundle')) {
+            $found[] = ['type' => 'CSS Framework', 'name' => 'Bootstrap'];
+        }
+        if (str_contains($html, 'tailwindcss') || preg_match('/cdn\.tailwindcss\.com/i', $html)) {
+            $found[] = ['type' => 'CSS Framework', 'name' => 'Tailwind CSS'];
         }
 
         // ---- Analytics ----

@@ -29,6 +29,19 @@ class SubdomainTakeoverScanner
         'freshdesk.com'      => ['There is no helpdesk here'],
         'statuspage.io'      => ['Better luck next time'],
         'unbouncepages.com'  => ['The requested URL was not found on this server'],
+        'vercel.app'         => ['The deployment could not be found', 'DEPLOYMENT_NOT_FOUND', 'This deployment has been disabled'],
+        'vercel-dns.com'     => ['The deployment could not be found', 'DEPLOYMENT_NOT_FOUND'],
+        'onrender.com'       => ['No Such App', 'There\'s nothing here, yet'],
+        'railway.app'        => ['Application not found', 'This application has no deployed services'],
+        'fly.dev'            => ['404: No such app', 'fly.io/docs'],
+        'flyapps.io'         => ['404: No such app'],
+        'firebaseapp.com'    => ['Firebase App Not Found', 'Requested route doesn\'t match'],
+        'web.app'            => ['Firebase App Not Found', 'Requested route doesn\'t match'],
+        'ondigitalocean.app' => ['Service Not Found', '404 Page Not Found'],
+        'glitch.me'          => ['No such app'],
+        'replit.dev'         => ['No such Repl'],
+        'myshopify.com'      => ['Sorry, this shop is currently unavailable'],
+        'wpengine.com'       => ['The site you were looking for couldn\'t be found'],
     ];
 
     /** Common subdomains to check in addition to the main host */
