@@ -35,18 +35,6 @@ class ScanController extends Controller
             return back()->withErrors(['url' => 'Please enter a domain name, not an IP address.'])->withInput();
         }
 
-        // Return a cached scan if the same host was successfully scanned within the last hour.
-        // This avoids hammering external services for popular domains and keeps responses fast.
-        $cached = Scan::where('host', $host)
-            ->where('status', 'completed')
-            ->where('completed_at', '>=', now()->subHour())
-            ->latest('completed_at')
-            ->first();
-
-        if ($cached) {
-            return redirect()->route('scan.show', $cached);
-        }
-
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,
@@ -213,16 +201,6 @@ class ScanController extends Controller
 
         if (! $host || filter_var($host, FILTER_VALIDATE_IP)) {
             return null;
-        }
-
-        $cached = Scan::where('host', $host)
-            ->where('status', 'completed')
-            ->where('completed_at', '>=', now()->subHour())
-            ->latest('completed_at')
-            ->first();
-
-        if ($cached) {
-            return $cached;
         }
 
         $scan = Scan::create(['url' => $norm, 'host' => $host, 'status' => 'running', 'ip_address' => $ip]);
