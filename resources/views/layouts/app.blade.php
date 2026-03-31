@@ -34,34 +34,6 @@
     @yield('structured_data')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script>
-        // Reset all scan form loading states when navigating away so the back-button
-        // never shows a frozen "Scanning..." state. pagehide fires before bfcache stores
-        // the page; setting loading=false here means it is already false when restored.
-        window.addEventListener('pagehide', function () {
-            document.querySelectorAll('form[\\@submit]').forEach(function (form) {
-                if (form._x_dataStack) {
-                    try { form._x_dataStack[0].loading = false; } catch (e) {}
-                }
-            });
-        });
-        // Belt-and-suspenders: also reset on pageshow in case the pagehide didn't fire.
-        window.addEventListener('pageshow', function (e) {
-            if (!e.persisted) return;
-            document.querySelectorAll('button[\\:disabled]').forEach(function (btn) {
-                btn.disabled = false;
-            });
-            // Force Alpine to reinitialize all components
-            if (window.Alpine) {
-                document.querySelectorAll('[x-data]').forEach(function (el) {
-                    try {
-                        var data = Alpine.$data(el);
-                        if ('loading' in data) data.loading = false;
-                    } catch (e) {}
-                });
-            }
-        });
-    </script>
 </head>
 <body class="h-full bg-gray-950 text-white antialiased" x-data>
 

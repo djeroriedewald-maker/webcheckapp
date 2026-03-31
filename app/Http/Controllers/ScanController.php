@@ -14,7 +14,9 @@ class ScanController extends Controller
     {
         $scanCount = Scan::where('status', 'completed')->count() + 2_406_521;
 
-        return view('welcome', compact('scanCount'));
+        return response()
+            ->view('welcome', compact('scanCount'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
     public function store(Request $request)
