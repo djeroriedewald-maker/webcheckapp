@@ -34,6 +34,13 @@
     @yield('structured_data')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script>
+        // When the browser restores this page from bfcache (back button),
+        // Alpine state is frozen with loading=true. Force a fresh load to reset it.
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted) window.location.reload();
+        });
+    </script>
 </head>
 <body class="h-full bg-gray-950 text-white antialiased" x-data>
 
