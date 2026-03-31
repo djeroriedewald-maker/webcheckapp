@@ -117,6 +117,9 @@
             doneUpto: -1,
             _timer: null,
 
+            init() {
+                window.addEventListener('pageshow', (e) => { if (e.persisted) { this.show = false; clearInterval(this._timer); } });
+            },
             start(rawUrl) {
                 // Parse display domain
                 let d = rawUrl.trim() || '...';

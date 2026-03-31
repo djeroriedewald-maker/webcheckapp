@@ -74,7 +74,7 @@ class ScanController extends Controller
         // Previous scan for "wat veranderde" diff
         $prevScan = null;
         $diff     = null;
-        if ($scan->isCompleted()) {
+        if ($scan->isCompleted() && $scan->completed_at !== null) {
             $prevScan = Scan::where('host', $scan->host)
                 ->where('status', 'completed')
                 ->where('id', '!=', $scan->id)

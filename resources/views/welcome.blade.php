@@ -50,7 +50,7 @@
         {{-- Scan form --}}
         <form action="{{ route('scan.store') }}" method="POST"
               x-data="{ loading: false }"
-              x-init="loading = false"
+              x-init="loading = false; window.addEventListener('pageshow', (e) => { if (e.persisted) loading = false; })"
               @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })">
             @csrf
             <div class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
