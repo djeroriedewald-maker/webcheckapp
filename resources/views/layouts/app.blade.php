@@ -6,17 +6,27 @@
     <title>@yield('title', 'WebCheckApp — Website Security Scanner')</title>
     <meta name="description" content="@yield('meta_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
 
+    {{-- Icons & PWA --}}
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="WebCheckApp">
     <meta property="og:title" content="@yield('og_title', 'WebCheckApp — Free Website Security Scanner')">
     <meta property="og:description" content="@yield('og_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
     <meta property="og:url" content="@yield('og_url', url()->current())">
+    <meta property="og:image" content="@yield('og_image', url('/og-image.png'))">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     {{-- Twitter / X --}}
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('og_title', 'WebCheckApp — Free Website Security Scanner')">
     <meta name="twitter:description" content="@yield('og_description', 'Instantly scan your website for security issues, performance problems and get actionable recommendations.')">
+    <meta name="twitter:image" content="@yield('og_image', url('/og-image.png'))">
 
     <link rel="canonical" href="@yield('canonical', url()->current())">
     <meta name="robots" content="@yield('robots', 'index, follow')">
