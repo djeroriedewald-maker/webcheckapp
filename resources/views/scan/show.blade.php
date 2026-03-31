@@ -370,7 +370,10 @@
             $malwareCount = $scan->results['malware']['threat_count'] ?? 0;
             $portCount    = $scan->results['ports']['open_danger'] ?? 0;
             $expCount     = collect($scan->results['exposed_files']['checks'] ?? [])->where('status', 'fail')->count();
-            $secCount     = $portCount + $expCount;
+            $tlsCount     = collect($scan->results['tls']['checks'] ?? [])->whereIn('status', ['fail','warn'])->count();
+            $apiCount     = collect($scan->results['api_security']['checks'] ?? [])->whereIn('status', ['fail','warn'])->count();
+            $subCount     = collect($scan->results['subdomain_takeover']['checks'] ?? [])->whereIn('status', ['fail','warn'])->count();
+            $secCount     = $portCount + $expCount + $tlsCount + $apiCount + $subCount;
             $privCount    = collect($scan->results['privacy']['checks'] ?? [])->whereIn('status', ['fail','warn'])->count();
             // Tab map: which tab does each scored category link to?
             $tabMap = [
