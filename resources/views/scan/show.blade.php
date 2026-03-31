@@ -40,87 +40,67 @@
     @if(!$scan->isCompleted() && !$scan->isFailed())
     <div id="scan-loading" class="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center px-6"
          x-show="!completed && !failed">
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="relative w-full max-w-sm text-center">
-            <div class="flex items-center justify-center gap-2 mb-10 text-lg font-bold">
+        <div class="relative w-full max-w-md text-center">
+            {{-- Logo --}}
+            <div class="flex items-center justify-center gap-2 mb-12 text-lg font-bold">
                 <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                 </svg>
                 <span>WebCheck<span class="text-indigo-400">App</span></span>
             </div>
 
-            <p class="text-sm text-gray-500 uppercase tracking-widest mb-2">Analyzing security for</p>
-            <h2 class="text-2xl font-bold text-white truncate mb-8">{{ $scan->host }}</h2>
+            {{-- Host --}}
+            <p class="text-xs text-gray-500 uppercase tracking-widest mb-1">Analyzing security for</p>
+            <h2 class="text-2xl font-bold text-white truncate mb-10">{{ $scan->host }}</h2>
 
-            <div class="w-full h-1 bg-white/5 rounded-full mb-8 overflow-hidden">
+            {{-- Progress percentage --}}
+            <div class="flex items-end justify-between mb-2 px-1">
+                <span id="scan-current-label" class="text-sm text-indigo-300 font-medium truncate pr-4">Starting scan&hellip;</span>
+                <span id="scan-percent" class="text-sm font-bold text-white tabular-nums flex-shrink-0">0%</span>
+            </div>
+
+            {{-- Progress bar --}}
+            <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden mb-4">
                 <div id="scan-progress-bar"
                      class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
                      style="width: 0%"></div>
             </div>
 
-            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-left mb-10" id="scan-checker-list">
-                @foreach(['SSL & HTTPS','Security Headers','DNS & Email Security','Performance & SEO','Content & CMS','Technology Stack','Malware & Reputation','Open Ports','Exposed Files','Privacy & GDPR','Trust & WHOIS','Accessibility','TLS / Cipher Suite','Robots & Crawling','API Security','Carbon Footprint','Broken Links','Branding','Subdomain Takeover'] as $i => $scanner)
-                <div class="flex items-center gap-2.5 text-sm" data-scanner-idx="{{ $i }}">
-                    <span class="checker-pending flex-shrink-0 w-4 h-4 flex items-center justify-center">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white/15"></span>
-                    </span>
-                    <span class="checker-spin flex-shrink-0 w-4 h-4 hidden">
-                        <svg class="w-4 h-4 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path class="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                    </span>
-                    <span class="checker-done flex-shrink-0 w-4 h-4 rounded-full bg-green-500/20 items-center justify-center hidden">
-                        <svg class="w-2.5 h-2.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </span>
-                    <span class="checker-label text-gray-600 text-sm">{{ $scanner }}</span>
-                </div>
-                @endforeach
-            </div>
-
-            <p class="text-xs text-gray-600">This usually takes 30–60 seconds. Please wait&hellip;</p>
+            {{-- Completed count --}}
+            <p class="text-xs text-gray-600"><span id="scan-done-count">0</span> of 19 checks completed</p>
         </div>
     </div>
     <script>
-    // updateProgress is called by the scanPoller on every poll response
-    // with the real completed_scanners count from the API.
+    var _scanners = ['SSL & HTTPS','Security Headers','DNS & Email Security','Performance & SEO','Content & CMS','Technology Stack','Malware & Reputation','Open Ports','Exposed Files','Privacy & GDPR','Trust & WHOIS','Accessibility','TLS / Cipher Suite','Robots & Crawling','API Security','Carbon Footprint','Broken Links','Branding','Subdomain Takeover'];
     var _lastRendered = -1;
+
     function updateProgress(completedCount) {
         if (completedCount <= _lastRendered) return;
-        var items = document.querySelectorAll('#scan-checker-list [data-scanner-idx]');
-        var bar   = document.getElementById('scan-progress-bar');
-        if (!items.length || !bar) return;
-        var total = items.length;
 
-        for (var i = _lastRendered + 1; i < completedCount && i < total; i++) {
-            var item = items[i];
-            // Mark as done
-            item.querySelector('.checker-pending').classList.add('hidden');
-            item.querySelector('.checker-spin').classList.add('hidden');
-            var d = item.querySelector('.checker-done');
-            d.classList.remove('hidden');
-            d.classList.add('flex');
-            item.querySelector('.checker-label').classList.remove('text-gray-600','text-white','font-medium');
-            item.querySelector('.checker-label').classList.add('text-green-400');
-        }
+        var bar       = document.getElementById('scan-progress-bar');
+        var percent   = document.getElementById('scan-percent');
+        var label     = document.getElementById('scan-current-label');
+        var doneCount = document.getElementById('scan-done-count');
+        if (!bar) return;
 
-        // Activate next (the one currently running)
+        var total = _scanners.length;
+        var pct   = Math.round((completedCount / total) * 100);
+
+        bar.style.width   = pct + '%';
+        percent.textContent = pct + '%';
+        doneCount.textContent = completedCount;
+
         if (completedCount < total) {
-            var cur = items[completedCount];
-            cur.querySelector('.checker-pending').classList.add('hidden');
-            cur.querySelector('.checker-spin').classList.remove('hidden');
-            cur.querySelector('.checker-label').classList.remove('text-gray-600');
-            cur.querySelector('.checker-label').classList.add('text-white','font-medium');
+            label.textContent = 'Scanning: ' + _scanners[completedCount] + '\u2026';
+        } else {
+            label.textContent = 'Finalizing\u2026';
         }
 
-        bar.style.width = Math.round((completedCount / total) * 100) + '%';
         _lastRendered = completedCount - 1;
     }
 
-    // Show first scanner as active immediately on page load
     updateProgress(0);
     </script>
     @endif
