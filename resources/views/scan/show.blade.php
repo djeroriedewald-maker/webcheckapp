@@ -64,20 +64,44 @@
             {{-- Progress bar --}}
             <div class="w-full h-3 bg-white/5 rounded-full overflow-hidden mb-4">
                 <div id="scan-progress-bar"
-                     class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
-                     style="width: 0%"></div>
+                     class="h-full rounded-full transition-all duration-700 ease-out"
+                     style="width: 2%; background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1); background-size: 200% 100%; animation: scanShimmer 1.8s linear infinite;"></div>
             </div>
 
             {{-- Completed count --}}
             <p class="text-xs text-gray-600"><span id="scan-done-count">0</span> of 19 checks completed</p>
         </div>
     </div>
+    <style>
+    @keyframes scanShimmer {
+        0%   { background-position: 200% center; }
+        100% { background-position: -200% center; }
+    }
+    </style>
     <script>
     var _scanners = ['SSL & HTTPS','Security Headers','DNS & Email Security','Performance & SEO','Content & CMS','Technology Stack','Malware & Reputation','Open Ports','Exposed Files','Privacy & GDPR','Trust & WHOIS','Accessibility','TLS / Cipher Suite','Robots & Crawling','API Security','Carbon Footprint','Broken Links','Branding','Subdomain Takeover'];
-    var _lastRendered = -1;
+    var _lastRendered  = -1;
+    var _realPct       = 0;
+    var _pseudoPct     = 2;
+    var _pseudoTimer   = null;
+
+    // Slowly crawl from 2% → 35% while waiting for the first real update.
+    // Gives visual feedback during the slow SSL scanner phase.
+    function startPseudo() {
+        _pseudoTimer = setInterval(function () {
+            if (_realPct > 0) { clearInterval(_pseudoTimer); return; }
+            if (_pseudoPct < 35) {
+                _pseudoPct += 0.4;
+                var bar = document.getElementById('scan-progress-bar');
+                if (bar) bar.style.width = _pseudoPct.toFixed(1) + '%';
+            } else {
+                clearInterval(_pseudoTimer);
+            }
+        }, 500);
+    }
 
     function updateProgress(completedCount) {
-        if (completedCount <= _lastRendered) return;
+        if (completedCount > 0 && completedCount <= _lastRendered) return;
 
         var bar       = document.getElementById('scan-progress-bar');
         var percent   = document.getElementById('scan-percent');
@@ -86,22 +110,23 @@
         if (!bar) return;
 
         var total = _scanners.length;
-        var pct   = Math.round((completedCount / total) * 100);
 
-        bar.style.width   = pct + '%';
-        percent.textContent = pct + '%';
-        doneCount.textContent = completedCount;
-
-        if (completedCount < total) {
-            label.textContent = 'Scanning: ' + _scanners[completedCount] + '\u2026';
-        } else {
-            label.textContent = 'Finalizing\u2026';
+        if (completedCount > 0) {
+            // Real data arrived — stop pseudo and switch to real percentage
+            if (_pseudoTimer) { clearInterval(_pseudoTimer); _pseudoTimer = null; }
+            var pct = Math.round((completedCount / total) * 100);
+            _realPct = pct;
+            bar.style.width = pct + '%';
+            percent.textContent = pct + '%';
+            doneCount.textContent = completedCount;
+            label.textContent = completedCount < total
+                ? 'Scanning: ' + _scanners[completedCount] + '\u2026'
+                : 'Finalizing\u2026';
+            _lastRendered = completedCount;
         }
-
-        _lastRendered = completedCount - 1;
     }
 
-    updateProgress(0);
+    startPseudo();
     </script>
     @endif
 
