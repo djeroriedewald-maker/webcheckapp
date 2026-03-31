@@ -387,44 +387,46 @@ class SslScanner
         return $accepted;
     }
 
+    /**
+     * Check whether the server accepts TLS 1.0 or TLS 1.1 using curl.
+     * curl respects CURLOPT_TIMEOUT reliably for SSL; stream_socket_client does not.
+     */
     private function checkOldTls(string $host): array
     {
         $supported = [];
 
-        // These constants were deprecated in modern OpenSSL and may not exist on all builds.
-        // Build the list dynamically to avoid fatal errors on servers where they are undefined.
+        // CURL_SSLVERSION_MAX_TLSv1_x forces the negotiation ceiling so we can
+        // test whether the server accepts that specific version.
+        // These constants require libcurl ≥ 7.54 (available since PHP 7.3).
         $versions = [];
-        if (defined('STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT')) {
-            $versions['TLS 1.0'] = STREAM_CRYPTO_METHOD_TLSv1_0_CLIENT;
+        if (defined('CURL_SSLVERSION_MAX_TLSv1_0')) {
+            $versions['TLS 1.0'] = CURL_SSLVERSION_TLSv1_0 | CURL_SSLVERSION_MAX_TLSv1_0;
         }
-        if (defined('STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT')) {
-            $versions['TLS 1.1'] = STREAM_CRYPTO_METHOD_TLSv1_1_CLIENT;
+        if (defined('CURL_SSLVERSION_MAX_TLSv1_1')) {
+            $versions['TLS 1.1'] = CURL_SSLVERSION_TLSv1_1 | CURL_SSLVERSION_MAX_TLSv1_1;
         }
 
         if (empty($versions)) {
-            return []; // Cannot check on this server build — treat as no deprecated versions found
+            return [];
         }
 
-        foreach ($versions as $name => $method) {
-            $context = stream_context_create([
-                'ssl' => [
-                    'verify_peer'      => false,
-                    'verify_peer_name' => false,
-                    'crypto_method'    => $method,
-                ],
+        foreach ($versions as $name => $sslVersion) {
+            $ch = curl_init("https://{$host}");
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_NOBODY         => true,
+                CURLOPT_TIMEOUT        => self::TIMEOUT,
+                CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_SSLVERSION     => $sslVersion,
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
             ]);
+            curl_exec($ch);
+            $errno = curl_errno($ch);
+            curl_close($ch);
 
-            $sock = @stream_socket_client(
-                "ssl://{$host}:443",
-                $errno,
-                $errstr,
-                (float) self::TIMEOUT,
-                STREAM_CLIENT_CONNECT,
-                $context
-            );
-
-            if ($sock) {
-                fclose($sock);
+            if ($errno === 0) {
                 $supported[] = $name;
             }
         }
