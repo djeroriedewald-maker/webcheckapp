@@ -103,7 +103,11 @@ class TlsCipherScanner
 
         // 5. Perfect Forward Secrecy (ECDHE cipher suites)
         $maxScore += 25;
-        $pfs = $this->safe(fn() => $this->testPerfectForwardSecrecy($host), null);
+        try {
+            $pfs = $this->testPerfectForwardSecrecy($host);
+        } catch (\Throwable) {
+            $pfs = null;
+        }
         if ($pfs === true) {
             $score += 25;
             $checks[] = [
