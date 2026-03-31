@@ -68,17 +68,6 @@ class DashboardController extends Controller
     {
         abort_unless($site->user_id === Auth::id(), 403);
 
-        // Check for a recent cached scan first
-        $existing = Scan::where('host', $site->domain)
-            ->where('status', 'completed')
-            ->where('completed_at', '>=', now()->subHour())
-            ->latest('completed_at')
-            ->first();
-
-        if ($existing) {
-            return redirect()->route('scan.show', $existing);
-        }
-
         $scan = Scan::create([
             'url'        => 'https://' . $site->domain,
             'host'       => $site->domain,
