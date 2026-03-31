@@ -3,6 +3,75 @@
 @section('title', 'WebCheckApp — Free Website Security Scanner')
 @section('meta_description', 'Instantly scan any website for security issues, misconfigurations and vulnerabilities. Get a detailed report with score, grade and actionable fixes.')
 
+@section('structured_data')
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "Organization",
+    "name": "WebCheckApp",
+    "url": "{{ url('/') }}",
+    "logo": "{{ url('/og-image.png') }}",
+    "description": "Free website security scanner that checks SSL, headers, DNS, performance and 19 security categories.",
+    "sameAs": []
+}
+</script>
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "WebApplication",
+    "name": "WebCheckApp",
+    "url": "{{ url('/') }}",
+    "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Any",
+    "offers": {
+        "@@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+    }
+}
+</script>
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@@type": "Question",
+            "name": "What does WebCheckApp scan for?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "WebCheckApp runs 19 security scanners covering SSL/HTTPS, security headers, DNS & email security, performance, content security, exposed files, open ports, TLS cipher strength, privacy & GDPR compliance, malware & reputation, accessibility, and more."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Is WebCheckApp free to use?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Yes, WebCheckApp is completely free. No account or credit card is required. Simply enter a domain and get a full security report in under 60 seconds."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "How long does a security scan take?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "A full scan typically completes in 20 to 40 seconds. All 19 security categories are checked sequentially and results are displayed as they become available."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Is my website data stored or shared?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Scan results are stored so you can access your report later and compare it with future scans. We do not share your scan data with third parties. Only publicly accessible information is checked during a scan."
+            }
+        }
+    ]
+}
+</script>
+@endsection
+
 @section('content')
 
 {{-- ═══════════════════════════════════════════
@@ -13,7 +82,7 @@
     {{-- Mesh / glow background --}}
     <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
         {{-- Base image --}}
-        <img src="/hero.jpg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-20">
+        <img src="/hero.jpg" alt="Website security scanner interface with scan results and vulnerability analysis" class="absolute inset-0 w-full h-full object-cover opacity-20">
         <div class="absolute inset-0 bg-gray-950/70"></div>
         {{-- Radial glows --}}
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-indigo-600/12 rounded-full blur-[120px]"></div>
