@@ -4,12 +4,19 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Vite;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Generate the CSP nonce BEFORE building the response so that Blade
+        // templates can reference it via Vite::cspNonce(). The @vite directive
+        // also automatically adds this nonce to its generated <script> tags.
+        $nonce = Vite::useCspNonce();
+
         $response = $next($request);
 
         // Prevent MIME-type sniffing
@@ -29,14 +36,48 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // NOTE: Content-Security-Policy is intentionally omitted.
-        // CSP with script-src breaks Alpine.js when Vite serves <script type="module">
-        // because 'unsafe-inline' does not apply to module scripts in all browsers.
-        // Removed in b181a61, do not re-add without a proper nonce-based CSP.
+        // Nonce-based Content Security Policy.
+        // - No 'unsafe-inline': all inline <script> blocks must carry nonce="{{ Vite::cspNonce() }}"
+        // - 'unsafe-eval' is required by Alpine.js v3, which uses new Function() to evaluate
+        //   x-data/x-init expressions. Do NOT remove it without switching to @alpinejs/csp build.
+        // - COOP/COEP are intentionally omitted: COOP breaks bfcache and the scan overlay (see b181a61 / 6a710fd).
+        $csp = implode('; ', [
+            "default-src 'self'",
+            "script-src 'self' 'nonce-{$nonce}' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: https:",
+            "connect-src 'self'",
+            "font-src 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'",
+            "base-uri 'self'",
+        ]);
+        $response->headers->set('Content-Security-Policy', $csp);
 
-        // NOTE: Cross-Origin-Opener-Policy is intentionally omitted.
-        // COOP: same-origin can interfere with bfcache and cause the scan loading
-        // overlay to persist after browser back navigation.
+        // Make the XSRF-TOKEN cookie HttpOnly.
+        // This app uses only HTML form CSRF (@csrf blade directive) — no JavaScript ever
+        // reads the XSRF-TOKEN cookie — so HttpOnly is safe and removes the scanner warning.
+        foreach ($response->headers->getCookies() as $cookie) {
+            if ($cookie->getName() === 'XSRF-TOKEN') {
+                $response->headers->removeCookie(
+                    $cookie->getName(),
+                    $cookie->getPath(),
+                    $cookie->getDomain()
+                );
+                $response->headers->setCookie(new Cookie(
+                    $cookie->getName(),
+                    $cookie->getValue(),
+                    $cookie->getExpiresTime(),
+                    $cookie->getPath(),
+                    $cookie->getDomain(),
+                    $cookie->isSecure(),
+                    true, // httpOnly
+                    $cookie->isRaw(),
+                    $cookie->getSameSite()
+                ));
+                break;
+            }
+        }
 
         return $response;
     }

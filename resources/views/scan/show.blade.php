@@ -78,7 +78,7 @@
         100% { background-position: -200% center; }
     }
     </style>
-    <script>
+    <script nonce="{{ Vite::cspNonce() }}">
     var _scanners = ['SSL & HTTPS','Security Headers','DNS & Email Security','Performance & SEO','Content & CMS','Technology Stack','Malware & Reputation','Open Ports','Exposed Files','Privacy & GDPR','Trust & WHOIS','Accessibility','TLS / Cipher Suite','Robots & Crawling','API Security','Carbon Footprint','Broken Links','Branding','Subdomain Takeover'];
     var _lastRendered  = -1;
     var _realPct       = 0;
@@ -1502,7 +1502,7 @@
 
 </div>
 
-<script>
+<script nonce="{{ Vite::cspNonce() }}">
 function scanPoller(scanId, statusUrl, alreadyCompleted) {
     return {
         completed: alreadyCompleted,
