@@ -15,7 +15,7 @@ class SecurityHeaders
         // Prevent MIME-type sniffing
         $response->headers->set('X-Content-Type-Options', 'nosniff');
 
-        // Clickjacking protection (also covered by CSP frame-ancestors below)
+        // Clickjacking protection
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
 
         // Limit referrer information sent cross-origin
@@ -24,30 +24,19 @@ class SecurityHeaders
         // Restrict browser feature access
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
 
-        // Cross-origin isolation headers
-        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
-        $response->headers->set('Cross-Origin-Embedder-Policy', 'unsafe-none');
-
         // Force HTTPS for 1 year (only send over HTTPS to avoid breaking HTTP)
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        // Content Security Policy
-        // unsafe-inline is needed for Alpine.js x-data attributes and inline progress-bar scripts.
-        // img-src includes https: to allow og:image previews from scanned sites.
-        $csp = implode('; ', [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",
-            "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: https:",
-            "connect-src 'self'",
-            "font-src 'self'",
-            "form-action 'self'",
-            "frame-ancestors 'none'",
-            "base-uri 'self'",
-        ]);
-        $response->headers->set('Content-Security-Policy', $csp);
+        // NOTE: Content-Security-Policy is intentionally omitted.
+        // CSP with script-src breaks Alpine.js when Vite serves <script type="module">
+        // because 'unsafe-inline' does not apply to module scripts in all browsers.
+        // Removed in b181a61, do not re-add without a proper nonce-based CSP.
+
+        // NOTE: Cross-Origin-Opener-Policy is intentionally omitted.
+        // COOP: same-origin can interfere with bfcache and cause the scan loading
+        // overlay to persist after browser back navigation.
 
         return $response;
     }
