@@ -218,37 +218,27 @@ class ScanService
             return false;
         }
 
-        // Resolve A + AAAA records and verify every resolved IP is public
-        $records = @dns_get_record($host, DNS_A | DNS_AAAA) ?: [];
+        // Resolve to an IP and verify it is public.
+        // gethostbyname is used instead of dns_get_record because it uses the
+        // libc resolver (respects system timeout ~5 s) and returns immediately
+        // from the OS cache — dns_get_record has no PHP-level timeout and can
+        // block a queue worker for minutes on slow/unreachable resolvers.
+        $ip = @gethostbyname($host);
 
-        // Fallback to gethostbyname when dns_get_record returns nothing
-        if (empty($records)) {
-            $ip = @gethostbyname($host);
-            if ($ip === $host) {
-                // Unresolvable — allow scanners to report connection errors naturally
-                return true;
-            }
-            $records = [['ip' => $ip]];
+        if ($ip === $host) {
+            // Unresolvable — let scanners report connection errors naturally
+            return true;
         }
 
-        foreach ($records as $record) {
-            $ip = $record['ip'] ?? $record['ipv6'] ?? null;
-            if ($ip === null) {
-                continue;
-            }
-
-            // Explicit IPv6 private/reserved ranges not covered by FILTER_FLAG_NO_PRIV_RANGE
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-                // Loopback (::1), link-local (fe80::/10), unique-local (fc00::/7),
-                // IPv4-mapped (::ffff:0:0/96), documentation (2001:db8::/32)
-                if (preg_match('/^(::1|fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|::ffff:|2001:db8:)/i', $ip)) {
-                    return false;
-                }
-            }
-
-            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        // Explicit IPv6 private/reserved ranges not covered by FILTER_FLAG_NO_PRIV_RANGE
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            if (preg_match('/^(::1|fe[89ab][0-9a-f]:|f[cd][0-9a-f]{2}:|::ffff:|2001:db8:)/i', $ip)) {
                 return false;
             }
+        }
+
+        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
         }
 
         return true;

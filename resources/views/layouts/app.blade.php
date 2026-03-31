@@ -34,6 +34,9 @@
     @yield('structured_data')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Prevent bfcache from restoring stale loading/spinner state --}}
+    <script>window.addEventListener('pageshow',function(e){if(e.persisted)location.reload();});</script>
 </head>
 <body class="h-full bg-gray-950 text-white antialiased" x-data>
 
