@@ -33,13 +33,13 @@ class ApiSecurityScanner
         $score    = 0;
         $maxScore = 0;
 
-        // 1. Exposed API/docs endpoints
+        // 1. Exposed API/docs endpoints — checked in parallel via curl_multi
         $maxScore += 50;
         $exposed = [];
-        foreach (self::ENDPOINTS as $path => $service) {
-            $result = $this->safe(fn() => $this->probeEndpoint($host, $path), null);
+        $results = $this->safe(fn() => $this->probeEndpointsParallel($host), []);
+        foreach ($results as $path => $result) {
             if ($result !== null && $result['exposed']) {
-                $exposed[] = ['path' => $path, 'service' => $service, 'auth' => $result['auth_required']];
+                $exposed[] = ['path' => $path, 'service' => self::ENDPOINTS[$path], 'auth' => $result['auth_required']];
             }
         }
 
@@ -122,6 +122,65 @@ class ApiSecurityScanner
             'score'    => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
             'checks'   => $checks,
         ];
+    }
+
+    /**
+     * Probe all API endpoints in parallel using curl_multi.
+     * Replaces sequential probing (16 × 5s = 80s max) with a single ~5s pass.
+     */
+    private function probeEndpointsParallel(string $host): array
+    {
+        $multi   = curl_multi_init();
+        $handles = [];
+
+        foreach (array_keys(self::ENDPOINTS) as $path) {
+            $ch = curl_init("https://{$host}{$path}");
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => self::TIMEOUT,
+                CURLOPT_CONNECTTIMEOUT => self::TIMEOUT,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_MAXREDIRS      => 2,
+                CURLOPT_RANGE          => '0-4095',
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
+            ]);
+            curl_multi_add_handle($multi, $ch);
+            $handles[$path] = $ch;
+        }
+
+        do {
+            curl_multi_exec($multi, $running);
+            if ($running) curl_multi_select($multi, 1.0);
+        } while ($running);
+
+        $results = [];
+        foreach ($handles as $path => $ch) {
+            $body = curl_multi_getcontent($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_multi_remove_handle($multi, $ch);
+            curl_close($ch);
+
+            if ($code === 0 || $code === 404 || $code === 410 || $code >= 500) {
+                $results[$path] = null;
+                continue;
+            }
+
+            $authRequired = in_array($code, [401, 403]);
+            $isApiContent = $body && (bool) preg_match('/swagger|openapi|graphql|"paths"\s*:|"version"\s*:|__schema|jwks|openid/i', $body);
+            $trimmed      = ltrim((string) $body);
+            $isJson       = $body && (str_starts_with($trimmed, '{') || str_starts_with($trimmed, '['));
+
+            if (! $authRequired && ! $isApiContent && ! $isJson) {
+                $results[$path] = null;
+                continue;
+            }
+
+            $results[$path] = ['exposed' => true, 'auth_required' => $authRequired, 'code' => $code];
+        }
+
+        curl_multi_close($multi);
+        return $results;
     }
 
     private function probeEndpoint(string $host, string $path): ?array

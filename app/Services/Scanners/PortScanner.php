@@ -77,8 +77,11 @@ class PortScanner
         $checks     = [];
         $openDanger = 0;
 
+        // Check all ports in parallel
+        $openPorts = $ip ? $this->safe(fn() => $this->checkPortsParallel($ip, array_keys(self::PORTS)), []) : [];
+
         foreach (self::PORTS as $port => $info) {
-            $open = $ip ? $this->safe(fn() => $this->isPortOpen($ip, $port), false) : false;
+            $open = $openPorts[$port] ?? false;
 
             if ($open && $info['dangerous']) {
                 $openDanger++;
@@ -115,6 +118,66 @@ class PortScanner
             'open_danger' => $openDanger,
             'checks'      => $checks,
         ];
+    }
+
+    /**
+     * Check multiple ports in parallel using non-blocking sockets.
+     * Replaces sequential checking (21 × 1s = 21s max) with a single ~1s pass.
+     */
+    private function checkPortsParallel(string $ip, array $ports): array
+    {
+        $sockets = [];
+        $results = [];
+
+        // Open all sockets non-blocking simultaneously
+        foreach ($ports as $port) {
+            $sock = @stream_socket_client(
+                "tcp://{$ip}:{$port}",
+                $errno,
+                $errstr,
+                0,
+                STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
+            );
+            if ($sock) {
+                stream_set_blocking($sock, false);
+                $sockets[$port] = $sock;
+            } else {
+                $results[$port] = false;
+            }
+        }
+
+        if (empty($sockets)) {
+            return $results;
+        }
+
+        // Wait up to TIMEOUT seconds for any connections to complete
+        $deadline = microtime(true) + self::TIMEOUT;
+        while (!empty($sockets) && microtime(true) < $deadline) {
+            $read   = null;
+            $write  = array_values($sockets);
+            $except = null;
+            $ready  = @stream_select($read, $write, $except, 0, 200000); // 200ms poll
+
+            if ($ready === false) break;
+
+            foreach ($write as $sock) {
+                $port = array_search($sock, $sockets, true);
+                if ($port === false) continue;
+
+                // A writable socket means the connection succeeded
+                $results[$port] = true;
+                fclose($sock);
+                unset($sockets[$port]);
+            }
+        }
+
+        // Remaining sockets timed out — port closed
+        foreach ($sockets as $port => $sock) {
+            $results[$port] = false;
+            fclose($sock);
+        }
+
+        return $results;
     }
 
     private function resolveIp(string $host): ?string
