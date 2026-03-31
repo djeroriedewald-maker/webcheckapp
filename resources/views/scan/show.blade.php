@@ -133,7 +133,8 @@
             </svg>
         </div>
         <h2 class="text-2xl font-bold mb-2">Scan failed</h2>
-        <p class="text-gray-400 mb-6">We could not scan <strong>{{ $scan->host }}</strong>. The website may be unreachable.</p>
+        <p class="text-gray-400 mb-2">We could not scan <strong>{{ $scan->host }}</strong>. The website may be unreachable.</p>
+        <p x-show="errorMessage" x-text="'Error: ' + errorMessage" class="text-red-400 text-sm mb-4 font-mono"></p>
         <a href="{{ route('home') }}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition">
             Try another URL
         </a>
@@ -1493,9 +1494,10 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
     return {
         completed: alreadyCompleted,
         failed: false,
+        errorMessage: null,
         interval: null,
         retries: 0,
-        maxRetries: 40, // ~2 minutes at 3s intervals
+        maxRetries: 100, // ~5 minutes at 3s intervals
 
         init() {
             if (!this.completed) {
@@ -1524,6 +1526,7 @@ function scanPoller(scanId, statusUrl, alreadyCompleted) {
                     window.location.reload();
                 } else if (data.failed) {
                     clearInterval(this.interval);
+                    this.errorMessage = data.error || null;
                     this.failed = true;
                 }
             } catch (e) {
