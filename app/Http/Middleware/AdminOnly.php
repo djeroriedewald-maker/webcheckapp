@@ -10,7 +10,11 @@ class AdminOnly
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()?->is_admin) {
+        if (! $request->user()) {
+            return redirect()->route('login');
+        }
+
+        if (! $request->user()->is_admin) {
             abort(404);
         }
 
