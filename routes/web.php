@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -46,6 +47,11 @@ Route::middleware('auth')->prefix('dashboard')->name('dashboard')->group(functio
 Route::view('/disclaimer', 'legal.disclaimer')->name('disclaimer');
 Route::view('/privacy', 'legal.privacy')->name('privacy');
 Route::view('/terms', 'legal.terms')->name('terms');
+
+// Admin
+Route::get('/admin', [AdminController::class, 'index'])
+    ->middleware(['auth', \App\Http\Middleware\AdminOnly::class])
+    ->name('admin');
 
 // Sitemap
 Route::get('/sitemap.xml', function () {
