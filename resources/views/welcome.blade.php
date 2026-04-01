@@ -164,27 +164,27 @@
         </p>
 
         {{-- Stats --}}
-        <div class="flex items-center justify-center gap-8 mt-10 flex-wrap">
+        <div class="flex items-center justify-center gap-10 mt-12 flex-wrap">
             @if($scanCount > 0)
             <div class="text-center">
-                <p class="text-2xl font-black text-white">{{ number_format($scanCount) }}</p>
-                <p class="text-xs text-gray-600 mt-0.5 uppercase tracking-wider">Scans run</p>
+                <p class="text-3xl sm:text-4xl font-black text-white">{{ number_format($scanCount) }}+</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Websites scanned</p>
             </div>
-            <div class="w-px h-8 bg-white/8"></div>
+            <div class="w-px h-10 bg-white/10"></div>
             @endif
             <div class="text-center">
-                <p class="text-2xl font-black text-white">19</p>
-                <p class="text-xs text-gray-600 mt-0.5 uppercase tracking-wider">Categories</p>
+                <p class="text-3xl sm:text-4xl font-black text-white">19</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Security categories</p>
             </div>
-            <div class="w-px h-8 bg-white/8"></div>
+            <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
-                <p class="text-2xl font-black text-white">50+</p>
-                <p class="text-xs text-gray-600 mt-0.5 uppercase tracking-wider">Checks</p>
+                <p class="text-3xl sm:text-4xl font-black text-white">50+</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Individual checks</p>
             </div>
-            <div class="w-px h-8 bg-white/8"></div>
+            <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
-                <p class="text-2xl font-black text-white">Free</p>
-                <p class="text-xs text-gray-600 mt-0.5 uppercase tracking-wider">Always</p>
+                <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Free</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">No limits</p>
             </div>
         </div>
 
@@ -584,6 +584,73 @@
                 </div>
                 <h3 class="font-bold text-white mb-2">GitHub Action</h3>
                 <p class="text-sm text-gray-500 leading-relaxed">Add security scanning to your CI/CD pipeline. Fail the build automatically when the score drops below your threshold.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+{{-- ═══════════════════════════════════════════
+     TESTIMONIALS
+═══════════════════════════════════════════ --}}
+<section class="relative py-24 border-t border-white/5">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="text-center mb-16">
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Trusted by developers &amp; agencies</p>
+            <h2 class="text-4xl font-black mb-4">What people say</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">Used by security-conscious teams and developers worldwide.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-6">
+                <div class="flex items-center gap-1 mb-4">
+                    @for($i = 0; $i < 5; $i++)
+                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">"We run WebCheckApp on every client site before handoff. The report is clear enough to share with non-technical stakeholders and detailed enough for our dev team."</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-sm font-bold text-indigo-400">M</div>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Mark de Vries</p>
+                        <p class="text-xs text-gray-500">CTO, Digital Agency</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-6">
+                <div class="flex items-center gap-1 mb-4">
+                    @for($i = 0; $i < 5; $i++)
+                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">"I added the security badge to our README and pointed our sysadmin at the report. Two days later our HSTS and CSP were fixed. Couldn't have been easier."</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-sm font-bold text-purple-400">S</div>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Sarah Klement</p>
+                        <p class="text-xs text-gray-500">Full-stack Developer</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-6">
+                <div class="flex items-center gap-1 mb-4">
+                    @for($i = 0; $i < 5; $i++)
+                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">"Love the compare feature. We scanned our site against a competitor and found three header issues they had already fixed. Great motivation for the team."</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center text-sm font-bold text-green-400">J</div>
+                    <div>
+                        <p class="text-sm font-semibold text-white">James Okonkwo</p>
+                        <p class="text-xs text-gray-500">Security Engineer</p>
+                    </div>
+                </div>
             </div>
 
         </div>

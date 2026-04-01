@@ -329,11 +329,29 @@ class HeadersScanner
             ];
         }
 
+        // Collect raw security header values as evidence for the report
+        $securityHeaderKeys = [
+            'content-security-policy', 'x-frame-options', 'x-content-type-options',
+            'referrer-policy', 'permissions-policy', 'strict-transport-security',
+            'cross-origin-opener-policy', 'cross-origin-embedder-policy',
+            'x-xss-protection', 'access-control-allow-origin', 'server',
+        ];
+        $evidence = [];
+        foreach ($securityHeaderKeys as $key) {
+            $val = $headers[$key] ?? null;
+            if ($val !== null) {
+                // Capitalize header name for display
+                $name = implode('-', array_map('ucfirst', explode('-', $key)));
+                $evidence[$name] = $val;
+            }
+        }
+
         return [
-            'category' => 'Security Headers',
-            'icon'     => 'document-check',
-            'score'    => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
-            'checks'   => $checks,
+            'category'    => 'Security Headers',
+            'icon'        => 'document-check',
+            'score'       => $maxScore > 0 ? (int) round(($score / $maxScore) * 100) : 0,
+            'checks'      => $checks,
+            'raw_headers' => $evidence,
         ];
     }
 

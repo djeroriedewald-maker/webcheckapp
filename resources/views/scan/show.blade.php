@@ -1276,6 +1276,27 @@
                 </div>
                 @endforeach
             </div>
+            @if(!empty($category['raw_headers']))
+            <div class="border-t border-white/5" x-data="{ open: false }">
+                <button @click="open = !open" class="w-full flex items-center justify-between px-5 py-3 text-sm text-gray-500 hover:text-gray-300 transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                        Response headers ({{ count($category['raw_headers']) }})
+                    </span>
+                    <svg class="w-4 h-4 transition-transform" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div x-show="open" x-cloak class="px-5 pb-4">
+                    <div class="bg-gray-900/60 border border-white/5 rounded-lg p-4 font-mono text-xs leading-relaxed overflow-x-auto">
+                        @foreach($category['raw_headers'] as $name => $value)
+                        <div class="flex gap-2 py-0.5">
+                            <span class="text-indigo-400 shrink-0">{{ $name }}:</span>
+                            <span class="text-gray-300 break-all">{{ $value }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
         @endforeach
         </div>
