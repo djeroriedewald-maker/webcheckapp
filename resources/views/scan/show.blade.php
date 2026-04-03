@@ -421,8 +421,7 @@
         {{-- Sticky tab navigation --}}
         <div id="tab-nav" class="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
             <div class="bg-[#0b0b12]/95 backdrop-blur-md border-b border-white/8 px-4 sm:px-6 lg:px-8">
-                <style>.hide-scrollbar::-webkit-scrollbar{display:none}.hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}</style>
-                <div class="hide-scrollbar flex items-center gap-1 overflow-x-auto py-2">
+                <div class="flex items-center gap-1 flex-wrap py-2">
                     @php
                         $qualityCount = collect($scan->results['accessibility']['checks'] ?? [])
                             ->merge($scan->results['robots']['checks'] ?? [])
