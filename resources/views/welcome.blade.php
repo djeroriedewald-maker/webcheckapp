@@ -117,7 +117,7 @@
         </p>
 
         {{-- Scan form with tier selection --}}
-        <div x-data="{ tier: 'free', loading: false }">
+        <div x-data="{ tier: 'free', loading: false, url: '{{ old('url') }}' }">
             {{-- URL input --}}
             <div class="max-w-2xl mx-auto mb-6">
                 <div class="relative">
@@ -129,8 +129,8 @@
                     <input
                         type="text"
                         id="scan-url"
+                        x-model="url"
                         placeholder="example.com or https://example.com"
-                        value="{{ old('url') }}"
                         class="w-full bg-white/6 border border-white/12 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white/8 transition-all text-lg backdrop-blur-sm"
                         autofocus
                     >
@@ -178,7 +178,7 @@
             <form x-show="tier === 'free'" action="{{ route('scan.store') }}" method="POST"
                   @submit="loading = true" class="max-w-2xl mx-auto">
                 @csrf
-                <input type="hidden" name="url" :value="document.getElementById('scan-url').value">
+                <input type="hidden" name="url" x-bind:value="url">
                 <button type="submit" :disabled="loading"
                         class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 mx-auto min-w-[200px] shadow-lg shadow-indigo-500/25">
                     <span x-show="!loading">Quick Scan (Free) →</span>
@@ -190,7 +190,7 @@
             <form x-show="tier !== 'free'" action="{{ route('checkout.create') }}" method="POST"
                   @submit="loading = true" class="max-w-2xl mx-auto">
                 @csrf
-                <input type="hidden" name="url" :value="document.getElementById('scan-url').value">
+                <input type="hidden" name="url" x-bind:value="url">
                 <input type="hidden" name="tier" :value="tier">
                 <button type="submit" :disabled="loading"
                         :class="tier === 'pro' ? 'from-purple-600 to-purple-500 shadow-purple-500/25' : 'from-pink-600 to-pink-500 shadow-pink-500/25'"
