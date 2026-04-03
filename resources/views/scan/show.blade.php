@@ -437,14 +437,24 @@
                             ['id' => 'technologie',  'label' => 'Full Report',   'count' => 0,              'countColor' => ''],
                         ];
                     @endphp
+                    @php
+                        $premiumTabs = ['trust', 'malware', 'beveiliging', 'privacy', 'kwaliteit'];
+                    @endphp
                     @foreach($tabs as $t)
+                    @php $isLocked = $scan->isFree() && in_array($t['id'], $premiumTabs); @endphp
                     <button type="button"
                             @click="tab = '{{ $t['id'] }}'"
                             :class="tab === '{{ $t['id'] }}' ? 'bg-indigo-600 text-white border-transparent' : 'text-gray-400 hover:text-white hover:bg-white/5 border-transparent'"
                             class="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all whitespace-nowrap">
+                        @if($isLocked)
+                        <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        @endif
                         {{ $t['label'] }}
                         @if($t['count'] > 0)
                         <span class="text-xs font-bold {{ $t['countColor'] }} px-1.5 py-0.5 rounded-full">{{ $t['count'] }}</span>
+                        @endif
+                        @if($isLocked)
+                        <span class="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded-full">PRO</span>
                         @endif
                     </button>
                     @endforeach
@@ -453,6 +463,15 @@
         </div>
 
         {{-- Trust & Reputation panel --}}
+        @if($scan->isFree() && empty($scan->results['trust']))
+        <div class="mb-10" x-show="tab === 'trust'">
+            @include('scan.partials.locked-tab', [
+                'title' => 'Trust & WHOIS',
+                'description' => 'See domain age, registrar, expiry date, server location, and reputation checks across security databases.',
+                'features' => ['Domain Age', 'WHOIS Data', 'Server Location', 'Reputation Check', 'Expiry Alert'],
+            ])
+        </div>
+        @endif
         @if(!empty($scan->results['trust']))
         @php
             $trust        = $scan->results['trust'];
@@ -649,6 +668,15 @@
         @endif
 
         {{-- Malware & Virus Scan panel --}}
+        @if($scan->isFree() && empty($scan->results['malware']))
+        <div class="mb-10" x-show="tab === 'malware'">
+            @include('scan.partials.locked-tab', [
+                'title' => 'Malware & Reputation',
+                'description' => 'Check if your site is flagged by malware databases, blacklists, and antivirus vendors worldwide.',
+                'features' => ['VirusTotal', 'URLhaus', 'Spamhaus', 'PhishTank', 'Cloudflare DNS'],
+            ])
+        </div>
+        @endif
         @if(!empty($scan->results['malware']))
         @php
             $malware     = $scan->results['malware'];
@@ -757,6 +785,17 @@
         </div>
         @endif
 
+        {{-- Security locked overlay for free scans --}}
+        @if($scan->isFree() && empty($scan->results['ports']))
+        <div class="mb-10" x-show="tab === 'beveiliging'">
+            @include('scan.partials.locked-tab', [
+                'title' => 'Advanced Security Checks',
+                'description' => 'Detect open ports, exposed files, API vulnerabilities, TLS weaknesses, and subdomain takeover risks.',
+                'features' => ['Open Ports', 'Exposed Files', 'API Security', 'TLS Ciphers', 'Subdomain Takeover'],
+            ])
+        </div>
+        @endif
+
         {{-- Open Ports panel --}}
         @if(!empty($scan->results['ports']))
         @php
@@ -824,6 +863,17 @@
                 </div>
                 @endforeach
             </div>
+        </div>
+        @endif
+
+        {{-- Privacy locked overlay for free scans --}}
+        @if($scan->isFree() && empty($scan->results['privacy']))
+        <div class="mb-10" x-show="tab === 'privacy'">
+            @include('scan.partials.locked-tab', [
+                'title' => 'Privacy & GDPR',
+                'description' => 'Analyze cookie consent, privacy policy presence, third-party trackers, and GDPR compliance signals.',
+                'features' => ['Cookie Consent', 'Privacy Policy', 'Tracker Detection', 'GDPR Compliance'],
+            ])
         </div>
         @endif
 
@@ -1036,6 +1086,15 @@
 
         {{-- ═══ Kwaliteit (Quality) tab ═══ --}}
         <div x-show="tab === 'kwaliteit'">
+
+        {{-- Quality locked overlay for free scans --}}
+        @if($scan->isFree() && empty($scan->results['accessibility']))
+            @include('scan.partials.locked-tab', [
+                'title' => 'Quality & Accessibility',
+                'description' => 'Check accessibility compliance, robots.txt, branding, broken links, and carbon footprint.',
+                'features' => ['Accessibility', 'Robots & SEO', 'Branding', 'Broken Links', 'Carbon Footprint'],
+            ])
+        @endif
 
         {{-- Accessibility panel --}}
         @if(!empty($scan->results['accessibility']))
