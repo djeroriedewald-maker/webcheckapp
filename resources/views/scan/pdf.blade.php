@@ -268,91 +268,80 @@
 {{-- ══ MAIN CONTENT ══ --}}
 <div class="content">
 
-    {{-- Critical issues --}}
-    @if($failures->count() > 0)
-    <div class="no-break">
-        <div class="section-title">&#x26A0; Critical Issues ({{ $failures->count() }})</div>
-        @foreach($failures as $check)
-        <div class="issue-item issue-fail">
-            <div class="issue-label">
-                {{ $check['label'] }}
-                <span class="issue-badge badge-fail">{{ $check['_cat'] }}</span>
-            </div>
-            <div class="issue-desc">{{ $check['description'] }}</div>
-            @if(!empty($check['recommendation']))
-            <div class="issue-fix">&#128161; {{ $check['recommendation'] }}</div>
-            @endif
-        </div>
-        @endforeach
+    {{-- ══ EXECUTIVE SUMMARY ══ --}}
+    @php
+        $catCount = collect($scan->results)->filter(fn($c) => isset($c['score']) && $c['score'] !== null)->count();
+        $strongAreas = collect($scan->results)
+            ->filter(fn($c) => isset($c['score']) && $c['score'] >= 80)
+            ->pluck('category')
+            ->take(4)
+            ->implode(', ');
+        $weakAreas = collect($scan->results)
+            ->filter(fn($c) => isset($c['score']) && $c['score'] !== null && $c['score'] < 60)
+            ->sortBy('score')
+            ->pluck('category')
+            ->take(4)
+            ->implode(', ');
+        $mediumAreas = collect($scan->results)
+            ->filter(fn($c) => isset($c['score']) && $c['score'] >= 60 && $c['score'] < 80)
+            ->pluck('category')
+            ->take(4)
+            ->implode(', ');
+    @endphp
+    <div class="section-title">Executive Summary</div>
+    <div style="font-size: 10.5px; color: #374151; line-height: 1.7; margin-bottom: 16px;">
+        <p style="margin-bottom: 8px;">
+            We performed a comprehensive security analysis of <strong>{{ $scan->host }}</strong> across {{ $catCount }} categories.
+            The website received an overall score of <strong>{{ $scan->score }}/100</strong> (grade <strong>{{ $scan->grade }}</strong>),
+            with {{ $failures->count() }} critical {{ $failures->count() === 1 ? 'issue' : 'issues' }},
+            {{ $warnings->count() }} {{ $warnings->count() === 1 ? 'warning' : 'warnings' }},
+            and {{ $passes->count() }} passed {{ $passes->count() === 1 ? 'check' : 'checks' }}.
+        </p>
+
+        @if($scan->score >= 85)
+        <p style="margin-bottom: 8px;">
+            <strong>Overall assessment:</strong> {{ $scan->host }} demonstrates a strong security posture. The website follows most security best practices and is well-configured. Minor improvements are possible but no urgent issues were found.
+        </p>
+        @elseif($scan->score >= 65)
+        <p style="margin-bottom: 8px;">
+            <strong>Overall assessment:</strong> {{ $scan->host }} has a reasonable security foundation but there is room for improvement. Several issues were identified that could expose the website or its users to unnecessary risk. We recommend addressing the critical issues first, followed by the warnings.
+        </p>
+        @elseif($scan->score >= 40)
+        <p style="margin-bottom: 8px;">
+            <strong>Overall assessment:</strong> {{ $scan->host }} has significant security gaps that should be addressed as soon as possible. The current configuration leaves the website vulnerable to common attacks. We strongly recommend reviewing the critical issues listed below and implementing the recommended fixes.
+        </p>
+        @else
+        <p style="margin-bottom: 8px;">
+            <strong>Overall assessment:</strong> {{ $scan->host }} has serious security deficiencies across multiple areas. The website is at high risk of exploitation. Immediate action is required to protect the website and its users. We urge you to address the critical issues as a top priority.
+        </p>
+        @endif
+
+        @if($strongAreas)
+        <p style="margin-bottom: 4px;">
+            <span style="color: #16a34a; font-weight: bold;">&#10003; Strong areas:</span> {{ $strongAreas }}.
+        </p>
+        @endif
+
+        @if($mediumAreas)
+        <p style="margin-bottom: 4px;">
+            <span style="color: #ca8a04; font-weight: bold;">&#9888; Needs improvement:</span> {{ $mediumAreas }}.
+        </p>
+        @endif
+
+        @if($weakAreas)
+        <p style="margin-bottom: 4px;">
+            <span style="color: #dc2626; font-weight: bold;">&#10007; Weak areas:</span> {{ $weakAreas }}.
+        </p>
+        @endif
     </div>
-    @endif
 
-    {{-- Warnings --}}
-    @if($warnings->count() > 0)
-    <div class="no-break">
-        <div class="section-title">Warnings ({{ $warnings->count() }})</div>
-        @foreach($warnings as $check)
-        <div class="issue-item issue-warn">
-            <div class="issue-label">
-                {{ $check['label'] }}
-                <span class="issue-badge badge-warn">{{ $check['_cat'] }}</span>
-            </div>
-            <div class="issue-desc">{{ $check['description'] }}</div>
-            @if(!empty($check['recommendation']))
-            <div class="issue-fix">&#128161; {{ $check['recommendation'] }}</div>
-            @endif
-        </div>
-        @endforeach
-    </div>
-    @endif
-
-    {{-- Passing checks — compact table, no need to write them all out --}}
-    @if($passes->count() > 0)
-    <div class="no-break">
-        <div class="section-title">&#10003; Passed Checks ({{ $passes->count() }})</div>
-        <table class="pass-table">
-            @foreach($passes as $check)
-            <tr>
-                <td class="pass-tick">&#10003;</td>
-                <td class="pass-check">{{ $check['label'] }}</td>
-                <td class="pass-cat">{{ $check['_cat'] }}</td>
-            </tr>
-            @endforeach
-        </table>
-    </div>
-    @endif
-
-    <div class="page-break"></div>
-
-    {{-- Technology stack --}}
-    @if(!empty($scan->results['technology']['technologies']))
-    <div class="no-break">
-        <div class="section-title">Detected Technologies</div>
-        <div class="tech-panel">
-            @php $byType = collect($scan->results['technology']['technologies'])->groupBy('type'); @endphp
-            @foreach($byType as $type => $items)
-            <div class="tech-group">
-                <span class="tech-type-label">{{ $type }}</span>
-                @foreach($items as $item)
-                <span class="tech-badge">{{ $item['name'] }}</span>
-                @endforeach
-            </div>
-            @endforeach
-            @foreach($scan->results['technology']['checks'] ?? [] as $check)
-            <div style="margin-top:6px; font-size:9.5px; color:#374151;">
-                <span style="color:{{ $check['status'] === 'pass' ? '#16a34a' : '#d97706' }};">
-                    {{ $check['status'] === 'pass' ? '&#10003;' : '&#9888;' }}
-                </span>
-                <strong>{{ $check['label'] }}</strong> — {{ $check['description'] }}
-            </div>
-            @endforeach
-        </div>
-    </div>
-    @endif
-
-    {{-- OWASP Top 10 section (Pro/Deep scans only) --}}
+    {{-- ══ OWASP TOP 10 (first, most recognizable) ══ --}}
     @if(isset($scan->results['owasp']) && !empty($scan->results['owasp']['checks']))
     <div class="section-title" style="color: #7c3aed;">OWASP Top 10 Analysis (Score: {{ $scan->results['owasp']['score'] ?? 0 }}/100)</div>
+    <div style="font-size: 10px; color: #4b5563; margin-bottom: 10px; line-height: 1.6;">
+        The OWASP Top 10 is the globally recognized standard for web application security risks.
+        Below is how {{ $scan->host }} scores against each of the ten categories.
+    </div>
     <div class="cat-section">
         @foreach($scan->results['owasp']['checks'] as $check)
         @php
@@ -380,6 +369,100 @@
             @endif
         </div>
         @endforeach
+    </div>
+    @endif
+
+    {{-- ══ CRITICAL ISSUES ══ --}}
+    @if($failures->count() > 0)
+    <div class="no-break">
+        <div class="section-title">&#x26A0; Critical Issues ({{ $failures->count() }})</div>
+        <div style="font-size: 10px; color: #4b5563; margin-bottom: 8px;">
+            These issues pose an immediate security risk and should be addressed as a priority.
+        </div>
+        @foreach($failures as $check)
+        <div class="issue-item issue-fail">
+            <div class="issue-label">
+                {{ $check['label'] }}
+                <span class="issue-badge badge-fail">{{ $check['_cat'] }}</span>
+            </div>
+            <div class="issue-desc">{{ $check['description'] }}</div>
+            @if(!empty($check['recommendation']))
+            <div class="issue-fix">&#128161; {{ $check['recommendation'] }}</div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @endif
+
+    {{-- ══ WARNINGS ══ --}}
+    @if($warnings->count() > 0)
+    <div class="no-break">
+        <div class="section-title">Warnings ({{ $warnings->count() }})</div>
+        <div style="font-size: 10px; color: #4b5563; margin-bottom: 8px;">
+            These items are not immediately critical but should be reviewed to strengthen your security posture.
+        </div>
+        @foreach($warnings as $check)
+        <div class="issue-item issue-warn">
+            <div class="issue-label">
+                {{ $check['label'] }}
+                <span class="issue-badge badge-warn">{{ $check['_cat'] }}</span>
+            </div>
+            <div class="issue-desc">{{ $check['description'] }}</div>
+            @if(!empty($check['recommendation']))
+            <div class="issue-fix">&#128161; {{ $check['recommendation'] }}</div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @endif
+
+    {{-- ══ PASSED CHECKS ══ --}}
+    @if($passes->count() > 0)
+    <div class="no-break">
+        <div class="section-title">&#10003; Passed Checks ({{ $passes->count() }})</div>
+        <div style="font-size: 10px; color: #4b5563; margin-bottom: 8px;">
+            These checks were all successfully validated. Keep up the good work.
+        </div>
+        <table class="pass-table">
+            @foreach($passes as $check)
+            <tr>
+                <td class="pass-tick">&#10003;</td>
+                <td class="pass-check">{{ $check['label'] }}</td>
+                <td class="pass-cat">{{ $check['_cat'] }}</td>
+            </tr>
+            @endforeach
+        </table>
+    </div>
+    @endif
+
+    <div class="page-break"></div>
+
+    {{-- ══ TECHNOLOGY STACK ══ --}}
+    @if(!empty($scan->results['technology']['technologies']))
+    <div class="no-break">
+        <div class="section-title">Detected Technologies</div>
+        <div style="font-size: 10px; color: #4b5563; margin-bottom: 8px;">
+            The following technologies were detected on {{ $scan->host }}. Knowing your stack helps identify potential vulnerabilities.
+        </div>
+        <div class="tech-panel">
+            @php $byType = collect($scan->results['technology']['technologies'])->groupBy('type'); @endphp
+            @foreach($byType as $type => $items)
+            <div class="tech-group">
+                <span class="tech-type-label">{{ $type }}</span>
+                @foreach($items as $item)
+                <span class="tech-badge">{{ $item['name'] }}</span>
+                @endforeach
+            </div>
+            @endforeach
+            @foreach($scan->results['technology']['checks'] ?? [] as $check)
+            <div style="margin-top:6px; font-size:9.5px; color:#374151;">
+                <span style="color:{{ $check['status'] === 'pass' ? '#16a34a' : '#d97706' }};">
+                    {{ $check['status'] === 'pass' ? '&#10003;' : '&#9888;' }}
+                </span>
+                <strong>{{ $check['label'] }}</strong> — {{ $check['description'] }}
+            </div>
+            @endforeach
+        </div>
     </div>
     @endif
 
