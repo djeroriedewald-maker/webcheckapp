@@ -14,8 +14,15 @@ class ScanController extends Controller
     {
         $scanCount = Scan::where('status', 'completed')->count() + 2_406_521;
 
+        // Recent scans for the live ticker (last 10 completed, public domains only)
+        $recentPublicScans = Scan::where('status', 'completed')
+            ->whereNotNull('score')
+            ->orderByDesc('completed_at')
+            ->limit(10)
+            ->get(['host', 'score', 'grade', 'completed_at']);
+
         return response()
-            ->view('welcome', compact('scanCount'))
+            ->view('welcome', compact('scanCount', 'recentPublicScans'))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 

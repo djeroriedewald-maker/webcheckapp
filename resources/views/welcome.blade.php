@@ -23,11 +23,29 @@
     "url": "{{ url('/') }}",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Any",
-    "offers": {
-        "@@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-    }
+    "offers": [
+        {
+            "@@type": "Offer",
+            "name": "Quick Scan",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "description": "Free security scan with 5 scanners"
+        },
+        {
+            "@@type": "Offer",
+            "name": "Pro Scan",
+            "price": "9.99",
+            "priceCurrency": "EUR",
+            "description": "20 security scanners + OWASP Top 10 analysis + PDF report"
+        },
+        {
+            "@@type": "Offer",
+            "name": "Deep Scan",
+            "price": "29.99",
+            "priceCurrency": "EUR",
+            "description": "27 security scanners + OWASP Top 10 + penetration checks + PDF report"
+        }
+    ]
 }
 </script>
 <script type="application/ld+json">
@@ -40,7 +58,7 @@
             "name": "What does WebCheckApp scan for?",
             "acceptedAnswer": {
                 "@@type": "Answer",
-                "text": "WebCheckApp runs 19 security scanners covering SSL/HTTPS, security headers, DNS & email security, performance, content security, exposed files, open ports, TLS cipher strength, privacy & GDPR compliance, malware & reputation, accessibility, and more."
+                "text": "WebCheckApp runs up to 27 security scanners covering SSL/HTTPS, security headers, DNS & email security, OWASP Top 10, performance, content security, exposed files, open ports, TLS cipher strength, privacy & GDPR compliance, malware & reputation, accessibility, and more."
             }
         },
         {
@@ -48,7 +66,23 @@
             "name": "Is WebCheckApp free to use?",
             "acceptedAnswer": {
                 "@@type": "Answer",
-                "text": "Yes, WebCheckApp is completely free. No account or credit card is required. Simply enter a domain and get a full security report in under 60 seconds."
+                "text": "The Quick Scan is completely free — no account required. It covers 5 core security categories. For a deeper analysis with OWASP Top 10, malware detection, and 20+ more scanners, Pro Scan is available for \u20ac9.99 and Deep Scan for \u20ac29.99 per scan."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "What is the difference between Quick, Pro, and Deep Scan?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Quick Scan (free) runs 5 basic scanners: SSL, headers, DNS, performance, and content. Pro Scan (\u20ac9.99) adds 15 more scanners plus an OWASP Top 10 analysis and PDF report. Deep Scan (\u20ac29.99) includes everything in Pro plus 7 advanced penetration-style checks like directory discovery, XSS reflection testing, and HTTP method analysis."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "What is the OWASP Top 10?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "The OWASP Top 10 is a globally recognized standard for web application security risks, published by the Open Web Application Security Project. It covers the ten most critical security vulnerabilities including broken access control, cryptographic failures, injection attacks, and more. Our Pro and Deep scans map your results against all ten OWASP categories."
             }
         },
         {
@@ -56,7 +90,15 @@
             "name": "How long does a security scan take?",
             "acceptedAnswer": {
                 "@@type": "Answer",
-                "text": "A full scan typically completes in 20 to 40 seconds. All 19 security categories are checked sequentially and results are displayed as they become available."
+                "text": "A Quick Scan completes in about 15 seconds. A Pro Scan takes 30-60 seconds. A Deep Scan with all 27 scanners typically finishes in 60-90 seconds. Results are displayed in real-time as each check completes."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Do I need to install anything on my website?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "No. WebCheckApp scans your website from the outside, just like a visitor or search engine would. No software installation, code changes, or server access is required."
             }
         },
         {
@@ -65,6 +107,14 @@
             "acceptedAnswer": {
                 "@@type": "Answer",
                 "text": "Scan results are stored so you can access your report later and compare it with future scans. We do not share your scan data with third parties. Only publicly accessible information is checked during a scan."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Can I monitor my website continuously?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Yes. Create a free account and add up to 10 sites to your monitoring dashboard. You can rescan sites at any time, track score changes over time, and get notified when your security score drops or your SSL certificate is about to expire."
             }
         }
     ]
@@ -232,30 +282,68 @@
             SSL · Headers · DNS · OWASP Top 10 · Malware · Ports · Privacy and more
         </p>
 
-        {{-- Stats --}}
+        {{-- Stats with animated counter --}}
         <div class="flex items-center justify-center gap-10 mt-12 flex-wrap">
             @if($scanCount > 0)
-            <div class="text-center">
-                <p class="text-3xl sm:text-4xl font-black text-white">{{ number_format($scanCount) }}+</p>
+            <div class="text-center" x-data="{ count: 0 }" x-init="
+                let target = {{ $scanCount }};
+                let start = performance.now();
+                let duration = 2000;
+                let tick = (now) => {
+                    let p = Math.min((now - start) / duration, 1);
+                    let ease = 1 - Math.pow(1 - p, 3);
+                    count = Math.round(ease * target);
+                    if (p < 1) requestAnimationFrame(tick);
+                };
+                setTimeout(() => requestAnimationFrame(tick), 300);
+            ">
+                <p class="text-3xl sm:text-4xl font-black text-white"><span x-text="count.toLocaleString()">0</span>+</p>
                 <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Websites scanned</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             @endif
             <div class="text-center">
-                <p class="text-3xl sm:text-4xl font-black text-white">19</p>
-                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Security categories</p>
+                <p class="text-3xl sm:text-4xl font-black text-white">27</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Security scanners</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
-                <p class="text-3xl sm:text-4xl font-black text-white">50+</p>
+                <p class="text-3xl sm:text-4xl font-black text-white">100+</p>
                 <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Individual checks</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
                 <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Free</p>
-                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">No limits</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Quick scan</p>
             </div>
         </div>
+
+        {{-- Recent scans ticker --}}
+        @if($recentPublicScans->isNotEmpty())
+        <div class="mt-8 overflow-hidden relative max-w-2xl mx-auto" x-data="{}" x-init="
+            const el = $el.querySelector('.ticker-track');
+            if (el) { el.style.animationDuration = (el.children.length * 3) + 's'; }
+        ">
+            <div class="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-gray-950 to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-gray-950 to-transparent z-10 pointer-events-none"></div>
+            <div class="ticker-track flex gap-4 animate-[tickerScroll_30s_linear_infinite] whitespace-nowrap">
+                @foreach($recentPublicScans->concat($recentPublicScans) as $rs)
+                <span class="inline-flex items-center gap-2 text-xs text-gray-500 shrink-0">
+                    <span class="w-1.5 h-1.5 rounded-full {{ ($rs->score ?? 0) >= 80 ? 'bg-green-500' : (($rs->score ?? 0) >= 60 ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
+                    <span class="text-gray-400">{{ $rs->host }}</span>
+                    <span class="font-bold {{ ($rs->score ?? 0) >= 80 ? 'text-green-400' : (($rs->score ?? 0) >= 60 ? 'text-yellow-400' : 'text-red-400') }}">{{ $rs->grade }}</span>
+                    <span class="text-gray-600">{{ $rs->completed_at->diffForHumans() }}</span>
+                </span>
+                @endforeach
+            </div>
+            <style>
+            @keyframes tickerScroll {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+            }
+            </style>
+        </div>
+        @endif
 
         {{-- Floating check badges --}}
         <div class="absolute left-8 top-1/3 hidden xl:flex flex-col gap-3 opacity-60">
@@ -826,11 +914,11 @@
         <div class="relative">
             <div class="inline-flex items-center gap-2 bg-indigo-500/15 border border-indigo-500/25 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-6">
                 <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
-                Free forever — no credit card
+                Free quick scan — no account needed
             </div>
 
             <h2 class="text-4xl font-black mb-4">Scan your website now</h2>
-            <p class="text-gray-400 mb-10 max-w-lg mx-auto">Find out what attackers see when they look at your site. Usually done in under 60 seconds.</p>
+            <p class="text-gray-400 mb-10 max-w-lg mx-auto">Find out what attackers see when they look at your site. Free quick scan in 15 seconds, or upgrade for OWASP Top 10 and deep analysis.</p>
 
             <form action="{{ route('scan.store') }}" method="POST"
                   x-data="{ loading: false }"
