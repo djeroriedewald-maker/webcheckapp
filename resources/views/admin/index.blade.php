@@ -52,6 +52,37 @@
 
     </div>
 
+    {{-- ═══ Revenue cards ═══ --}}
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+            <p class="text-xs text-emerald-400 uppercase tracking-wider">Revenue total</p>
+            <p class="text-2xl font-black text-emerald-400 mt-1">&euro;{{ number_format($totalRevenue / 100, 2, ',', '.') }}</p>
+        </div>
+        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+            <p class="text-xs text-emerald-400 uppercase tracking-wider">Revenue month</p>
+            <p class="text-2xl font-black text-emerald-400 mt-1">&euro;{{ number_format($revenueMonth / 100, 2, ',', '.') }}</p>
+        </div>
+        <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+            <p class="text-xs text-emerald-400 uppercase tracking-wider">Revenue week</p>
+            <p class="text-2xl font-black text-emerald-400 mt-1">&euro;{{ number_format($revenueWeek / 100, 2, ',', '.') }}</p>
+        </div>
+        <div class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+            <p class="text-xs text-purple-400 uppercase tracking-wider">Payments total</p>
+            <p class="text-2xl font-black text-purple-400 mt-1">{{ $totalPayments }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">{{ $paymentsMonth }} this month</p>
+        </div>
+        <div class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-4">
+            <p class="text-xs text-purple-400 uppercase tracking-wider">Pro scans</p>
+            <p class="text-2xl font-black text-purple-400 mt-1">{{ $proScansMonth }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">this month</p>
+        </div>
+        <div class="bg-pink-500/5 border border-pink-500/20 rounded-xl p-4">
+            <p class="text-xs text-pink-400 uppercase tracking-wider">Deep scans</p>
+            <p class="text-2xl font-black text-pink-400 mt-1">{{ $deepScansMonth }}</p>
+            <p class="text-xs text-gray-500 mt-0.5">this month</p>
+        </div>
+    </div>
+
     {{-- ═══ Visitors + Status row ═══ --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
 
@@ -205,6 +236,7 @@
                 <thead>
                     <tr class="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-white/5">
                         <th class="px-5 py-3">Host</th>
+                        <th class="px-5 py-3">Tier</th>
                         <th class="px-5 py-3">Status</th>
                         <th class="px-5 py-3">Score</th>
                         <th class="px-5 py-3">Grade</th>
@@ -217,6 +249,15 @@
                     <tr class="hover:bg-white/2 transition">
                         <td class="px-5 py-3">
                             <a href="{{ route('scan.show', $scan) }}" class="text-indigo-400 hover:text-indigo-300 transition">{{ $scan->host }}</a>
+                        </td>
+                        <td class="px-5 py-3">
+                            @if($scan->tier === 'deep')
+                            <span class="text-[10px] font-bold text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded-full">DEEP</span>
+                            @elseif($scan->tier === 'pro')
+                            <span class="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded-full">PRO</span>
+                            @else
+                            <span class="text-[10px] font-bold text-gray-500 bg-white/5 px-1.5 py-0.5 rounded-full">FREE</span>
+                            @endif
                         </td>
                         <td class="px-5 py-3">
                             @if($scan->status === 'completed')
@@ -233,6 +274,142 @@
                         <td class="px-5 py-3 font-bold text-white">{{ $scan->grade ?? '—' }}</td>
                         <td class="px-5 py-3 text-gray-500 text-xs font-mono">{{ $scan->ip_address }}</td>
                         <td class="px-5 py-3 text-gray-500 text-xs">{{ $scan->created_at->diffForHumans() }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- ═══ Grant free scan ═══ --}}
+    <div class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-5 mb-10 mt-10">
+        <h2 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4">Grant Free Pro/Deep Scan</h2>
+
+        @if(session('success'))
+        <div class="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 mb-4 text-sm text-green-400">
+            {{ session('success') }}
+        </div>
+        @endif
+
+        @if(session('error'))
+        <div class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4 text-sm text-red-400">
+            {{ session('error') }}
+        </div>
+        @endif
+
+        <form action="{{ route('admin.grantScan') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+            @csrf
+            <select name="user_id" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                <option value="">Select user...</option>
+                @foreach($users as $user)
+                <option value="{{ $user->id }}">{{ $user->email }} ({{ $user->name }})</option>
+                @endforeach
+            </select>
+            <input type="text" name="url" placeholder="domain.com" required
+                   class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+            <select name="tier" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                <option value="pro">Pro Scan</option>
+                <option value="deep">Deep Scan</option>
+            </select>
+            <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition whitespace-nowrap">
+                Grant free scan
+            </button>
+        </form>
+    </div>
+
+    {{-- ═══ Recent payments ═══ --}}
+    <div class="bg-white/3 border border-white/8 rounded-xl overflow-hidden mb-10">
+        <div class="px-5 py-4 border-b border-white/5">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent Payments</h2>
+        </div>
+        @if($recentPayments->isEmpty())
+        <div class="px-5 py-8 text-center text-gray-500 text-sm">No payments yet.</div>
+        @else
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-white/5">
+                        <th class="px-5 py-3">User</th>
+                        <th class="px-5 py-3">Domain</th>
+                        <th class="px-5 py-3">Tier</th>
+                        <th class="px-5 py-3">Amount</th>
+                        <th class="px-5 py-3">Status</th>
+                        <th class="px-5 py-3">Time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    @foreach($recentPayments as $payment)
+                    <tr class="hover:bg-white/2 transition">
+                        <td class="px-5 py-3 text-white">{{ $payment->user->email ?? '—' }}</td>
+                        <td class="px-5 py-3">
+                            @if($payment->scan)
+                            <a href="{{ route('scan.show', $payment->scan) }}" class="text-indigo-400 hover:text-indigo-300 transition">{{ $payment->domain }}</a>
+                            @else
+                            <span class="text-gray-400">{{ $payment->domain }}</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $payment->tier === 'deep' ? 'bg-pink-500/10 text-pink-400' : 'bg-purple-500/10 text-purple-400' }}">
+                                {{ ucfirst($payment->tier) }}
+                            </span>
+                        </td>
+                        <td class="px-5 py-3 text-emerald-400 font-bold">&euro;{{ number_format($payment->amount_cents / 100, 2, ',', '.') }}</td>
+                        <td class="px-5 py-3">
+                            @if($payment->status === 'completed')
+                            <span class="inline-flex items-center gap-1 text-green-400 text-xs"><span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Paid</span>
+                            @elseif($payment->status === 'failed')
+                            <span class="inline-flex items-center gap-1 text-red-400 text-xs"><span class="w-1.5 h-1.5 bg-red-400 rounded-full"></span> Failed</span>
+                            @else
+                            <span class="inline-flex items-center gap-1 text-yellow-400 text-xs"><span class="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></span> Pending</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3 text-gray-500 text-xs">{{ $payment->created_at->diffForHumans() }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+    </div>
+
+    {{-- ═══ Users ═══ --}}
+    <div class="bg-white/3 border border-white/8 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-white/5">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Users ({{ $totalUsers }})</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-white/5">
+                        <th class="px-5 py-3">Name</th>
+                        <th class="px-5 py-3">Email</th>
+                        <th class="px-5 py-3">Auth</th>
+                        <th class="px-5 py-3">Scans</th>
+                        <th class="px-5 py-3">Payments</th>
+                        <th class="px-5 py-3">Joined</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    @foreach($users as $user)
+                    <tr class="hover:bg-white/2 transition">
+                        <td class="px-5 py-3 text-white">
+                            {{ $user->name }}
+                            @if($user->is_admin)
+                            <span class="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full ml-1">ADMIN</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3 text-gray-400">{{ $user->email }}</td>
+                        <td class="px-5 py-3">
+                            @if($user->google_id)
+                            <span class="text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full">Google</span>
+                            @endif
+                            @if($user->password)
+                            <span class="text-xs text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">Email</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3 text-white font-bold">{{ $user->scans_count }}</td>
+                        <td class="px-5 py-3 text-white font-bold">{{ $user->payments_count }}</td>
+                        <td class="px-5 py-3 text-gray-500 text-xs">{{ $user->created_at->diffForHumans() }}</td>
                     </tr>
                     @endforeach
                 </tbody>

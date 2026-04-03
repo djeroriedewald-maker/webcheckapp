@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessScan;
+use App\Models\Payment;
 use App\Models\Scan;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
@@ -71,6 +74,28 @@ class AdminController extends Controller
         // ── Recent scans ──
         $recentScans = Scan::latest()->limit(20)->get();
 
+        // ── Revenue & Payments ──
+        $totalRevenue    = Payment::where('status', 'completed')->sum('amount_cents');
+        $revenueMonth    = Payment::where('status', 'completed')->where('paid_at', '>=', $month)->sum('amount_cents');
+        $revenueWeek     = Payment::where('status', 'completed')->where('paid_at', '>=', $week)->sum('amount_cents');
+        $totalPayments   = Payment::where('status', 'completed')->count();
+        $paymentsMonth   = Payment::where('status', 'completed')->where('paid_at', '>=', $month)->count();
+        $recentPayments  = Payment::with('user', 'scan')->latest()->limit(10)->get();
+
+        // ── Tier breakdown ──
+        $tierBreakdown = Scan::where('status', 'completed')
+            ->select('tier', DB::raw('count(*) as total'))
+            ->groupBy('tier')
+            ->pluck('total', 'tier')
+            ->toArray();
+
+        // ── Pro/Deep scans ──
+        $proScansMonth  = Scan::where('tier', 'pro')->where('created_at', '>=', $month)->count();
+        $deepScansMonth = Scan::where('tier', 'deep')->where('created_at', '>=', $month)->count();
+
+        // ── Users list (for grant tier feature) ──
+        $users = User::withCount(['scans', 'payments'])->orderByDesc('created_at')->limit(50)->get();
+
         return view('admin.index', compact(
             'totalScans', 'scansToday', 'scansWeek', 'scansMonth',
             'completedAll', 'failedAll', 'pendingNow',
@@ -78,6 +103,48 @@ class AdminController extends Controller
             'totalUsers', 'newUsersWeek',
             'avgScore', 'gradeDistribution', 'chart',
             'topDomains', 'recentScans',
+            'totalRevenue', 'revenueMonth', 'revenueWeek',
+            'totalPayments', 'paymentsMonth', 'recentPayments',
+            'tierBreakdown', 'proScansMonth', 'deepScansMonth',
+            'users',
         ));
+    }
+
+    /**
+     * Grant a free Pro or Deep scan to a user.
+     */
+    public function grantScan(Request $request)
+    {
+        $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'url'     => ['required', 'string', 'max:255'],
+            'tier'    => ['required', 'in:pro,deep'],
+        ]);
+
+        $url  = trim($request->input('url'));
+        if (! str_starts_with($url, 'http://') && ! str_starts_with($url, 'https://')) {
+            $url = 'https://' . $url;
+        }
+        $url  = rtrim($url, '/');
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (! $host) {
+            return back()->with('error', 'Invalid URL.');
+        }
+
+        $scan = Scan::create([
+            'url'        => $url,
+            'host'       => $host,
+            'status'     => 'pending',
+            'tier'       => $request->input('tier'),
+            'user_id'    => $request->input('user_id'),
+            'ip_address' => $request->ip(),
+        ]);
+
+        ProcessScan::dispatch($scan);
+
+        $user = User::find($request->input('user_id'));
+
+        return back()->with('success', "Granted free {$request->input('tier')} scan for {$host} to {$user->email}");
     }
 }

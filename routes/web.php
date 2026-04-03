@@ -61,9 +61,10 @@ Route::view('/privacy', 'legal.privacy')->name('privacy');
 Route::view('/terms', 'legal.terms')->name('terms');
 
 // Admin
-Route::get('/admin', [AdminController::class, 'index'])
-    ->middleware(['auth', \App\Http\Middleware\AdminOnly::class])
-    ->name('admin');
+Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->group(function () {
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin');
+    Route::post('/admin/grant-scan', [AdminController::class, 'grantScan'])->name('admin.grantScan');
+});
 
 // Sitemap
 Route::get('/sitemap.xml', function () {
