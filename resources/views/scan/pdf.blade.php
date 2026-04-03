@@ -185,7 +185,10 @@
             <div class="brand">WebCheck<span>App</span></div>
             <div class="header-tagline">Website Security Scanner</div>
             <div class="header-host">{{ $scan->host }}</div>
-            <div class="header-sub">Security Scan Report</div>
+            <div class="header-sub">
+                {{ $scan->tierLabel() }} Report
+                @if(!$scan->isFree()) &mdash; {{ count($scan->results ?? []) }} categories scanned @endif
+            </div>
         </div>
         <div class="header-meta">
             <div>Scanned: {{ $scan->completed_at->format('d M Y, H:i') }} UTC</div>
@@ -349,7 +352,7 @@
 
     {{-- OWASP Top 10 section (Pro/Deep scans only) --}}
     @if(isset($scan->results['owasp']) && !empty($scan->results['owasp']['checks']))
-    <div class="section-title" style="color: #7c3aed;">OWASP Top 10 Analysis</div>
+    <div class="section-title" style="color: #7c3aed;">OWASP Top 10 Analysis (Score: {{ $scan->results['owasp']['score'] ?? 0 }}/100)</div>
     <div class="cat-section">
         @foreach($scan->results['owasp']['checks'] as $check)
         @php
@@ -360,11 +363,15 @@
                 'Low'      => '#16a34a',
                 default    => '#6b7280',
             };
-            $itemClass = $check['status'] === 'pass' ? '' : ($check['status'] === 'warn' ? 'issue-warn' : 'issue-fail');
+            $itemClass = match($check['status']) {
+                'pass' => 'issue-pass',
+                'warn' => 'issue-warn',
+                default => 'issue-fail',
+            };
         @endphp
         <div class="issue-item {{ $itemClass }}" style="margin-bottom: 8px;">
             <div class="issue-label" style="display: flex; justify-content: space-between;">
-                <span>{{ $check['label'] }}</span>
+                <span>{{ $check['status'] === 'pass' ? '&#10003;' : ($check['status'] === 'warn' ? '&#9888;' : '&#10007;') }} {{ $check['label'] }}</span>
                 <span style="color: {{ $riskColor }}; font-weight: bold; font-size: 9px;">{{ $check['risk'] ?? '' }} Risk</span>
             </div>
             <div class="issue-desc">{{ $check['description'] }}</div>
@@ -376,28 +383,31 @@
     </div>
     @endif
 
-    {{-- Per-category detail — only categories with score < 100 --}}
+    {{-- Per-category detail --}}
     <div class="section-title">Category Details</div>
 
-    @foreach($scan->results as $key => $cat)
-    @if(!isset($cat['score']) || $cat['score'] === null) @continue @endif
-    @if(in_array($key, ['technology', 'owasp'])) @continue @endif {{-- shown in dedicated sections --}}
+    @php
+        $detailCategories = collect($scan->results)
+            ->filter(fn($cat, $key) => isset($cat['score']) && $cat['score'] !== null && !in_array($key, ['technology', 'owasp']))
+            ->sortBy('score');
+    @endphp
+
+    @foreach($detailCategories as $key => $cat)
     @php
         $s = $cat['score'];
         $scoreClass = $s >= 75 ? 'score-green' : ($s >= 50 ? 'score-yellow' : 'score-red');
-        $hasIssues  = collect($cat['checks'] ?? [])->whereIn('status', ['fail', 'warn'])->count() > 0;
+        $nonPassing = collect($cat['checks'] ?? [])->whereIn('status', ['fail', 'warn']);
     @endphp
-    @if($s >= 100 && !$hasIssues) @continue @endif {{-- skip perfect categories --}}
     <div class="cat-section">
         <div class="cat-header">
             <span class="cat-header-name">{{ $cat['category'] }}</span>
             <span class="cat-header-score {{ $scoreClass }}">{{ $s }}/100</span>
         </div>
-        @foreach($cat['checks'] ?? [] as $check)
-        @if($check['status'] === 'pass') @continue @endif {{-- only show non-passing in detail --}}
-        @php
-            $itemClass = $check['status'] === 'warn' ? 'issue-warn' : 'issue-fail';
-        @endphp
+        @if($nonPassing->isEmpty())
+        <div style="padding: 4px 10px; font-size: 9.5px; color: #16a34a;">&#10003; All checks passed</div>
+        @else
+        @foreach($nonPassing as $check)
+        @php $itemClass = $check['status'] === 'warn' ? 'issue-warn' : 'issue-fail'; @endphp
         <div class="issue-item {{ $itemClass }}">
             <div class="issue-label">{{ $check['label'] }}</div>
             <div class="issue-desc">{{ $check['description'] }}</div>
@@ -406,6 +416,7 @@
             @endif
         </div>
         @endforeach
+        @endif
     </div>
     @endforeach
 
