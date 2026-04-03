@@ -152,7 +152,7 @@
 
     {{-- Completed report --}}
     @if($scan->isCompleted())
-    <div x-show="completed" x-data="{ tab: 'overzicht' }">
+    <div x-show="completed" x-data="{ tab: 'technologie' }">
 
         {{-- Header with score --}}
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
@@ -428,13 +428,13 @@
                             ->merge($scan->results['branding']['checks'] ?? [])
                             ->whereIn('status', ['fail','warn'])->count();
                         $tabs = [
+                            ['id' => 'technologie',  'label' => 'Full Report',   'count' => 0,              'countColor' => ''],
                             ['id' => 'overzicht',    'label' => 'Overview',      'count' => $issueCount,    'countColor' => 'bg-red-500/20 text-red-400'],
                             ['id' => 'trust',        'label' => 'Trust & WHOIS', 'count' => 0,              'countColor' => ''],
                             ['id' => 'malware',      'label' => 'Malware',       'count' => $malwareCount,  'countColor' => 'bg-red-500/20 text-red-400'],
                             ['id' => 'beveiliging',  'label' => 'Security',      'count' => $secCount,      'countColor' => 'bg-red-500/20 text-red-400'],
                             ['id' => 'privacy',      'label' => 'Privacy',       'count' => $privCount,     'countColor' => 'bg-yellow-500/20 text-yellow-400'],
                             ['id' => 'kwaliteit',    'label' => 'Quality',       'count' => $qualityCount,  'countColor' => 'bg-yellow-500/20 text-yellow-400'],
-                            ['id' => 'technologie',  'label' => 'Full Report',   'count' => 0,              'countColor' => ''],
                         ];
                     @endphp
                     @php
