@@ -100,7 +100,7 @@
         {{-- Badge --}}
         <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/25 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-8 backdrop-blur-sm">
             <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
-            Free · No account required · Results in seconds
+            Free quick scan · Pro & Deep scans available
         </div>
 
         {{-- Headline --}}
@@ -116,14 +116,11 @@
             grade and clear steps to fix every issue found.
         </p>
 
-        {{-- Scan form --}}
-        <form action="{{ route('scan.store') }}" method="POST"
-              x-data="{ loading: false }"
-              x-init="loading = false; window.addEventListener('pageshow', (e) => { if (e.persisted) loading = false; })"
-              @submit="loading = true; $dispatch('scan-start', { url: $el.querySelector('[name=url]').value })">
-            @csrf
-            <div class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
-                <div class="flex-1 relative">
+        {{-- Scan form with tier selection --}}
+        <div x-data="{ tier: 'free', loading: false }">
+            {{-- URL input --}}
+            <div class="max-w-2xl mx-auto mb-6">
+                <div class="relative">
                     <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
@@ -131,36 +128,92 @@
                     </div>
                     <input
                         type="text"
-                        name="url"
+                        id="scan-url"
                         placeholder="example.com or https://example.com"
                         value="{{ old('url') }}"
                         class="w-full bg-white/6 border border-white/12 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white/8 transition-all text-lg backdrop-blur-sm"
                         autofocus
                     >
                 </div>
-                <button
-                    type="submit"
-                    :disabled="loading"
-                    class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 min-w-[160px] shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:shadow-xl"
-                >
-                    <span x-show="!loading">Scan now →</span>
-                    <span x-show="loading" x-cloak class="flex items-center gap-2">
-                        <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                        Scanning…
-                    </span>
+                @error('url')
+                    <p class="mt-3 text-red-400 text-sm">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Tier cards --}}
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto mb-6">
+                {{-- Quick Scan (Free) --}}
+                <button @click="tier = 'free'" :class="tier === 'free' ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10 bg-white/3 hover:bg-white/5'" class="border rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-bold text-white">Quick Scan</span>
+                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Free</span>
+                    </div>
+                    <p class="text-xs text-gray-500">5 scanners — SSL, Headers, DNS, Performance, Content</p>
+                </button>
+
+                {{-- Pro Scan --}}
+                <button @click="tier = 'pro'" :class="tier === 'pro' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 bg-white/3 hover:bg-white/5'" class="border rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer relative">
+                    <div class="absolute -top-2 left-1/2 -translate-x-1/2">
+                        <span class="text-[10px] font-bold text-white bg-purple-600 px-2 py-0.5 rounded-full uppercase tracking-wider">Popular</span>
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-bold text-white">Pro Scan</span>
+                        <span class="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">&euro;9,99</span>
+                    </div>
+                    <p class="text-xs text-gray-500">21 scanners + OWASP Top 10 analysis</p>
+                </button>
+
+                {{-- Deep Scan --}}
+                <button @click="tier = 'deep'" :class="tier === 'deep' ? 'border-pink-500 bg-pink-500/10' : 'border-white/10 bg-white/3 hover:bg-white/5'" class="border rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-bold text-white">Deep Scan</span>
+                        <span class="text-xs font-bold text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">&euro;29,99</span>
+                    </div>
+                    <p class="text-xs text-gray-500">28 scanners + OWASP + penetration checks</p>
                 </button>
             </div>
 
-            @error('url')
-                <p class="mt-3 text-red-400 text-sm">{{ $message }}</p>
-            @enderror
-        </form>
+            {{-- Submit buttons --}}
+            {{-- Free scan --}}
+            <form x-show="tier === 'free'" action="{{ route('scan.store') }}" method="POST"
+                  @submit="loading = true" class="max-w-2xl mx-auto">
+                @csrf
+                <input type="hidden" name="url" :value="document.getElementById('scan-url').value">
+                <button type="submit" :disabled="loading"
+                        class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 mx-auto min-w-[200px] shadow-lg shadow-indigo-500/25">
+                    <span x-show="!loading">Quick Scan (Free) →</span>
+                    <span x-show="loading" x-cloak>Scanning…</span>
+                </button>
+            </form>
+
+            {{-- Pro/Deep scan (requires auth + payment) --}}
+            <form x-show="tier !== 'free'" action="{{ route('checkout.create') }}" method="POST"
+                  @submit="loading = true" class="max-w-2xl mx-auto">
+                @csrf
+                <input type="hidden" name="url" :value="document.getElementById('scan-url').value">
+                <input type="hidden" name="tier" :value="tier">
+                <button type="submit" :disabled="loading"
+                        :class="tier === 'pro' ? 'from-purple-600 to-purple-500 shadow-purple-500/25' : 'from-pink-600 to-pink-500 shadow-pink-500/25'"
+                        class="w-full sm:w-auto bg-gradient-to-r hover:opacity-90 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 mx-auto min-w-[250px] shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <span x-show="!loading">
+                        <template x-if="tier === 'pro'">
+                            <span>Pro Scan — &euro;9,99 →</span>
+                        </template>
+                        <template x-if="tier === 'deep'">
+                            <span>Deep Scan — &euro;29,99 →</span>
+                        </template>
+                    </span>
+                    <span x-show="loading" x-cloak>Processing…</span>
+                </button>
+                @guest
+                <p class="text-xs text-gray-500 mt-2 text-center">Requires <a href="{{ route('login') }}" class="text-indigo-400 hover:text-indigo-300">sign in</a> and payment via Stripe</p>
+                @endguest
+            </form>
+        </div>
 
         <p class="mt-5 text-sm text-gray-600">
-            SSL · Headers · DNS · Malware · Ports · Privacy · WHOIS and more
+            SSL · Headers · DNS · OWASP Top 10 · Malware · Ports · Privacy and more
         </p>
 
         {{-- Stats --}}
@@ -586,6 +639,132 @@
                 <p class="text-sm text-gray-500 leading-relaxed">Add security scanning to your CI/CD pipeline. Fail the build automatically when the score drops below your threshold.</p>
             </div>
 
+        </div>
+    </div>
+</section>
+
+
+{{-- ═══════════════════════════════════════════
+     PRICING
+═══════════════════════════════════════════ --}}
+<section class="relative py-24 border-t border-white/5 overflow-hidden">
+    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-purple-600/6 rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Choose your scan</p>
+            <h2 class="text-4xl font-black mb-4">Simple, transparent pricing</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">Start free. Upgrade when you need deeper analysis or OWASP compliance reporting.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {{-- Quick Scan --}}
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-8 hover:border-white/15 transition-all">
+                <h3 class="text-xl font-bold text-white mb-1">Quick Scan</h3>
+                <p class="text-sm text-gray-500 mb-4">Basic security check</p>
+                <p class="text-4xl font-black text-white mb-6">Free</p>
+                <ul class="space-y-3 mb-8 text-sm">
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        5 security scanners
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        SSL, Headers, DNS, Performance, Content
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        PDF report
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        No account required
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-600">
+                        <svg class="w-4 h-4 text-gray-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        OWASP Top 10 analysis
+                    </li>
+                </ul>
+                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">Start free scan</a>
+            </div>
+
+            {{-- Pro Scan --}}
+            <div class="bg-purple-500/5 border-2 border-purple-500/30 rounded-2xl p-8 relative">
+                <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span class="text-xs font-bold text-white bg-purple-600 px-4 py-1 rounded-full uppercase tracking-wider">Most popular</span>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-1">Pro Scan</h3>
+                <p class="text-sm text-gray-500 mb-4">Complete security analysis</p>
+                <p class="text-4xl font-black text-white mb-1">&euro;9<span class="text-xl text-gray-400">,99</span></p>
+                <p class="text-xs text-gray-600 mb-6">per scan</p>
+                <ul class="space-y-3 mb-8 text-sm">
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <strong>21 security scanners</strong>
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <strong>OWASP Top 10 analysis</strong>
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Malware, Ports, Exposed Files
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Privacy, Accessibility, API Security
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        PDF report + dashboard
+                    </li>
+                </ul>
+                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-purple-500/25">Get Pro Scan</a>
+            </div>
+
+            {{-- Deep Scan --}}
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-8 hover:border-white/15 transition-all">
+                <h3 class="text-xl font-bold text-white mb-1">Deep Scan</h3>
+                <p class="text-sm text-gray-500 mb-4">Advanced penetration checks</p>
+                <p class="text-4xl font-black text-white mb-1">&euro;29<span class="text-xl text-gray-400">,99</span></p>
+                <p class="text-xs text-gray-600 mb-6">per scan</p>
+                <ul class="space-y-3 mb-8 text-sm">
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <strong>28 security scanners</strong>
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Everything in Pro +
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-pink-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <strong>Directory brute-force</strong>
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-pink-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <strong>XSS reflection testing</strong>
+                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">
+                        <svg class="w-4 h-4 text-pink-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        Error disclosure, HTTP methods, Session, Email, Cookies
+                    </li>
+                </ul>
+                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">Get Deep Scan</a>
+            </div>
+        </div>
+
+        {{-- BudgetPixels CTA --}}
+        <div class="mt-12 text-center bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-8">
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-2">Need more?</p>
+            <h3 class="text-xl font-bold text-white mb-2">Professional pentest or security audit?</h3>
+            <p class="text-sm text-gray-400 mb-5 max-w-lg mx-auto">Our experts at BudgetPixels perform manual penetration tests, security audits with source code review, and AVG/GDPR compliance checks.</p>
+            <a href="https://budgetpixels.nl" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-500/25">
+                View professional services →
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
         </div>
     </div>
 </section>

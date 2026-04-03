@@ -41,6 +41,7 @@ class ScanController extends Controller
             'url'        => $url,
             'host'       => $host,
             'status'     => 'pending',
+            'tier'       => 'free',
             'ip_address' => $request->ip(),
         ]);
 

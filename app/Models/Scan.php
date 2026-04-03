@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class Scan extends Model
@@ -17,6 +18,8 @@ class Scan extends Model
         'results',
         'ip_address',
         'completed_at',
+        'tier',
+        'user_id',
     ];
 
     protected static function booted(): void
@@ -77,6 +80,35 @@ class Scan extends Model
             $this->score >= 55 => 'bg-yellow-500',
             $this->score >= 40 => 'bg-orange-500',
             default            => 'bg-red-500',
+        };
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function isFree(): bool
+    {
+        return $this->tier === 'free';
+    }
+
+    public function isPro(): bool
+    {
+        return $this->tier === 'pro';
+    }
+
+    public function isDeep(): bool
+    {
+        return $this->tier === 'deep';
+    }
+
+    public function tierLabel(): string
+    {
+        return match ($this->tier) {
+            'pro'  => 'Pro Scan',
+            'deep' => 'Deep Scan',
+            default => 'Quick Scan',
         };
     }
 }

@@ -21,11 +21,19 @@ use App\Services\Scanners\CarbonScanner;
 use App\Services\Scanners\BrokenLinksScanner;
 use App\Services\Scanners\BrandingScanner;
 use App\Services\Scanners\SubdomainTakeoverScanner;
+use App\Services\Scanners\OwaspScanner;
+use App\Services\Scanners\DirectoryBruteScanner;
+use App\Services\Scanners\InputReflectionScanner;
+use App\Services\Scanners\ErrorDisclosureScanner;
+use App\Services\Scanners\SessionSecurityScanner;
+use App\Services\Scanners\HttpMethodScanner;
+use App\Services\Scanners\EmailSecurityScanner;
+use App\Services\Scanners\CookieComplianceScanner;
 use Illuminate\Support\Facades\Log;
 
 class ScanService
 {
-    // Weights for the overall score calculation
+    // Weights for the overall score calculation (used for scored categories)
     private array $weights = [
         'ssl'           => 25,
         'headers'       => 20,
@@ -35,7 +43,44 @@ class ScanService
         'exposed_files' => 20,
     ];
 
-    public function run(string $host, ?callable $onScannerDone = null): array
+    // Scanner tiers — each tier includes all scanners from lower tiers
+    private const FREE_SCANNERS = [
+        'ssl', 'headers', 'dns', 'performance', 'content',
+    ];
+
+    private const PRO_SCANNERS = [
+        'technology', 'trust', 'malware', 'exposed_files', 'ports',
+        'privacy', 'accessibility', 'tls', 'robots', 'api_security',
+        'carbon', 'broken_links', 'branding', 'subdomain_takeover',
+        'owasp',
+    ];
+
+    private const DEEP_SCANNERS = [
+        'directory_brute', 'input_reflection', 'error_disclosure',
+        'session_security', 'http_methods', 'email_security', 'cookie_compliance',
+    ];
+
+    public function scannersForTier(string $tier): array
+    {
+        $scanners = self::FREE_SCANNERS;
+
+        if (in_array($tier, ['pro', 'deep'])) {
+            $scanners = array_merge($scanners, self::PRO_SCANNERS);
+        }
+
+        if ($tier === 'deep') {
+            $scanners = array_merge($scanners, self::DEEP_SCANNERS);
+        }
+
+        return $scanners;
+    }
+
+    public function scannerCountForTier(string $tier): int
+    {
+        return count($this->scannersForTier($tier));
+    }
+
+    public function run(string $host, ?callable $onScannerDone = null, string $tier = 'free'): array
     {
         // Block SSRF attempts — private IPs, localhost, metadata services
         if (! $this->isPublicHost($host)) {
@@ -43,16 +88,13 @@ class ScanService
         }
 
         $results = [];
+        $allowedScanners = $this->scannersForTier($tier);
 
         // Resolve the canonical host once before running any scanner.
-        // Many sites have SSL/services only on www.domain.com while the apex
-        // domain has no open port 443. Without this step every scanner would
-        // fail for those sites (TTFB null, no compression detected, etc.).
         $canonicalHost = $this->resolveCanonicalHost($host);
 
-        // DNS scanner always uses the user-supplied host (apex domain),
-        // because SPF/DMARC/CAA records live on the apex regardless of www.
-        $scanners = [
+        // All available scanners — DNS/subdomain_takeover use original host (apex domain)
+        $allScanners = [
             'ssl'                 => fn() => (new SslScanner())->scan($canonicalHost),
             'headers'             => fn() => (new HeadersScanner())->scan($canonicalHost),
             'dns'                 => fn() => (new DnsScanner())->scan($host),
@@ -72,7 +114,22 @@ class ScanService
             'broken_links'        => fn() => (new BrokenLinksScanner())->scan($canonicalHost),
             'branding'            => fn() => (new BrandingScanner())->scan($canonicalHost),
             'subdomain_takeover'  => fn() => (new SubdomainTakeoverScanner())->scan($host),
+            // Deep scan scanners
+            'directory_brute'     => fn() => (new DirectoryBruteScanner())->scan($canonicalHost),
+            'input_reflection'    => fn() => (new InputReflectionScanner())->scan($canonicalHost),
+            'error_disclosure'    => fn() => (new ErrorDisclosureScanner())->scan($canonicalHost),
+            'session_security'    => fn() => (new SessionSecurityScanner())->scan($canonicalHost),
+            'http_methods'        => fn() => (new HttpMethodScanner())->scan($canonicalHost),
+            'email_security'      => fn() => (new EmailSecurityScanner())->scan($host),
+            'cookie_compliance'   => fn() => (new CookieComplianceScanner())->scan($canonicalHost),
         ];
+
+        // Filter scanners by tier (exclude OWASP — runs after all others)
+        $scanners = array_filter(
+            $allScanners,
+            fn($key) => in_array($key, $allowedScanners) && $key !== 'owasp',
+            ARRAY_FILTER_USE_KEY,
+        );
 
         foreach ($scanners as $key => $scanner) {
             try {
@@ -94,6 +151,35 @@ class ScanService
                         'label'       => 'Scanner error',
                         'status'      => 'warn',
                         'description' => 'This check could not be completed.',
+                    ]],
+                ];
+            }
+
+            if ($onScannerDone !== null) {
+                $onScannerDone($results);
+            }
+        }
+
+        // OWASP scanner runs last — it maps results from other scanners
+        if (in_array('owasp', $allowedScanners)) {
+            try {
+                $results['owasp'] = (new OwaspScanner())->scan($canonicalHost, $results);
+            } catch (\Throwable $e) {
+                Log::warning("Scanner [owasp] failed for host [{$host}]", [
+                    'scanner' => 'owasp',
+                    'host'    => $host,
+                    'error'   => $e->getMessage(),
+                ]);
+
+                $results['owasp'] = [
+                    'category' => 'OWASP Top 10',
+                    'icon'     => 'shield-exclamation',
+                    'score'    => null,
+                    'checks'   => [[
+                        'id'          => 'owasp_error',
+                        'label'       => 'Scanner error',
+                        'status'      => 'warn',
+                        'description' => 'OWASP analysis could not be completed.',
                     ]],
                 ];
             }

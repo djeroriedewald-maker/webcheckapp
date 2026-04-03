@@ -69,7 +69,7 @@
             </div>
 
             {{-- Completed count --}}
-            <p class="text-xs text-gray-600"><span id="scan-done-count">0</span> of 19 checks completed</p>
+            <p class="text-xs text-gray-600"><span id="scan-done-count">0</span> of {{ app(\App\Services\ScanService::class)->scannerCountForTier($scan->tier ?? 'free') }} checks completed</p>
         </div>
     </div>
     <style>
@@ -1229,6 +1229,44 @@
                     </div>
                 </div>
                 @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- Tier badge --}}
+        @if($scan->tier !== 'free')
+        <div class="inline-flex items-center gap-1.5 mb-4 text-xs font-semibold px-3 py-1 rounded-full {{ $scan->tier === 'deep' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20' }}">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            {{ $scan->tierLabel() }}
+        </div>
+        @endif
+
+        {{-- Upgrade CTA for free scans --}}
+        @if($scan->isFree())
+        <div class="bg-gradient-to-r from-purple-600/10 to-indigo-600/10 border border-purple-500/20 rounded-2xl p-6 mb-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div class="flex-1">
+                    <h3 class="font-bold text-white mb-1">Unlock the full security report</h3>
+                    <p class="text-sm text-gray-400">This Quick Scan covers 5 categories. Upgrade to Pro for OWASP Top 10 analysis, malware detection, exposed files, and 16 more scanners.</p>
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <form action="{{ route('checkout.create') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="url" value="{{ $scan->url }}">
+                        <input type="hidden" name="tier" value="pro">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition whitespace-nowrap">
+                            Pro Scan &euro;9,99
+                        </button>
+                    </form>
+                    <form action="{{ route('checkout.create') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="url" value="{{ $scan->url }}">
+                        <input type="hidden" name="tier" value="deep">
+                        <button type="submit" class="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition whitespace-nowrap">
+                            Deep Scan &euro;29,99
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
         @endif

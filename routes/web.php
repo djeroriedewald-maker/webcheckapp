@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ScanController;
 use Illuminate\Support\Facades\Route;
@@ -29,9 +30,20 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+// Checkout (auth only)
+Route::middleware('auth')->group(function () {
+    Route::post('/checkout', [CheckoutController::class, 'create'])->name('checkout.create');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
+});
+
+// Stripe webhook (no CSRF)
+Route::post('/stripe/webhook', [CheckoutController::class, 'webhook'])->name('stripe.webhook');
 
 // Dashboard (auth only)
 Route::middleware('auth')->prefix('dashboard')->name('dashboard')->group(function () {

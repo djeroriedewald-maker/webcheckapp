@@ -24,6 +24,7 @@ class ProcessScan implements ShouldQueue
         $results = $scanService->run(
             $this->scan->host,
             fn(array $partial) => $this->scan->update(['results' => $partial]),
+            $this->scan->tier ?? 'free',
         );
 
         $this->scan->update([
