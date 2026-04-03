@@ -1342,6 +1342,68 @@
         </div>
         @endif
 
+        {{-- Executive Summary --}}
+        @php
+            $catCount = collect($scan->results)->filter(fn($c) => isset($c['score']) && $c['score'] !== null)->count();
+            $allChecksFlat = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] !== null)
+                ->flatMap(fn($c) => collect($c['checks'] ?? []));
+            $failCount = $allChecksFlat->where('status', 'fail')->count();
+            $warnCount = $allChecksFlat->where('status', 'warn')->count();
+            $passCount = $allChecksFlat->where('status', 'pass')->count();
+            $strongAreas = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] >= 80)
+                ->pluck('category')->take(4);
+            $weakAreas = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] !== null && $c['score'] < 60)
+                ->sortBy('score')->pluck('category')->take(4);
+        @endphp
+        <div class="bg-white/2 border border-white/8 rounded-2xl p-6 mb-8">
+            <h2 class="text-lg font-bold text-white mb-3">Executive Summary</h2>
+            <div class="text-sm text-gray-300 leading-relaxed space-y-3">
+                <p>
+                    We analysed <strong class="text-white">{{ $scan->host }}</strong> across {{ $catCount }} security categories.
+                    The website scored <strong class="text-white">{{ $scan->score }}/100</strong> (grade <strong class="text-white">{{ $scan->grade }}</strong>)
+                    with {{ $failCount }} critical {{ $failCount === 1 ? 'issue' : 'issues' }},
+                    {{ $warnCount }} {{ $warnCount === 1 ? 'warning' : 'warnings' }},
+                    and {{ $passCount }} passed {{ $passCount === 1 ? 'check' : 'checks' }}.
+                </p>
+
+                @if($scan->score >= 85)
+                <p class="text-emerald-400/90">
+                    <strong>Overall:</strong> This website demonstrates a strong security posture. Most best practices are followed and no urgent issues were found.
+                </p>
+                @elseif($scan->score >= 65)
+                <p class="text-yellow-400/90">
+                    <strong>Overall:</strong> This website has a reasonable security foundation but there is room for improvement. Several issues were identified that could expose the site or its users to unnecessary risk.
+                </p>
+                @elseif($scan->score >= 40)
+                <p class="text-orange-400/90">
+                    <strong>Overall:</strong> This website has significant security gaps that should be addressed as soon as possible. The current configuration leaves it vulnerable to common attacks.
+                </p>
+                @else
+                <p class="text-red-400/90">
+                    <strong>Overall:</strong> This website has serious security deficiencies across multiple areas and is at high risk. Immediate action is required.
+                </p>
+                @endif
+
+                <div class="flex flex-wrap gap-x-6 gap-y-2 pt-1">
+                    @if($strongAreas->isNotEmpty())
+                    <div>
+                        <span class="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Strong:</span>
+                        <span class="text-xs text-gray-400">{{ $strongAreas->implode(', ') }}</span>
+                    </div>
+                    @endif
+                    @if($weakAreas->isNotEmpty())
+                    <div>
+                        <span class="text-xs text-red-400 font-semibold uppercase tracking-wider">Needs work:</span>
+                        <span class="text-xs text-gray-400">{{ $weakAreas->implode(', ') }}</span>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
         {{-- OWASP Top 10 section (shown first for Pro/Deep scans) --}}
         @if(!empty($scan->results['owasp']))
         @php $owasp = $scan->results['owasp']; @endphp
