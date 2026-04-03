@@ -40,68 +40,75 @@
 </head>
 <body class="h-full bg-gray-950 text-white antialiased" x-data>
 
-    <nav class="border-b border-white/5 bg-gray-900/80 backdrop-blur sticky top-0 z-50">
+    <nav class="border-b border-white/5 bg-gray-900/80 backdrop-blur sticky top-0 z-50" x-data="{ mobileOpen: false }">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <a href="{{ route('home') }}" class="flex items-center gap-2 font-bold text-lg">
+                {{-- Logo --}}
+                <a href="{{ route('home') }}" class="flex items-center gap-2 font-bold text-lg shrink-0">
                     <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                     <span class="text-white">WebCheck<span class="text-indigo-400">App</span></span>
                 </a>
-                <div class="flex items-center gap-2">
+
+                {{-- Desktop menu links --}}
+                <div class="hidden md:flex items-center gap-1 mx-6">
+                    <a href="{{ route('home') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Scan</a>
+                    <a href="{{ route('scan.compare') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Compare</a>
+                    <a href="{{ route('scan.recent') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Recent</a>
+                    <a href="{{ route('api.docs') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">API</a>
+                </div>
+
+                {{-- Right side: auth + CTA --}}
+                <div class="hidden md:flex items-center gap-2">
                     @auth
-                    <a href="{{ route('dashboard') }}"
-                       class="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3.5 py-2 rounded-lg transition-all duration-200">
-                        <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-                        </svg>
-                        Dashboard
-                    </a>
+                    <a href="{{ route('dashboard') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Dashboard</a>
                     @if(auth()->user()->is_admin)
-                    <a href="{{ route('admin') }}"
-                       class="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3.5 py-2 rounded-lg transition-all duration-200">
-                        <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        Admin
-                    </a>
+                    <a href="{{ route('admin') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Admin</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit"
-                                class="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3.5 py-2 rounded-lg transition-all duration-200">
-                            <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                            </svg>
-                            Logout
-                        </button>
+                        <button type="submit" class="text-sm text-gray-500 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Logout</button>
                     </form>
                     @else
-                    <a href="{{ route('login') }}"
-                       class="inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-3.5 py-2 rounded-lg transition-all duration-200">
-                        <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                        </svg>
-                        Sign in
-                    </a>
-                    <a href="{{ route('register') }}"
-                       class="inline-flex items-center gap-1.5 text-sm text-white bg-indigo-600/80 hover:bg-indigo-600 border border-indigo-500/50 hover:border-indigo-400/60 px-3.5 py-2 rounded-lg transition-all duration-200 shadow-sm shadow-indigo-500/20">
-                        <svg class="w-3.5 h-3.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                        </svg>
-                        Register
-                    </a>
+                    <a href="{{ route('login') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Sign in</a>
                     @endauth
                     <a href="{{ route('home') }}"
-                       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-200 shadow-md shadow-indigo-500/25 ring-1 ring-indigo-400/20 hover:shadow-indigo-500/40 hover:shadow-lg">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
+                       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-md shadow-indigo-500/25">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         New scan
                     </a>
                 </div>
+
+                {{-- Mobile hamburger --}}
+                <button @click="mobileOpen = !mobileOpen" class="md:hidden p-2 text-gray-400 hover:text-white transition">
+                    <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg x-show="mobileOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        {{-- Mobile menu --}}
+        <div x-show="mobileOpen" x-cloak class="md:hidden border-t border-white/5 bg-gray-900/95 backdrop-blur">
+            <div class="px-4 py-4 space-y-1">
+                <a href="{{ route('home') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Scan</a>
+                <a href="{{ route('scan.compare') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Compare</a>
+                <a href="{{ route('scan.recent') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Recent scans</a>
+                <a href="{{ route('api.docs') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">API</a>
+                <div class="border-t border-white/5 my-2"></div>
+                @auth
+                <a href="{{ route('dashboard') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Dashboard</a>
+                @if(auth()->user()->is_admin)
+                <a href="{{ route('admin') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Admin</a>
+                @endif
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="w-full text-left text-sm text-gray-500 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Logout</button>
+                </form>
+                @else
+                <a href="{{ route('login') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Sign in</a>
+                <a href="{{ route('register') }}" class="block text-sm text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-2.5 rounded-lg transition text-center font-semibold mt-2">Create account</a>
+                @endauth
             </div>
         </div>
     </nav>
