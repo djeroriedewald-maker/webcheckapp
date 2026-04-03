@@ -262,13 +262,18 @@ class ScanService
 
     private function calculateOverallScore(array $results): int
     {
-        $totalWeight = array_sum($this->weights);
+        $totalWeight = 0;
         $weightedScore = 0;
 
         foreach ($this->weights as $key => $weight) {
             if (isset($results[$key]['score'])) {
                 $weightedScore += $results[$key]['score'] * $weight;
+                $totalWeight += $weight;
             }
+        }
+
+        if ($totalWeight === 0) {
+            return 0;
         }
 
         return (int) min(100, max(0, round($weightedScore / $totalWeight)));
