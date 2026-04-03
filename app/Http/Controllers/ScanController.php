@@ -140,6 +140,66 @@ class ScanController extends Controller
         return view('scan.card', compact('scan'));
     }
 
+    public function ogImage(Scan $scan)
+    {
+        abort_unless($scan->isCompleted(), 404);
+
+        $score = $scan->score ?? 0;
+        $grade = $scan->grade ?? 'F';
+        $host  = htmlspecialchars($scan->host, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $tier  = $scan->tierLabel();
+
+        $color = match(true) {
+            $score >= 85 => '#10b981',
+            $score >= 70 => '#22c55e',
+            $score >= 55 => '#eab308',
+            $score >= 40 => '#f97316',
+            default      => '#ef4444',
+        };
+
+        $checks = is_array($scan->results) ? collect($scan->results)
+            ->filter(fn($c) => isset($c['score']) && $c['score'] !== null)
+            ->count() : 0;
+
+        $svg = <<<SVG
+        <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+          <rect width="1200" height="630" fill="#0b0b12"/>
+          <rect x="0" y="0" width="1200" height="4" fill="#6366f1"/>
+
+          <!-- Logo -->
+          <text x="80" y="80" font-family="system-ui,sans-serif" font-size="28" font-weight="bold" fill="#ffffff">WebCheck<tspan fill="#818cf8">App</tspan></text>
+          <text x="80" y="105" font-family="system-ui,sans-serif" font-size="14" fill="#6b7280">{$tier}</text>
+
+          <!-- Score circle -->
+          <circle cx="600" cy="300" r="120" fill="none" stroke="#1e1e2e" stroke-width="16"/>
+          <circle cx="600" cy="300" r="120" fill="none" stroke="{$color}" stroke-width="16"
+                  stroke-dasharray="{$this->circumference($score)} 754" stroke-linecap="round"
+                  transform="rotate(-90 600 300)"/>
+          <text x="600" y="290" font-family="system-ui,sans-serif" font-size="72" font-weight="900" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">{$score}</text>
+          <text x="600" y="340" font-family="system-ui,sans-serif" font-size="20" fill="#6b7280" text-anchor="middle">/100</text>
+
+          <!-- Grade -->
+          <text x="600" y="430" font-family="system-ui,sans-serif" font-size="48" font-weight="900" fill="{$color}" text-anchor="middle">Grade {$grade}</text>
+
+          <!-- Host -->
+          <text x="600" y="500" font-family="system-ui,sans-serif" font-size="24" fill="#9ca3af" text-anchor="middle">{$host}</text>
+
+          <!-- Footer -->
+          <text x="600" y="560" font-family="system-ui,sans-serif" font-size="16" fill="#4b5563" text-anchor="middle">{$checks} security categories scanned · webcheckapp.com</text>
+        </svg>
+        SVG;
+
+        return response($svg, 200, [
+            'Content-Type'  => 'image/svg+xml',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    private function circumference(int $score): float
+    {
+        return round(2 * M_PI * 120 * $score / 100, 1);
+    }
+
     public function pdf(Scan $scan)
     {
         abort_unless($scan->isCompleted(), 404);

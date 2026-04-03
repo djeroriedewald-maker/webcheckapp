@@ -16,6 +16,7 @@ Route::get('/scan/{scan}/status', [ScanController::class, 'status'])->name('scan
 Route::get('/scan/{scan}/card', [ScanController::class, 'card'])->name('scan.card');
 Route::get('/scan/{scan}/pdf', [ScanController::class, 'pdf'])->name('scan.pdf')->middleware('throttle:10,1');
 Route::get('/scan/{scan}/badge', [ScanController::class, 'badge'])->name('scan.badge')->middleware('throttle:60,1');
+Route::get('/scan/{scan}/og-image', [ScanController::class, 'ogImage'])->name('scan.ogImage')->middleware('throttle:60,1');
 
 // Compare two domains side by side
 Route::get('/compare', [ScanController::class, 'compare'])->name('scan.compare')->middleware('throttle:5,1');

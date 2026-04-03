@@ -10,6 +10,7 @@
 @section('og_title', 'Security Report: ' . $scan->host . ' — Score ' . $scan->score . '/100 (Grade ' . $scan->grade . ')')
 @section('og_description', $scan->host . ' scored ' . $scan->score . '/100 (Grade ' . $scan->grade . ') on WebCheckApp. Free security scan covering SSL, headers, DNS, malware, ports, and more.')
 @section('og_url', route('scan.show', $scan))
+@section('og_image', route('scan.ogImage', $scan))
 @section('structured_data')
 <script type="application/ld+json">
 {
