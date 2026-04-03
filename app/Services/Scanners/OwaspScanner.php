@@ -267,11 +267,13 @@ class OwaspScanner
             $earned -= 3;
         }
 
-        // Own check: rate limiting (send rapid requests, check for 429)
+        // Own check: rate limiting (check headers and 429 responses)
+        // This is a soft check — many frameworks implement rate limiting that
+        // cannot be detected from outside without triggering it (60+ requests).
         $noRateLimit = $this->safe(fn() => $this->checkRateLimiting($host), false);
         if ($noRateLimit) {
-            $issues[] = 'No rate limiting detected on the application';
-            $earned -= 4;
+            $issues[] = 'No visible rate limiting headers detected (may still be present server-side)';
+            $earned -= 2;
         }
 
         $earned = max(0, $earned);
@@ -807,43 +809,42 @@ class OwaspScanner
 
     private function checkRateLimiting(string $host): bool
     {
-        // Send 5 rapid requests and check for 429
-        for ($i = 0; $i < 5; $i++) {
-            $ch = curl_init("https://{$host}/");
+        // Check multiple endpoints for rate limiting indicators
+        $endpoints = [
+            "https://{$host}/",
+            "https://{$host}/api/v1/scan?url=test.com",
+            "https://{$host}/login",
+        ];
+
+        foreach ($endpoints as $url) {
+            $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 3,
+                CURLOPT_TIMEOUT        => 5,
                 CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_HEADER         => true,
                 CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
             ]);
-            curl_exec($ch);
+            $response = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
+            // 429 = rate limiting active
             if ($code === 429) {
-                return false; // Rate limiting IS working
+                return false;
+            }
+
+            // Check for common rate limit headers (many frameworks set these)
+            if ($response && preg_match('/x-ratelimit|retry-after|ratelimit-limit|ratelimit-remaining/i', $response)) {
+                return false;
             }
         }
 
-        // No 429 after 5 rapid requests — but this is inconclusive
-        // Only flag if X-RateLimit headers are also absent
-        $ch = curl_init("https://{$host}/");
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 3,
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_HEADER         => true,
-            CURLOPT_NOBODY         => true,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 WebCheckApp/1.0',
-        ]);
-        $headers = curl_exec($ch);
-        curl_close($ch);
-
-        if ($headers && preg_match('/x-ratelimit/i', $headers)) {
-            return false; // Rate limit headers present
-        }
-
-        return true; // No rate limiting detected
+        // Rate limiting is hard to detect from outside — many implementations
+        // only trigger after 10-60+ requests. To avoid false positives, we only
+        // report this as an issue if NONE of the endpoints show any rate limit
+        // indicators. This is a soft check, not a definitive finding.
+        return true;
     }
 
     private function fetchBody(string $url): ?string

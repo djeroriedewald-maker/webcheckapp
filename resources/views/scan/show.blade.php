@@ -1330,10 +1330,72 @@
         </div>
         @endif
 
+        {{-- OWASP Top 10 section (shown first for Pro/Deep scans) --}}
+        @if(!empty($scan->results['owasp']))
+        @php $owasp = $scan->results['owasp']; @endphp
+        <div class="mb-8">
+            <div class="bg-gradient-to-r from-purple-500/5 to-indigo-500/5 border border-purple-500/20 rounded-2xl overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-purple-500/10">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        <h3 class="font-semibold text-white">OWASP Top 10 Analysis</h3>
+                        <span class="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">2021</span>
+                    </div>
+                    <span class="text-sm font-bold {{ ($owasp['score'] ?? 0) >= 75 ? 'text-green-400' : (($owasp['score'] ?? 0) >= 50 ? 'text-yellow-400' : 'text-red-400') }}">
+                        {{ $owasp['score'] ?? 0 }}/100
+                    </span>
+                </div>
+                <div class="divide-y divide-white/5">
+                    @foreach($owasp['checks'] as $check)
+                    <div class="flex items-start gap-4 px-5 py-4">
+                        @if($check['status'] === 'pass')
+                            <svg class="w-5 h-5 text-green-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @elseif($check['status'] === 'warn')
+                            <svg class="w-5 h-5 text-yellow-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                        @else
+                            <svg class="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        @endif
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="text-sm font-medium text-white">{{ $check['label'] }}</p>
+                                @if(!empty($check['risk']))
+                                @php
+                                    $riskColors = [
+                                        'Critical' => 'text-red-400 bg-red-500/10 border-red-500/20',
+                                        'High'     => 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+                                        'Medium'   => 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+                                        'Low'      => 'text-green-400 bg-green-500/10 border-green-500/20',
+                                    ];
+                                    $rc = $riskColors[$check['risk']] ?? 'text-gray-400 bg-white/5 border-white/10';
+                                @endphp
+                                <span class="text-[10px] font-bold {{ $rc }} px-1.5 py-0.5 rounded-full border">{{ $check['risk'] }}</span>
+                                @endif
+                            </div>
+                            <p class="text-sm text-gray-400 mt-0.5">{{ $check['description'] }}</p>
+                            @if(!empty($check['recommendation']))
+                            <p class="text-xs text-indigo-400 mt-1.5">Fix: {{ $check['recommendation'] }}</p>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Full Report: all scored categories --}}
         <div class="space-y-6 mt-4">
         <h2 class="text-lg font-semibold">Full report</h2>
         @foreach($scan->results as $key => $category)
+        @if($key === 'owasp') @continue @endif
         @if($category['score'] === null) @continue @endif
         @if(in_array($key, ['exposed_files','tls','api_security','subdomain_takeover','accessibility','robots','branding'])) @continue @endif
         <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden">
