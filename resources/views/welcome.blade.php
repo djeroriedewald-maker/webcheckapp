@@ -676,32 +676,22 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            @php
+                $checkIcon = '<svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                $crossIcon = '<svg class="w-4 h-4 text-gray-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+            @endphp
+
             {{-- Quick Scan --}}
             <div class="bg-white/3 border border-white/8 rounded-2xl p-8 hover:border-white/15 transition-all">
                 <h3 class="text-xl font-bold text-white mb-1">Quick Scan</h3>
                 <p class="text-sm text-gray-500 mb-4">Basic security check</p>
                 <p class="text-4xl font-black text-white mb-6">Free</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        5 security scanners
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        SSL, Headers, DNS, Performance, Content
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        PDF report
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        No account required
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-600">
-                        <svg class="w-4 h-4 text-gray-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        OWASP Top 10 analysis
-                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} 5 security scanners</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} SSL, Headers, DNS, Performance, Content</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} No account required</li>
+                    <li class="flex items-center gap-2 text-gray-600">{!! $crossIcon !!} OWASP Top 10 analysis</li>
+                    <li class="flex items-center gap-2 text-gray-600">{!! $crossIcon !!} PDF report</li>
                 </ul>
                 <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">Start free scan</a>
             </div>
@@ -716,26 +706,11 @@
                 <p class="text-4xl font-black text-white mb-1">&euro;9<span class="text-xl text-gray-400">,99</span></p>
                 <p class="text-xs text-gray-600 mb-6">per scan</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <strong>21 security scanners</strong>
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <strong>OWASP Top 10 analysis</strong>
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Malware, Ports, Exposed Files
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Privacy, Accessibility, API Security
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        PDF report + dashboard
-                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>21 security scanners</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>OWASP Top 10 analysis</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Malware, Ports, Exposed Files</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Privacy, Accessibility, API Security</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} PDF report + dashboard</li>
                 </ul>
                 <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-purple-500/25">Get Pro Scan</a>
             </div>
@@ -747,26 +722,11 @@
                 <p class="text-4xl font-black text-white mb-1">&euro;29<span class="text-xl text-gray-400">,99</span></p>
                 <p class="text-xs text-gray-600 mb-6">per scan</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <strong>28 security scanners</strong>
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Everything in Pro +
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-pink-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <strong>Directory brute-force</strong>
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-pink-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        <strong>XSS reflection testing</strong>
-                    </li>
-                    <li class="flex items-center gap-2 text-gray-300">
-                        <svg class="w-4 h-4 text-pink-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Error disclosure, HTTP methods, Session, Email, Cookies
-                    </li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>28 security scanners</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Everything in Pro +</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>Directory brute-force</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>XSS reflection testing</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Error disclosure, HTTP methods, Session, Email, Cookies</li>
                 </ul>
                 <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">Get Deep Scan</a>
             </div>
