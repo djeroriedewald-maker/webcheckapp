@@ -104,21 +104,18 @@ class AdminController extends Controller
         $topBest  = [];
         $topWorst = [];
         foreach ($periods as $label => $since) {
-            $baseQuery = Scan::where('status', 'completed')
+            $topBest[$label] = Scan::where('status', 'completed')
                 ->whereNotNull('score')
-                ->where('completed_at', '>=', $since);
-
-            $topBest[$label] = (clone $baseQuery)
+                ->where('completed_at', '>=', $since)
                 ->orderByDesc('score')
-                ->select('host', 'score', 'grade', 'completed_at', 'uid')
-                ->groupBy('host')
                 ->limit(3)
                 ->get();
 
-            $topWorst[$label] = (clone $baseQuery)
+            $topWorst[$label] = Scan::where('status', 'completed')
+                ->whereNotNull('score')
+                ->where('score', '>', 0)
+                ->where('completed_at', '>=', $since)
                 ->orderBy('score')
-                ->select('host', 'score', 'grade', 'completed_at', 'uid')
-                ->groupBy('host')
                 ->limit(3)
                 ->get();
         }

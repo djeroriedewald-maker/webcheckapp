@@ -195,7 +195,7 @@
                 <div class="flex items-center gap-3">
                     <span class="text-lg font-black {{ $i === 0 ? 'text-amber-400' : 'text-gray-600' }} w-6">{{ $i + 1 }}</span>
                     <div class="flex-1 min-w-0">
-                        <a href="{{ route('scan.show', $scan->uid) }}" class="text-sm text-white hover:text-indigo-400 transition truncate block">{{ $scan->host }}</a>
+                        <a href="{{ route('scan.show', $scan) }}" class="text-sm text-white hover:text-indigo-400 transition truncate block">{{ $scan->host }}</a>
                         <span class="text-xs text-gray-600">{{ $scan->completed_at?->diffForHumans() }}</span>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -219,7 +219,7 @@
                 <div class="flex items-center gap-3">
                     <span class="text-lg font-black {{ $i === 0 ? 'text-red-400' : 'text-gray-600' }} w-6">{{ $i + 1 }}</span>
                     <div class="flex-1 min-w-0">
-                        <a href="{{ route('scan.show', $scan->uid) }}" class="text-sm text-white hover:text-indigo-400 transition truncate block">{{ $scan->host }}</a>
+                        <a href="{{ route('scan.show', $scan) }}" class="text-sm text-white hover:text-indigo-400 transition truncate block">{{ $scan->host }}</a>
                         <span class="text-xs text-gray-600">{{ $scan->completed_at?->diffForHumans() }}</span>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
