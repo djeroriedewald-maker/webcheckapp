@@ -78,18 +78,6 @@ class ScanController extends Controller
             $tier = $request->user()->granted_tier;
         }
 
-        // Check for a recent cached scan with the same tier (within 1 hour)
-        $cached = Scan::where('host', $host)
-            ->where('tier', $tier)
-            ->where('status', 'completed')
-            ->where('completed_at', '>=', now()->subHour())
-            ->latest('completed_at')
-            ->first();
-
-        if ($cached) {
-            return redirect()->route('scan.show', $cached);
-        }
-
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,
