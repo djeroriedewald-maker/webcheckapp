@@ -281,9 +281,10 @@
         </div>
     </div>
 
-    {{-- ═══ Grant free scan ═══ --}}
+    {{-- ═══ Manage user tiers ═══ --}}
     <div class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-5 mb-10 mt-10">
-        <h2 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4">Grant Free Pro/Deep Scan</h2>
+        <h2 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-2">Manage User Tiers</h2>
+        <p class="text-xs text-gray-500 mb-4">Grant unlimited Pro or Deep scan access to a user. They can scan any domain without paying. Set to "Revoke" to remove access.</p>
 
         @if(session('success'))
         <div class="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 mb-4 text-sm text-green-400">
@@ -297,22 +298,24 @@
         </div>
         @endif
 
-        <form action="{{ route('admin.grantScan') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+        <form action="{{ route('admin.updateTier') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
             @csrf
-            <select name="user_id" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+            <select name="user_id" required style="background:#111827;color:#fff" class="border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition min-w-[280px]">
                 <option value="">Select user...</option>
                 @foreach($users as $user)
-                <option value="{{ $user->id }}" class="bg-gray-900 text-white">{{ $user->email }} ({{ $user->name }})</option>
+                <option value="{{ $user->id }}" style="background:#111827;color:#fff">
+                    {{ $user->email }} ({{ $user->name }})
+                    @if($user->granted_tier) — current: {{ strtoupper($user->granted_tier) }} @endif
+                </option>
                 @endforeach
             </select>
-            <input type="text" name="url" placeholder="domain.com" required
-                   class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-            <select name="tier" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-                <option value="pro" class="bg-gray-900 text-white">Pro Scan</option>
-                <option value="deep" class="bg-gray-900 text-white">Deep Scan</option>
+            <select name="tier" required style="background:#111827;color:#fff" class="border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                <option value="pro" style="background:#111827;color:#fff">Unlimited Pro</option>
+                <option value="deep" style="background:#111827;color:#fff">Unlimited Deep</option>
+                <option value="none" style="background:#111827;color:#ef4444">Revoke (back to free)</option>
             </select>
             <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition whitespace-nowrap">
-                Grant free scan
+                Update tier
             </button>
         </form>
     </div>
@@ -384,6 +387,7 @@
                         <th class="px-5 py-3">Name</th>
                         <th class="px-5 py-3">Email</th>
                         <th class="px-5 py-3">Auth</th>
+                        <th class="px-5 py-3">Tier</th>
                         <th class="px-5 py-3">Scans</th>
                         <th class="px-5 py-3">Payments</th>
                         <th class="px-5 py-3">Joined</th>
@@ -405,6 +409,15 @@
                             @endif
                             @if($user->password)
                             <span class="text-xs text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">Email</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3">
+                            @if($user->granted_tier === 'deep')
+                            <span class="text-xs font-bold text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">DEEP</span>
+                            @elseif($user->granted_tier === 'pro')
+                            <span class="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">PRO</span>
+                            @else
+                            <span class="text-xs text-gray-600">Free</span>
                             @endif
                         </td>
                         <td class="px-5 py-3 text-white font-bold">{{ $user->scans_count }}</td>

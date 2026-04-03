@@ -37,11 +37,18 @@ class ScanController extends Controller
             return back()->withErrors(['url' => 'Please enter a domain name, not an IP address.'])->withInput();
         }
 
+        // Use the user's granted tier if they have one, otherwise free
+        $tier = 'free';
+        if ($request->user() && $request->user()->granted_tier) {
+            $tier = $request->user()->granted_tier;
+        }
+
         $scan = Scan::create([
             'url'        => $url,
             'host'       => $host,
             'status'     => 'pending',
-            'tier'       => 'free',
+            'tier'       => $tier,
+            'user_id'    => $request->user()?->id,
             'ip_address' => $request->ip(),
         ]);
 

@@ -111,40 +111,24 @@ class AdminController extends Controller
     }
 
     /**
-     * Grant a free Pro or Deep scan to a user.
+     * Update a user's granted tier (permanent free access).
      */
-    public function grantScan(Request $request)
+    public function updateTier(Request $request)
     {
         $request->validate([
             'user_id' => ['required', 'exists:users,id'],
-            'url'     => ['required', 'string', 'max:255'],
-            'tier'    => ['required', 'in:pro,deep'],
+            'tier'    => ['required', 'in:none,pro,deep'],
         ]);
 
-        $url  = trim($request->input('url'));
-        if (! str_starts_with($url, 'http://') && ! str_starts_with($url, 'https://')) {
-            $url = 'https://' . $url;
-        }
-        $url  = rtrim($url, '/');
-        $host = parse_url($url, PHP_URL_HOST);
+        $user = User::findOrFail($request->input('user_id'));
+        $tier = $request->input('tier');
 
-        if (! $host) {
-            return back()->with('error', 'Invalid URL.');
-        }
-
-        $scan = Scan::create([
-            'url'        => $url,
-            'host'       => $host,
-            'status'     => 'pending',
-            'tier'       => $request->input('tier'),
-            'user_id'    => $request->input('user_id'),
-            'ip_address' => $request->ip(),
+        $user->update([
+            'granted_tier' => $tier === 'none' ? null : $tier,
         ]);
 
-        ProcessScan::dispatch($scan);
+        $label = $tier === 'none' ? 'revoked (back to free)' : $tier;
 
-        $user = User::find($request->input('user_id'));
-
-        return back()->with('success', "Granted free {$request->input('tier')} scan for {$host} to {$user->email}");
+        return back()->with('success', "Tier for {$user->email} set to: {$label}");
     }
 }

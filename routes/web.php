@@ -63,7 +63,7 @@ Route::view('/terms', 'legal.terms')->name('terms');
 // Admin
 Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin');
-    Route::post('/admin/grant-scan', [AdminController::class, 'grantScan'])->name('admin.grantScan');
+    Route::post('/admin/update-tier', [AdminController::class, 'updateTier'])->name('admin.updateTier');
 });
 
 // Sitemap

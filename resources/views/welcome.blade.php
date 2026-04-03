@@ -117,7 +117,8 @@
         </p>
 
         {{-- Scan form with tier selection --}}
-        <div x-data="{ tier: 'free', loading: false, url: '{{ old('url') }}' }">
+        @php $grantedTier = auth()->user()->granted_tier ?? null; @endphp
+        <div x-data="{ tier: '{{ $grantedTier ?? 'free' }}', loading: false, url: '{{ old('url') }}' }">
             {{-- URL input --}}
             <div class="max-w-2xl mx-auto mb-6">
                 <div class="relative">
@@ -174,6 +175,20 @@
             </div>
 
             {{-- Submit buttons --}}
+            @if($grantedTier)
+            {{-- User has granted tier — all scans go through scan.store (no payment needed) --}}
+            <form action="{{ route('scan.store') }}" method="POST"
+                  @submit="loading = true" class="max-w-2xl mx-auto">
+                @csrf
+                <input type="hidden" name="url" x-bind:value="url">
+                <button type="submit" :disabled="loading"
+                        class="w-full sm:w-auto bg-gradient-to-r {{ $grantedTier === 'deep' ? 'from-pink-600 to-pink-500 shadow-pink-500/25' : 'from-purple-600 to-purple-500 shadow-purple-500/25' }} hover:opacity-90 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 mx-auto min-w-[200px] shadow-lg">
+                    <span x-show="!loading">{{ $grantedTier === 'deep' ? 'Deep' : 'Pro' }} Scan →</span>
+                    <span x-show="loading" x-cloak>Scanning…</span>
+                </button>
+                <p class="text-xs text-emerald-400 mt-2 text-center">Unlimited {{ $grantedTier === 'deep' ? 'Deep' : 'Pro' }} scans enabled on your account</p>
+            </form>
+            @else
             {{-- Free scan --}}
             <form x-show="tier === 'free'" action="{{ route('scan.store') }}" method="POST"
                   @submit="loading = true" class="max-w-2xl mx-auto">
@@ -210,6 +225,7 @@
                 <p class="text-xs text-gray-500 mt-2 text-center">Requires <a href="{{ route('login') }}" class="text-indigo-400 hover:text-indigo-300">sign in</a> and payment via Stripe</p>
                 @endguest
             </form>
+            @endif
         </div>
 
         <p class="mt-5 text-sm text-gray-600">
