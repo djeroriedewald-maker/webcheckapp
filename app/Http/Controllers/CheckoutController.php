@@ -32,6 +32,17 @@ class CheckoutController extends Controller
             return back()->withErrors(['url' => 'Please enter a valid domain name.'])->withInput();
         }
 
+        $host = strtolower($host);
+
+        if (! preg_match('/^(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/', $host)) {
+            return back()->withErrors(['url' => 'Please enter a valid domain name (e.g. example.com).'])->withInput();
+        }
+
+        $resolved = @gethostbyname($host);
+        if ($resolved === $host) {
+            return back()->withErrors(['url' => "The domain \"{$host}\" does not appear to exist. Please check for typos."])->withInput();
+        }
+
         $price = self::TIER_PRICES[$tier];
 
         Stripe::setApiKey(config('services.stripe.secret'));

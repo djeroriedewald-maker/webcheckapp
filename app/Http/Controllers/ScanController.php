@@ -32,9 +32,26 @@ class ScanController extends Controller
             return back()->withErrors(['url' => 'Please enter a valid website URL.'])->withInput();
         }
 
-        // Basic validation: block IP addresses entered directly
+        // Block IP addresses
         if (filter_var($host, FILTER_VALIDATE_IP)) {
             return back()->withErrors(['url' => 'Please enter a domain name, not an IP address.'])->withInput();
+        }
+
+        // Must look like a real domain: label.tld (e.g. example.com)
+        $host = strtolower($host);
+        if (! preg_match('/^(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/', $host)) {
+            return back()->withErrors(['url' => 'Please enter a valid domain name (e.g. example.com).'])->withInput();
+        }
+
+        // Block internal/reserved TLDs
+        if (preg_match('/\.(local|internal|test|lan|intranet|corp|home|arpa|localhost)$/', $host)) {
+            return back()->withErrors(['url' => 'Internal or reserved domains cannot be scanned.'])->withInput();
+        }
+
+        // Quick DNS check — does this domain actually exist?
+        $resolved = @gethostbyname($host);
+        if ($resolved === $host) {
+            return back()->withErrors(['url' => "The domain \"{$host}\" does not appear to exist. Please check for typos."])->withInput();
         }
 
         // Use the user's granted tier if they have one, otherwise free
