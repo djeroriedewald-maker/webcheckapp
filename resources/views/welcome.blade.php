@@ -510,6 +510,82 @@
 
 
 {{-- ═══════════════════════════════════════════
+     BEFORE / AFTER
+═══════════════════════════════════════════ --}}
+<section class="relative py-24 border-t border-white/5">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Real results</p>
+            <h2 class="text-4xl font-black mb-4">From D to A+ in one afternoon</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">Most security issues are quick to fix once you know what they are. Here is a real example of what a single scan can uncover.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {{-- Before --}}
+            <div class="bg-red-500/5 border border-red-500/20 rounded-2xl p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/15 border border-red-500/25 flex flex-col items-center justify-center">
+                        <span class="text-lg font-black text-red-400 leading-none">D</span>
+                        <span class="text-[9px] text-red-500">42</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-white">Before scan</p>
+                        <p class="text-xs text-gray-500">Score: 42/100</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    @foreach([
+                        'No HTTPS redirect configured',
+                        'HSTS header missing',
+                        'No SPF or DMARC records',
+                        'Server version exposed',
+                        '.env file publicly accessible',
+                        'No Content-Security-Policy',
+                    ] as $issue)
+                    <div class="flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <span class="text-gray-400">{{ $issue }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- After --}}
+            <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex flex-col items-center justify-center">
+                        <span class="text-lg font-black text-emerald-400 leading-none">A+</span>
+                        <span class="text-[9px] text-emerald-500">96</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-white">After fixes</p>
+                        <p class="text-xs text-gray-500">Score: 96/100</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    @foreach([
+                        'HTTPS with auto-redirect enabled',
+                        'HSTS with 1-year max-age',
+                        'SPF + DMARC reject policy',
+                        'Server header removed',
+                        '.env blocked via server config',
+                        'Strict CSP implemented',
+                    ] as $fix)
+                    <div class="flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span class="text-gray-400">{{ $fix }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-gray-600 mt-6">All fixes were implemented in under 2 hours using only the recommendations from our report.</p>
+    </div>
+</section>
+
+
+{{-- ═══════════════════════════════════════════
      WHAT WE CHECK
 ═══════════════════════════════════════════ --}}
 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">

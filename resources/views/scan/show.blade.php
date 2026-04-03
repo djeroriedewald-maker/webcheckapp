@@ -1848,6 +1848,22 @@
             </a>
         </div>
 
+        {{-- Email capture for guests --}}
+        @guest
+        <div class="mt-8 bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div class="flex-1">
+                    <h3 class="font-bold text-white mb-1">Get this report emailed to you</h3>
+                    <p class="text-sm text-gray-400">Create a free account to save your scan results, monitor your sites, and get alerted when your score drops.</p>
+                </div>
+                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition whitespace-nowrap shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    Create free account
+                </a>
+            </div>
+        </div>
+        @endguest
+
         {{-- Embed badge section --}}
         <div class="mt-10 border border-white/8 rounded-2xl p-6 bg-white/2"
              x-data="{ open: false }">
