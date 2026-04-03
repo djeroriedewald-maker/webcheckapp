@@ -305,6 +305,86 @@
             </div>
         </form>
 
+        {{-- Simple Health Check (non-technical overview) --}}
+        @php
+            $r = $scan->results;
+            $healthChecks = [
+                [
+                    'label'    => 'Is my website safe for visitors?',
+                    'ok'       => ($r['ssl']['score'] ?? 0) >= 75 && ($r['headers']['score'] ?? 0) >= 60,
+                    'good'     => 'Yes — your website uses encryption and has security protections in place.',
+                    'bad'      => 'Not fully — your website is missing important security protections that keep visitors safe.',
+                    'icon_ok'  => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+                    'icon_bad' => 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+                ],
+                [
+                    'label'    => 'Can my website be found by Google?',
+                    'ok'       => ($r['performance']['score'] ?? 0) >= 50 && ($r['robots']['score'] ?? 100) >= 50,
+                    'good'     => 'Yes — your website is accessible to search engines and loads at a reasonable speed.',
+                    'bad'      => 'There are issues — search engines may have trouble finding or ranking your website properly.',
+                    'icon_ok'  => 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
+                    'icon_bad' => 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
+                ],
+                [
+                    'label'    => 'Is my email protected against spoofing?',
+                    'ok'       => ($r['dns']['score'] ?? 0) >= 70,
+                    'good'     => 'Yes — your domain has email authentication records (SPF/DMARC) that prevent others from sending fake emails on your behalf.',
+                    'bad'      => 'Not fully — attackers could send fake emails pretending to be from your domain. This is used in phishing attacks.',
+                    'icon_ok'  => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+                    'icon_bad' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+                ],
+                [
+                    'label'    => 'Is my website leaking sensitive data?',
+                    'ok'       => ($r['exposed_files']['score'] ?? 100) >= 80 && ($r['content']['score'] ?? 0) >= 70,
+                    'good'     => 'No leaks detected — configuration files and sensitive data appear to be properly protected.',
+                    'bad'      => 'Potential leaks found — some sensitive files or information may be publicly accessible to anyone.',
+                    'icon_ok'  => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
+                    'icon_bad' => 'M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z',
+                ],
+                [
+                    'label'    => 'Does my website respect visitor privacy?',
+                    'ok'       => ($r['privacy']['score'] ?? 100) >= 60,
+                    'good'     => 'Yes — a privacy policy and cookie consent appear to be in place.',
+                    'bad'      => 'Improvements needed — privacy policy, cookie consent, or tracking may not comply with GDPR regulations.',
+                    'icon_ok'  => 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
+                    'icon_bad' => 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M3 3l18 18',
+                ],
+            ];
+            // Only show checks for categories that were actually scanned
+            $healthChecks = array_filter($healthChecks, fn($h) => true);
+        @endphp
+        <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+                <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                <h2 class="text-lg font-bold text-white">Website Health Check</h2>
+                <span class="text-xs text-gray-500">Simple overview for everyone</span>
+            </div>
+            <div class="divide-y divide-white/5">
+                @foreach($healthChecks as $h)
+                <div class="flex items-start gap-4 px-6 py-4">
+                    <div class="mt-0.5 shrink-0 w-8 h-8 rounded-lg flex items-center justify-center {{ $h['ok'] ? 'bg-emerald-500/10' : 'bg-red-500/10' }}">
+                        <svg class="w-4.5 h-4.5 {{ $h['ok'] ? 'text-emerald-400' : 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $h['ok'] ? $h['icon_ok'] : $h['icon_bad'] }}"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-white">{{ $h['label'] }}</p>
+                        <p class="text-sm {{ $h['ok'] ? 'text-emerald-400/80' : 'text-red-400/80' }} mt-0.5">{{ $h['ok'] ? $h['good'] : $h['bad'] }}</p>
+                    </div>
+                    <div class="shrink-0 mt-1">
+                        @if($h['ok'])
+                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">Good</span>
+                        @else
+                        <span class="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-full">Action needed</span>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
         {{-- Executive Summary --}}
         @php
             $catCount = collect($scan->results)->filter(fn($c) => isset($c['score']) && $c['score'] !== null)->count();
