@@ -52,6 +52,7 @@ Route::middleware('auth')->prefix('dashboard')->name('dashboard')->group(functio
     Route::post('/sites/bulk', [DashboardController::class, 'bulkImport'])->name('.bulkImport');
     Route::delete('/sites/{site}', [DashboardController::class, 'removeSite'])->name('.removeSite');
     Route::post('/sites/{site}/refresh', [DashboardController::class, 'refreshSite'])->name('.refresh')->middleware('throttle:5,1');
+    Route::post('/refresh-all', [DashboardController::class, 'refreshAll'])->name('.refreshAll')->middleware('throttle:1,2');
     Route::patch('/sites/{site}/notifications', [DashboardController::class, 'updateNotifications'])->name('.notifications');
     Route::get('/history/{domain}', [DashboardController::class, 'history'])->name('.history')->where('domain', '.*');
 });

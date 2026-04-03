@@ -38,9 +38,109 @@ class DashboardController extends Controller
         // User's tier info
         $grantedTier = $user->granted_tier;
         $totalUserScans = Scan::where('user_id', $user->id)->where('status', 'completed')->count();
-        $paidScans = Scan::where('user_id', $user->id)->whereIn('tier', ['pro', 'deep'])->where('status', 'completed')->count();
 
-        return view('dashboard.index', compact('sites', 'stats', 'recentScans', 'grantedTier', 'totalUserScans', 'paidScans'));
+        // Score trend (last 30 days average per day across all monitored sites)
+        $domains = $sites->pluck('domain')->toArray();
+        $scoreTrend = [];
+        if (! empty($domains)) {
+            $raw = Scan::whereIn('host', $domains)
+                ->where('status', 'completed')
+                ->whereNotNull('score')
+                ->where('completed_at', '>=', now()->subDays(30))
+                ->selectRaw('DATE(completed_at) as date, ROUND(AVG(score)) as avg_score')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->pluck('avg_score', 'date')
+                ->toArray();
+
+            for ($i = 29; $i >= 0; $i--) {
+                $date = now()->subDays($i)->format('Y-m-d');
+                $scoreTrend[$date] = (int) ($raw[$date] ?? 0);
+            }
+        }
+
+        // Grade distribution
+        $gradeDistribution = $sites->whereNotNull('last_grade')
+            ->groupBy('last_grade')
+            ->map->count()
+            ->toArray();
+
+        // SSL expiry warnings (from last scan results)
+        $sslWarnings = [];
+        foreach ($sites as $site) {
+            if (! $site->lastScan || ! $site->lastScan->results) continue;
+            $sslChecks = $site->lastScan->results['ssl']['checks'] ?? [];
+            foreach ($sslChecks as $check) {
+                if (($check['id'] ?? '') === 'ssl_valid' && ($check['status'] ?? '') !== 'pass') {
+                    $sslWarnings[] = [
+                        'domain'      => $site->domain,
+                        'description' => $check['description'] ?? 'Certificate issue detected',
+                    ];
+                }
+            }
+        }
+
+        // Top issues across all sites
+        $topIssues = collect();
+        foreach ($sites as $site) {
+            if (! $site->lastScan || ! $site->lastScan->results) continue;
+            foreach ($site->lastScan->results as $cat) {
+                foreach ($cat['checks'] ?? [] as $check) {
+                    if (in_array($check['status'] ?? '', ['fail', 'warn'])) {
+                        $topIssues->push([
+                            'label'    => $check['label'] ?? '',
+                            'status'   => $check['status'],
+                            'domain'   => $site->domain,
+                            'category' => $cat['category'] ?? '',
+                        ]);
+                    }
+                }
+            }
+        }
+        // Group by label, count occurrences, take top 5
+        $topIssuesSummary = $topIssues->groupBy('label')->map(fn($group) => [
+            'label'    => $group->first()['label'],
+            'count'    => $group->count(),
+            'status'   => $group->first()['status'],
+            'category' => $group->first()['category'],
+            'domains'  => $group->pluck('domain')->unique()->take(3)->implode(', '),
+        ])->sortByDesc('count')->take(5)->values();
+
+        // Personalized tips based on most common failures
+        $tips = collect();
+        $issueLabels = $topIssues->where('status', 'fail')->pluck('label')->countBy();
+        foreach ($issueLabels->take(3) as $label => $count) {
+            $siteCount = $topIssues->where('label', $label)->pluck('domain')->unique()->count();
+            $tips->push("{$siteCount} of your sites: {$label}");
+        }
+
+        return view('dashboard.index', compact(
+            'sites', 'stats', 'recentScans', 'grantedTier', 'totalUserScans',
+            'scoreTrend', 'gradeDistribution', 'sslWarnings', 'topIssuesSummary', 'tips',
+        ));
+    }
+
+    public function refreshAll()
+    {
+        $user = Auth::user();
+        $sites = $user->monitoredSites()->get();
+        $count = 0;
+
+        foreach ($sites as $site) {
+            $tier = $user->granted_tier ?? 'free';
+            $scan = Scan::create([
+                'url'        => 'https://' . $site->domain,
+                'host'       => $site->domain,
+                'status'     => 'pending',
+                'tier'       => $tier,
+                'user_id'    => $user->id,
+                'ip_address' => request()->ip(),
+            ]);
+            ProcessScan::dispatch($scan);
+            $count++;
+        }
+
+        return redirect()->route('dashboard')->with('success', "Rescanning all {$count} sites. Results will appear shortly.");
     }
 
     public function addSite(Request $request)
