@@ -308,7 +308,7 @@
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
-                <p class="text-3xl sm:text-4xl font-black text-white">100+</p>
+                <p class="text-3xl sm:text-4xl font-black text-white">1500+</p>
                 <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Individual checks</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
