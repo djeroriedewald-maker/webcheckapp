@@ -79,7 +79,7 @@
     }
     </style>
     <script nonce="{{ Vite::cspNonce() }}">
-    var _scanners = ['SSL & HTTPS','Security Headers','DNS & Email Security','Performance & SEO','Content & CMS','Technology Stack','Malware & Reputation','Open Ports','Exposed Files','Privacy & GDPR','Trust & WHOIS','Accessibility','TLS / Cipher Suite','Robots & Crawling','API Security','Carbon Footprint','Broken Links','Branding','Subdomain Takeover'];
+    var _totalScanners = {{ app(\App\Services\ScanService::class)->scannerCountForTier($scan->tier ?? 'free') }};
     var _lastRendered  = -1;
     var _realPct       = 0;
     var _pseudoPct     = 2;
@@ -114,18 +114,18 @@
         var doneCount = document.getElementById('scan-done-count');
         if (!bar) return;
 
-        var total = _scanners.length;
+        var total = _totalScanners;
 
         if (completedCount > 0) {
             // Real data arrived — stop pseudo and switch to real percentage
             if (_pseudoTimer) { clearInterval(_pseudoTimer); _pseudoTimer = null; }
-            var pct = Math.round((completedCount / total) * 100);
+            var pct = Math.min(100, Math.round((completedCount / total) * 100));
             _realPct = pct;
             bar.style.width = pct + '%';
             percent.textContent = pct + '%';
-            doneCount.textContent = completedCount;
+            doneCount.textContent = Math.min(completedCount, total);
             label.textContent = completedCount < total
-                ? 'Scanning: ' + _scanners[completedCount] + '\u2026'
+                ? 'Scanning check ' + completedCount + ' of ' + total + '\u2026'
                 : 'Finalizing\u2026';
             _lastRendered = completedCount;
         }
