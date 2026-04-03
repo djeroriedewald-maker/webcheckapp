@@ -134,14 +134,13 @@
 
     {{-- CTA --}}
     <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-8 text-center">
-        <h2 class="text-xl font-bold mb-2">Ready to try it?</h2>
-        <p class="text-gray-400 mb-5">The API is free with no authentication required. Just start making requests.</p>
-        <a href="{{ url('/api/v1/scan') }}?url=example.com"
-           target="_blank"
+        <h2 class="text-xl font-bold mb-2">Ready to integrate?</h2>
+        <p class="text-gray-400 mb-5">The API is free with no authentication required. Just start making requests from your application.</p>
+        <a href="{{ route('home') }}"
            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition">
-            Try a live request
+            Scan a website first
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
             </svg>
         </a>
     </div>
