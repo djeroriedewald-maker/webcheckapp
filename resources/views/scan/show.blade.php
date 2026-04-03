@@ -421,7 +421,8 @@
         {{-- Sticky tab navigation --}}
         <div id="tab-nav" class="sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-8 mb-8">
             <div class="bg-[#0b0b12]/95 backdrop-blur-md border-b border-white/8 px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center gap-1 overflow-x-auto scrollbar-none py-2">
+                <style>.hide-scrollbar::-webkit-scrollbar{display:none}.hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}</style>
+                <div class="hide-scrollbar flex items-center gap-1 overflow-x-auto py-2">
                     @php
                         $qualityCount = collect($scan->results['accessibility']['checks'] ?? [])
                             ->merge($scan->results['robots']['checks'] ?? [])
@@ -1552,7 +1553,8 @@
                 </button>
             </form>
 
-            {{-- Download PDF --}}
+            {{-- Download PDF (paid scans only) --}}
+            @if(!$scan->isFree())
             <a href="{{ route('scan.pdf', $scan) }}"
                class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1560,6 +1562,14 @@
                 </svg>
                 Download PDF
             </a>
+            @else
+            <span class="inline-flex items-center gap-2 bg-white/3 border border-white/8 text-gray-500 font-semibold px-6 py-3 rounded-xl cursor-not-allowed" title="PDF reports are available with Pro and Deep scans">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                PDF <span class="text-xs text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded-full ml-1">PRO</span>
+            </span>
+            @endif
 
             {{-- Scan another --}}
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl transition">

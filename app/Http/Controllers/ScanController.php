@@ -100,6 +100,7 @@ class ScanController extends Controller
     public function pdf(Scan $scan)
     {
         abort_unless($scan->isCompleted(), 404);
+        abort_if($scan->isFree(), 403, 'PDF reports are available with Pro and Deep scans.');
 
         $pdf = Pdf::loadView('scan.pdf', compact('scan'))
             ->setPaper('a4', 'portrait');
