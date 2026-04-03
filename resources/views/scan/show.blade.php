@@ -1292,13 +1292,25 @@
         </div>
         @endif
 
-        {{-- Tier badge --}}
-        @if($scan->tier !== 'free')
-        <div class="inline-flex items-center gap-1.5 mb-4 text-xs font-semibold px-3 py-1 rounded-full {{ $scan->tier === 'deep' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20' }}">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            {{ $scan->tierLabel() }}
+        {{-- Tier badge + PDF download --}}
+        <div class="flex items-center gap-3 mb-4 flex-wrap">
+            @if($scan->tier !== 'free')
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full {{ $scan->tier === 'deep' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20' }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                {{ $scan->tierLabel() }}
+            </span>
+            <a href="{{ route('scan.pdf', $scan) }}"
+               class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Download PDF
+            </a>
+            @else
+            <span class="inline-flex items-center gap-1.5 text-xs text-gray-500 bg-white/3 border border-white/8 px-3 py-1 rounded-full cursor-not-allowed" title="PDF reports are available with Pro and Deep scans">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                PDF <span class="text-purple-400 ml-0.5">PRO</span>
+            </span>
+            @endif
         </div>
-        @endif
 
         {{-- Upgrade CTA for free scans --}}
         @if($scan->isFree())
