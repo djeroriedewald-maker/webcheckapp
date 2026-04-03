@@ -305,6 +305,123 @@
             </div>
         </form>
 
+        {{-- Executive Summary --}}
+        @php
+            $catCount = collect($scan->results)->filter(fn($c) => isset($c['score']) && $c['score'] !== null)->count();
+            $allChecksFlat = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] !== null)
+                ->flatMap(fn($c) => collect($c['checks'] ?? []));
+            $failCount = $allChecksFlat->where('status', 'fail')->count();
+            $warnCount = $allChecksFlat->where('status', 'warn')->count();
+            $passCount = $allChecksFlat->where('status', 'pass')->count();
+            $strongAreas = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] >= 80)
+                ->pluck('category')->take(5);
+            $weakAreas = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] !== null && $c['score'] < 60)
+                ->sortBy('score')->pluck('category')->take(5);
+            $mediumAreas = collect($scan->results)
+                ->filter(fn($c) => isset($c['score']) && $c['score'] >= 60 && $c['score'] < 80)
+                ->pluck('category')->take(5);
+            $topIssues = $allChecksFlat->where('status', 'fail')->take(3);
+        @endphp
+        <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-white/5">
+                <h2 class="text-lg font-bold text-white">Executive Summary</h2>
+            </div>
+            <div class="px-6 py-5">
+                <div class="text-sm text-gray-300 leading-relaxed space-y-4">
+                    <p>
+                        We performed a comprehensive security analysis of <strong class="text-white">{{ $scan->host }}</strong>
+                        across <strong class="text-white">{{ $catCount }} categories</strong>.
+                        The website received an overall score of <strong class="text-white">{{ $scan->score }}/100</strong>
+                        (grade <strong class="{{ $scan->getGradeColorClass() }}">{{ $scan->grade }}</strong>),
+                        with {{ $failCount }} critical {{ $failCount === 1 ? 'issue' : 'issues' }},
+                        {{ $warnCount }} {{ $warnCount === 1 ? 'warning' : 'warnings' }},
+                        and {{ $passCount }} passed {{ $passCount === 1 ? 'check' : 'checks' }}.
+                    </p>
+
+                    @if($scan->score >= 85)
+                    <div class="bg-emerald-500/5 border border-emerald-500/15 rounded-xl px-4 py-3">
+                        <p class="text-emerald-400">
+                            <strong>Overall assessment:</strong> {{ $scan->host }} demonstrates a strong security posture. The website follows most security best practices and is well-configured. Minor improvements are possible but no urgent issues were found. Continue monitoring regularly to maintain this level of security.
+                        </p>
+                    </div>
+                    @elseif($scan->score >= 65)
+                    <div class="bg-yellow-500/5 border border-yellow-500/15 rounded-xl px-4 py-3">
+                        <p class="text-yellow-400/90">
+                            <strong>Overall assessment:</strong> {{ $scan->host }} has a reasonable security foundation but there is clear room for improvement. Several issues were identified that could expose the website or its users to unnecessary risk. We recommend addressing the critical issues first, followed by the warnings outlined below.
+                        </p>
+                    </div>
+                    @elseif($scan->score >= 40)
+                    <div class="bg-orange-500/5 border border-orange-500/15 rounded-xl px-4 py-3">
+                        <p class="text-orange-400/90">
+                            <strong>Overall assessment:</strong> {{ $scan->host }} has significant security gaps that should be addressed as soon as possible. The current configuration leaves the website vulnerable to common attacks. We strongly recommend reviewing the critical issues listed in this report and implementing the recommended fixes without delay.
+                        </p>
+                    </div>
+                    @else
+                    <div class="bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-3">
+                        <p class="text-red-400/90">
+                            <strong>Overall assessment:</strong> {{ $scan->host }} has serious security deficiencies across multiple areas. The website is at high risk of exploitation. Immediate action is required to protect the website and its users. We urge you to address the critical issues as a top priority.
+                        </p>
+                    </div>
+                    @endif
+
+                    {{-- Top priority issues --}}
+                    @if($topIssues->isNotEmpty())
+                    <div>
+                        <p class="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">Top priority fixes:</p>
+                        <div class="space-y-1.5">
+                            @foreach($topIssues as $issue)
+                            <div class="flex items-start gap-2 text-xs">
+                                <svg class="w-3.5 h-3.5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                <span class="text-gray-400"><strong class="text-gray-300">{{ $issue['label'] }}</strong> — {{ Str::limit($issue['description'], 120) }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Area overview --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                        @if($strongAreas->isNotEmpty())
+                        <div class="bg-emerald-500/5 border border-emerald-500/15 rounded-lg px-3 py-2.5">
+                            <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider mb-1">Strong areas</p>
+                            @foreach($strongAreas as $area)
+                            <p class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3 h-3 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                {{ $area }}
+                            </p>
+                            @endforeach
+                        </div>
+                        @endif
+                        @if($mediumAreas->isNotEmpty())
+                        <div class="bg-yellow-500/5 border border-yellow-500/15 rounded-lg px-3 py-2.5">
+                            <p class="text-[10px] text-yellow-400 font-semibold uppercase tracking-wider mb-1">Needs improvement</p>
+                            @foreach($mediumAreas as $area)
+                            <p class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3 h-3 text-yellow-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
+                                {{ $area }}
+                            </p>
+                            @endforeach
+                        </div>
+                        @endif
+                        @if($weakAreas->isNotEmpty())
+                        <div class="bg-red-500/5 border border-red-500/15 rounded-lg px-3 py-2.5">
+                            <p class="text-[10px] text-red-400 font-semibold uppercase tracking-wider mb-1">Needs work</p>
+                            @foreach($weakAreas as $area)
+                            <p class="text-xs text-gray-400 flex items-center gap-1.5">
+                                <svg class="w-3 h-3 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                {{ $area }}
+                            </p>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- What changed since last scan --}}
         @if(!empty($diff) && ($diff['score_delta'] !== 0 || !empty($diff['fixed']) || !empty($diff['broken'])))
         <div class="mb-8 bg-white/3 border border-white/8 rounded-2xl overflow-hidden" x-data="{ open: true }">
@@ -1341,68 +1458,6 @@
             </div>
         </div>
         @endif
-
-        {{-- Executive Summary --}}
-        @php
-            $catCount = collect($scan->results)->filter(fn($c) => isset($c['score']) && $c['score'] !== null)->count();
-            $allChecksFlat = collect($scan->results)
-                ->filter(fn($c) => isset($c['score']) && $c['score'] !== null)
-                ->flatMap(fn($c) => collect($c['checks'] ?? []));
-            $failCount = $allChecksFlat->where('status', 'fail')->count();
-            $warnCount = $allChecksFlat->where('status', 'warn')->count();
-            $passCount = $allChecksFlat->where('status', 'pass')->count();
-            $strongAreas = collect($scan->results)
-                ->filter(fn($c) => isset($c['score']) && $c['score'] >= 80)
-                ->pluck('category')->take(4);
-            $weakAreas = collect($scan->results)
-                ->filter(fn($c) => isset($c['score']) && $c['score'] !== null && $c['score'] < 60)
-                ->sortBy('score')->pluck('category')->take(4);
-        @endphp
-        <div class="bg-white/2 border border-white/8 rounded-2xl p-6 mb-8">
-            <h2 class="text-lg font-bold text-white mb-3">Executive Summary</h2>
-            <div class="text-sm text-gray-300 leading-relaxed space-y-3">
-                <p>
-                    We analysed <strong class="text-white">{{ $scan->host }}</strong> across {{ $catCount }} security categories.
-                    The website scored <strong class="text-white">{{ $scan->score }}/100</strong> (grade <strong class="text-white">{{ $scan->grade }}</strong>)
-                    with {{ $failCount }} critical {{ $failCount === 1 ? 'issue' : 'issues' }},
-                    {{ $warnCount }} {{ $warnCount === 1 ? 'warning' : 'warnings' }},
-                    and {{ $passCount }} passed {{ $passCount === 1 ? 'check' : 'checks' }}.
-                </p>
-
-                @if($scan->score >= 85)
-                <p class="text-emerald-400/90">
-                    <strong>Overall:</strong> This website demonstrates a strong security posture. Most best practices are followed and no urgent issues were found.
-                </p>
-                @elseif($scan->score >= 65)
-                <p class="text-yellow-400/90">
-                    <strong>Overall:</strong> This website has a reasonable security foundation but there is room for improvement. Several issues were identified that could expose the site or its users to unnecessary risk.
-                </p>
-                @elseif($scan->score >= 40)
-                <p class="text-orange-400/90">
-                    <strong>Overall:</strong> This website has significant security gaps that should be addressed as soon as possible. The current configuration leaves it vulnerable to common attacks.
-                </p>
-                @else
-                <p class="text-red-400/90">
-                    <strong>Overall:</strong> This website has serious security deficiencies across multiple areas and is at high risk. Immediate action is required.
-                </p>
-                @endif
-
-                <div class="flex flex-wrap gap-x-6 gap-y-2 pt-1">
-                    @if($strongAreas->isNotEmpty())
-                    <div>
-                        <span class="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Strong:</span>
-                        <span class="text-xs text-gray-400">{{ $strongAreas->implode(', ') }}</span>
-                    </div>
-                    @endif
-                    @if($weakAreas->isNotEmpty())
-                    <div>
-                        <span class="text-xs text-red-400 font-semibold uppercase tracking-wider">Needs work:</span>
-                        <span class="text-xs text-gray-400">{{ $weakAreas->implode(', ') }}</span>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
 
         {{-- OWASP Top 10 section (shown first for Pro/Deep scans) --}}
         @if(!empty($scan->results['owasp']))
