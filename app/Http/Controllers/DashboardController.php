@@ -124,7 +124,12 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $sites = $user->monitoredSites()->get();
-        $count = 0;
+
+        if ($sites->isEmpty()) {
+            return redirect()->route('dashboard')->with('error', 'No sites to scan.');
+        }
+
+        $firstScan = null;
 
         foreach ($sites as $site) {
             $tier = $user->granted_tier ?? 'free';
@@ -137,10 +142,15 @@ class DashboardController extends Controller
                 'ip_address' => request()->ip(),
             ]);
             ProcessScan::dispatch($scan);
-            $count++;
+
+            if (! $firstScan) {
+                $firstScan = $scan;
+            }
         }
 
-        return redirect()->route('dashboard')->with('success', "Rescanning all {$count} sites. Results will appear shortly.");
+        // Redirect to the first scan so the user sees live progress
+        return redirect()->route('scan.show', $firstScan)
+            ->with('success', "Scanning all {$sites->count()} sites. Showing the first one now — the rest are running in the background.");
     }
 
     public function addSite(Request $request)
