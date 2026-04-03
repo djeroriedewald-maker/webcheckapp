@@ -10,8 +10,15 @@
     {{-- Header --}}
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-2xl font-bold">My monitored sites</h1>
-            <p class="text-gray-500 text-sm mt-1">{{ auth()->user()->email }}</p>
+            <h1 class="text-2xl font-bold">Dashboard</h1>
+            <p class="text-gray-500 text-sm mt-1">
+                {{ auth()->user()->name ?? auth()->user()->email }}
+                @if($grantedTier)
+                <span class="ml-2 text-xs font-bold {{ $grantedTier === 'deep' ? 'text-pink-400 bg-pink-500/10' : 'text-purple-400 bg-purple-500/10' }} px-2 py-0.5 rounded-full">
+                    {{ strtoupper($grantedTier) }} account
+                </span>
+                @endif
+            </p>
         </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
@@ -20,34 +27,39 @@
     </div>
 
     {{-- Stats bar --}}
-    @if($stats['total'] > 0)
-    <div class="grid grid-cols-3 gap-4 mb-8">
-        {{-- Average score --}}
-        @php
-            $avg = $stats['avg_score'] ? (int) round($stats['avg_score']) : null;
-            $avgColor = $avg === null ? 'text-gray-400'
-                      : ($avg >= 80 ? 'text-green-400' : ($avg >= 60 ? 'text-amber-400' : 'text-red-400'));
-            $avgBg    = $avg === null ? 'bg-white/3'
-                      : ($avg >= 80 ? 'bg-green-500/8' : ($avg >= 60 ? 'bg-amber-500/8' : 'bg-red-500/8'));
-        @endphp
+    @php
+        $avg = $stats['avg_score'] ? (int) round($stats['avg_score']) : null;
+        $avgColor = $avg === null ? 'text-gray-400'
+                  : ($avg >= 80 ? 'text-green-400' : ($avg >= 60 ? 'text-amber-400' : 'text-red-400'));
+        $avgBg    = $avg === null ? 'bg-white/3'
+                  : ($avg >= 80 ? 'bg-green-500/8' : ($avg >= 60 ? 'bg-amber-500/8' : 'bg-red-500/8'));
+    @endphp
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <div class="{{ $avgBg }} border border-white/8 rounded-2xl p-5 text-center">
             <p class="text-3xl font-black {{ $avgColor }}">{{ $avg ?? '—' }}</p>
             <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Avg. score</p>
         </div>
 
-        {{-- Sites count --}}
         <div class="bg-white/3 border border-white/8 rounded-2xl p-5 text-center">
             <p class="text-3xl font-black text-white">{{ $stats['total'] }}<span class="text-gray-700 text-lg font-normal">/10</span></p>
             <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Sites</p>
         </div>
 
-        {{-- Critical sites --}}
+        <div class="{{ $stats['healthy'] > 0 ? 'bg-green-500/8 border-green-500/20' : 'bg-white/3 border-white/8' }} border rounded-2xl p-5 text-center">
+            <p class="text-3xl font-black {{ $stats['healthy'] > 0 ? 'text-green-400' : 'text-gray-400' }}">{{ $stats['healthy'] }}</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Healthy (80+)</p>
+        </div>
+
         <div class="{{ $stats['critical'] > 0 ? 'bg-red-500/8 border-red-500/20' : 'bg-white/3 border-white/8' }} border rounded-2xl p-5 text-center">
             <p class="text-3xl font-black {{ $stats['critical'] > 0 ? 'text-red-400' : 'text-gray-400' }}">{{ $stats['critical'] }}</p>
-            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Need attention</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Critical (&lt;60)</p>
+        </div>
+
+        <div class="bg-indigo-500/8 border border-indigo-500/20 rounded-2xl p-5 text-center">
+            <p class="text-3xl font-black text-indigo-400">{{ $totalUserScans }}</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Total scans</p>
         </div>
     </div>
-    @endif
 
     {{-- Flash messages --}}
     @if(session('success'))
@@ -226,6 +238,33 @@
             </div>
         </div>
         @endforeach
+    </div>
+    @endif
+
+    {{-- Recent scan history --}}
+    @if($recentScans->isNotEmpty())
+    <div class="bg-white/3 border border-white/8 rounded-2xl overflow-hidden mt-8">
+        <div class="px-5 py-4 border-b border-white/5">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent scans</h2>
+        </div>
+        <div class="divide-y divide-white/5">
+            @foreach($recentScans as $scan)
+            <a href="{{ route('scan.show', $scan) }}" class="flex items-center justify-between px-5 py-3 hover:bg-white/2 transition">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="text-sm font-bold w-10 text-center {{ ($scan->score ?? 0) >= 80 ? 'text-green-400' : (($scan->score ?? 0) >= 60 ? 'text-amber-400' : 'text-red-400') }}">
+                        {{ $scan->score }}
+                    </span>
+                    <span class="text-sm text-white truncate">{{ $scan->host }}</span>
+                    @if($scan->tier !== 'free')
+                    <span class="text-[10px] font-bold {{ $scan->tier === 'deep' ? 'text-pink-400 bg-pink-500/10' : 'text-purple-400 bg-purple-500/10' }} px-1.5 py-0.5 rounded-full shrink-0">
+                        {{ strtoupper($scan->tier) }}
+                    </span>
+                    @endif
+                </div>
+                <span class="text-xs text-gray-600 shrink-0">{{ $scan->completed_at->diffForHumans() }}</span>
+            </a>
+            @endforeach
+        </div>
     </div>
     @endif
 

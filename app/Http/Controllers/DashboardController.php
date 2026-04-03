@@ -13,7 +13,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $sites = Auth::user()
+        $user = Auth::user();
+
+        $sites = $user
             ->monitoredSites()
             ->orderBy('domain')
             ->with('lastScan')
@@ -23,9 +25,22 @@ class DashboardController extends Controller
             'total'     => $sites->count(),
             'avg_score' => $sites->whereNotNull('last_score')->avg('last_score'),
             'critical'  => $sites->where('last_score', '<', 60)->count(),
+            'healthy'   => $sites->where('last_score', '>=', 80)->count(),
         ];
 
-        return view('dashboard.index', compact('sites', 'stats'));
+        // User's scan history (last 10)
+        $recentScans = Scan::where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->orderByDesc('completed_at')
+            ->limit(10)
+            ->get();
+
+        // User's tier info
+        $grantedTier = $user->granted_tier;
+        $totalUserScans = Scan::where('user_id', $user->id)->where('status', 'completed')->count();
+        $paidScans = Scan::where('user_id', $user->id)->whereIn('tier', ['pro', 'deep'])->where('status', 'completed')->count();
+
+        return view('dashboard.index', compact('sites', 'stats', 'recentScans', 'grantedTier', 'totalUserScans', 'paidScans'));
     }
 
     public function addSite(Request $request)

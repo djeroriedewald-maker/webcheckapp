@@ -171,6 +171,71 @@
         </div>
     </div>
 
+    {{-- ═══ Top 3 Best & Worst ═══ --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10" x-data="{ period: 'week' }">
+
+        {{-- Period selector --}}
+        <div class="lg:col-span-2 flex items-center gap-2">
+            <span class="text-xs text-gray-500 uppercase tracking-wider mr-2">Period:</span>
+            @foreach(['today' => 'Today', 'week' => 'Week', 'month' => 'Month', 'year' => 'Year'] as $key => $label)
+            <button @click="period = '{{ $key }}'"
+                    :class="period === '{{ $key }}' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-gray-400 hover:text-white'"
+                    class="text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                {{ $label }}
+            </button>
+            @endforeach
+        </div>
+
+        {{-- Top 3 Best --}}
+        <div class="bg-green-500/5 border border-green-500/15 rounded-xl p-5">
+            <h2 class="text-sm font-semibold text-green-400 uppercase tracking-wider mb-4">Top 3 Best Scores</h2>
+            @foreach(['today', 'week', 'month', 'year'] as $p)
+            <div x-show="period === '{{ $p }}'" class="space-y-3">
+                @forelse($topBest[$p] as $i => $scan)
+                <div class="flex items-center gap-3">
+                    <span class="text-lg font-black {{ $i === 0 ? 'text-amber-400' : 'text-gray-600' }} w-6">{{ $i + 1 }}</span>
+                    <div class="flex-1 min-w-0">
+                        <a href="{{ route('scan.show', $scan->uid) }}" class="text-sm text-white hover:text-indigo-400 transition truncate block">{{ $scan->host }}</a>
+                        <span class="text-xs text-gray-600">{{ $scan->completed_at?->diffForHumans() }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-xs font-bold text-white bg-white/5 px-2 py-0.5 rounded-full">{{ $scan->grade }}</span>
+                        <span class="text-lg font-black text-green-400">{{ $scan->score }}</span>
+                    </div>
+                </div>
+                @empty
+                <p class="text-sm text-gray-600">No scans in this period.</p>
+                @endforelse
+            </div>
+            @endforeach
+        </div>
+
+        {{-- Top 3 Worst --}}
+        <div class="bg-red-500/5 border border-red-500/15 rounded-xl p-5">
+            <h2 class="text-sm font-semibold text-red-400 uppercase tracking-wider mb-4">Top 3 Worst Scores</h2>
+            @foreach(['today', 'week', 'month', 'year'] as $p)
+            <div x-show="period === '{{ $p }}'" class="space-y-3">
+                @forelse($topWorst[$p] as $i => $scan)
+                <div class="flex items-center gap-3">
+                    <span class="text-lg font-black {{ $i === 0 ? 'text-red-400' : 'text-gray-600' }} w-6">{{ $i + 1 }}</span>
+                    <div class="flex-1 min-w-0">
+                        <a href="{{ route('scan.show', $scan->uid) }}" class="text-sm text-white hover:text-indigo-400 transition truncate block">{{ $scan->host }}</a>
+                        <span class="text-xs text-gray-600">{{ $scan->completed_at?->diffForHumans() }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-xs font-bold text-white bg-white/5 px-2 py-0.5 rounded-full">{{ $scan->grade }}</span>
+                        <span class="text-lg font-black text-red-400">{{ $scan->score }}</span>
+                    </div>
+                </div>
+                @empty
+                <p class="text-sm text-gray-600">No scans in this period.</p>
+                @endforelse
+            </div>
+            @endforeach
+        </div>
+
+    </div>
+
     {{-- ═══ Grade distribution + Top domains ═══ --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
 

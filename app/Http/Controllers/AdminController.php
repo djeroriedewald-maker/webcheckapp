@@ -93,6 +93,36 @@ class AdminController extends Controller
         $proScansMonth  = Scan::where('tier', 'pro')->where('created_at', '>=', $month)->count();
         $deepScansMonth = Scan::where('tier', 'deep')->where('created_at', '>=', $month)->count();
 
+        // ── Top 3 best & worst scoring sites (by period) ──
+        $periods = [
+            'today' => $today,
+            'week'  => $week,
+            'month' => $month,
+            'year'  => $now->copy()->subYear(),
+        ];
+
+        $topBest  = [];
+        $topWorst = [];
+        foreach ($periods as $label => $since) {
+            $baseQuery = Scan::where('status', 'completed')
+                ->whereNotNull('score')
+                ->where('completed_at', '>=', $since);
+
+            $topBest[$label] = (clone $baseQuery)
+                ->orderByDesc('score')
+                ->select('host', 'score', 'grade', 'completed_at', 'uid')
+                ->groupBy('host')
+                ->limit(3)
+                ->get();
+
+            $topWorst[$label] = (clone $baseQuery)
+                ->orderBy('score')
+                ->select('host', 'score', 'grade', 'completed_at', 'uid')
+                ->groupBy('host')
+                ->limit(3)
+                ->get();
+        }
+
         // ── Users list (for grant tier feature) ──
         $users = User::withCount(['scans', 'payments'])->orderByDesc('created_at')->limit(50)->get();
 
@@ -106,6 +136,7 @@ class AdminController extends Controller
             'totalRevenue', 'revenueMonth', 'revenueWeek',
             'totalPayments', 'paymentsMonth', 'recentPayments',
             'tierBreakdown', 'proScansMonth', 'deepScansMonth',
+            'topBest', 'topWorst',
             'users',
         ));
     }
