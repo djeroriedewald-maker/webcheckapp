@@ -161,7 +161,7 @@
                         <span class="text-sm font-bold text-white">Pro Scan</span>
                         <span class="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">&euro;9,99</span>
                     </div>
-                    <p class="text-xs text-gray-500">21 scanners + OWASP Top 10 analysis</p>
+                    <p class="text-xs text-gray-500">20 scanners + OWASP Top 10 analysis</p>
                 </button>
 
                 {{-- Deep Scan --}}
@@ -170,7 +170,7 @@
                         <span class="text-sm font-bold text-white">Deep Scan</span>
                         <span class="text-xs font-bold text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">&euro;29,99</span>
                     </div>
-                    <p class="text-xs text-gray-500">28 scanners + OWASP + penetration checks</p>
+                    <p class="text-xs text-gray-500">27 scanners + OWASP + penetration checks</p>
                 </button>
             </div>
 
@@ -706,7 +706,7 @@
                 <p class="text-4xl font-black text-white mb-1">&euro;9<span class="text-xl text-gray-400">,99</span></p>
                 <p class="text-xs text-gray-600 mb-6">per scan</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>21 security scanners</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>20 security scanners</strong></li>
                     <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>OWASP Top 10 analysis</strong></li>
                     <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Malware, Ports, Exposed Files</li>
                     <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Privacy, Accessibility, API Security</li>
@@ -722,7 +722,7 @@
                 <p class="text-4xl font-black text-white mb-1">&euro;29<span class="text-xl text-gray-400">,99</span></p>
                 <p class="text-xs text-gray-600 mb-6">per scan</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>28 security scanners</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>27 security scanners</strong></li>
                     <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Everything in Pro +</li>
                     <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>Directory brute-force</strong></li>
                     <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>XSS reflection testing</strong></li>

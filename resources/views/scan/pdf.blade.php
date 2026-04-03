@@ -381,7 +381,7 @@
 
     @foreach($scan->results as $key => $cat)
     @if(!isset($cat['score']) || $cat['score'] === null) @continue @endif
-    @if($key === 'technology') @continue @endif {{-- already shown above --}}
+    @if(in_array($key, ['technology', 'owasp'])) @continue @endif {{-- shown in dedicated sections --}}
     @php
         $s = $cat['score'];
         $scoreClass = $s >= 75 ? 'score-green' : ($s >= 50 ? 'score-yellow' : 'score-red');

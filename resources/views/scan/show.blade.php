@@ -1306,7 +1306,7 @@
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div class="flex-1">
                     <h3 class="font-bold text-white mb-1">Unlock the full security report</h3>
-                    <p class="text-sm text-gray-400">This Quick Scan covers 5 categories. Upgrade to Pro for OWASP Top 10 analysis, malware detection, exposed files, and 16 more scanners.</p>
+                    <p class="text-sm text-gray-400">This Quick Scan covers 5 categories. Upgrade to Pro for OWASP Top 10 analysis, malware detection, exposed files, and 15 more scanners.</p>
                 </div>
                 <div class="flex gap-2 shrink-0">
                     <form action="{{ route('checkout.create') }}" method="POST">
