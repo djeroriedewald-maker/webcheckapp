@@ -302,14 +302,14 @@
             <select name="user_id" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
                 <option value="">Select user...</option>
                 @foreach($users as $user)
-                <option value="{{ $user->id }}">{{ $user->email }} ({{ $user->name }})</option>
+                <option value="{{ $user->id }}" class="bg-gray-900 text-white">{{ $user->email }} ({{ $user->name }})</option>
                 @endforeach
             </select>
             <input type="text" name="url" placeholder="domain.com" required
                    class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
             <select name="tier" required class="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-                <option value="pro">Pro Scan</option>
-                <option value="deep">Deep Scan</option>
+                <option value="pro" class="bg-gray-900 text-white">Pro Scan</option>
+                <option value="deep" class="bg-gray-900 text-white">Deep Scan</option>
             </select>
             <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition whitespace-nowrap">
                 Grant free scan
