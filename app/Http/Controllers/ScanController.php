@@ -26,6 +26,17 @@ class ScanController extends Controller
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
     }
 
+    public function recent()
+    {
+        $scans = Scan::where('status', 'completed')
+            ->whereNotNull('score')
+            ->orderByDesc('completed_at')
+            ->limit(50)
+            ->get();
+
+        return view('scan.recent', compact('scans'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([

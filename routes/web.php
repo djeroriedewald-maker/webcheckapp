@@ -69,15 +69,34 @@ Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->group(functi
 });
 
 // Sitemap
+// Recent public scans directory (SEO)
+Route::get('/recent', [ScanController::class, 'recent'])->name('scan.recent');
+
 Route::get('/sitemap.xml', function () {
     $urls = [
         ['loc' => url('/'),             'changefreq' => 'daily',   'priority' => '1.0'],
+        ['loc' => url('/recent'),       'changefreq' => 'daily',   'priority' => '0.8'],
         ['loc' => url('/compare'),      'changefreq' => 'monthly', 'priority' => '0.7'],
         ['loc' => url('/api'),          'changefreq' => 'monthly', 'priority' => '0.6'],
         ['loc' => url('/disclaimer'),   'changefreq' => 'yearly',  'priority' => '0.3'],
         ['loc' => url('/privacy'),      'changefreq' => 'yearly',  'priority' => '0.3'],
         ['loc' => url('/terms'),        'changefreq' => 'yearly',  'priority' => '0.3'],
     ];
+
+    // Add recent completed scan pages to sitemap
+    $recentScans = \App\Models\Scan::where('status', 'completed')
+        ->whereNotNull('score')
+        ->orderByDesc('completed_at')
+        ->limit(200)
+        ->get(['uid', 'completed_at']);
+
+    foreach ($recentScans as $scan) {
+        $urls[] = [
+            'loc'        => route('scan.show', $scan->uid),
+            'changefreq' => 'monthly',
+            'priority'   => '0.5',
+        ];
+    }
 
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
