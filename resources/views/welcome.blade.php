@@ -168,7 +168,8 @@
 
         {{-- Scan form with tier selection --}}
         @php $grantedTier = auth()->user()->granted_tier ?? null; @endphp
-        <div x-data="{ tier: '{{ $grantedTier ?? 'free' }}', loading: false, url: '{{ old('url') }}' }">
+        <div x-data="{ tier: '{{ $grantedTier ?? 'free' }}', loading: false, url: '{{ old('url') }}' }"
+             x-init="window.addEventListener('pageshow', (e) => { if (e.persisted) loading = false; })">
             {{-- URL input --}}
             <div class="max-w-2xl mx-auto mb-6">
                 <div class="relative">
@@ -251,7 +252,9 @@
                 </button>
             </form>
 
-            {{-- Pro/Deep scan (requires auth + payment) --}}
+            {{-- Pro/Deep scan --}}
+            @auth
+            {{-- Logged in: submit directly to checkout --}}
             <form x-show="tier !== 'free'" action="{{ route('checkout.create') }}" method="POST"
                   @submit="loading = true" class="max-w-2xl mx-auto">
                 @csrf
@@ -271,10 +274,19 @@
                     </span>
                     <span x-show="loading" x-cloak>Processing…</span>
                 </button>
-                @guest
-                <p class="text-xs text-gray-500 mt-2 text-center">Requires <a href="{{ route('login') }}" class="text-indigo-400 hover:text-indigo-300">sign in</a> and payment via Stripe</p>
-                @endguest
             </form>
+            @else
+            {{-- Not logged in: send to login first --}}
+            <div x-show="tier !== 'free'" class="max-w-2xl mx-auto text-center">
+                <a :href="'{{ route('login') }}?redirect=checkout&tier=' + tier + '&url=' + encodeURIComponent(url)"
+                   :class="tier === 'pro' ? 'from-purple-600 to-purple-500 shadow-purple-500/25' : 'from-pink-600 to-pink-500 shadow-pink-500/25'"
+                   class="w-full sm:w-auto inline-flex bg-gradient-to-r hover:opacity-90 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg items-center justify-center gap-2.5 mx-auto min-w-[250px] shadow-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    <span x-text="tier === 'pro' ? 'Sign in & Pro Scan — \u20ac9,99 →' : 'Sign in & Deep Scan — \u20ac29,99 →'"></span>
+                </a>
+                <p class="text-xs text-gray-500 mt-2">Sign in or create an account to purchase a scan</p>
+            </div>
+            @endauth
             @endif
         </div>
 
