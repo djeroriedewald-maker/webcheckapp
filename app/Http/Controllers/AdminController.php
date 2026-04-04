@@ -151,9 +151,8 @@ class AdminController extends Controller
         $user = User::findOrFail($request->input('user_id'));
         $tier = $request->input('tier');
 
-        $user->update([
-            'granted_tier' => $tier === 'none' ? null : $tier,
-        ]);
+        $user->granted_tier = $tier === 'none' ? null : $tier;
+        $user->save();
 
         $label = $tier === 'none' ? 'revoked (back to free)' : $tier;
 
@@ -204,7 +203,8 @@ class AdminController extends Controller
             return back()->with('error', 'You cannot remove your own admin status.');
         }
 
-        $user->update(['is_admin' => ! $user->is_admin]);
+        $user->is_admin = ! $user->is_admin;
+        $user->save();
         $status = $user->is_admin ? 'promoted to admin' : 'removed as admin';
 
         return back()->with('success', "{$user->email} has been {$status}.");

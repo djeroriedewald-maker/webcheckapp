@@ -225,6 +225,7 @@ class DashboardController extends Controller
         $scans = Scan::where('host', $domain)
             ->where('status', 'completed')
             ->whereNotNull('score')
+            ->where(fn($q) => $q->where('user_id', Auth::id())->orWhereNull('user_id'))
             ->orderBy('completed_at', 'desc')
             ->limit(30)
             ->get();

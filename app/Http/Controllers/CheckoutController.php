@@ -109,7 +109,9 @@ class CheckoutController extends Controller
             return redirect()->route('home');
         }
 
-        $payment = Payment::where('stripe_session_id', $sessionId)->first();
+        $payment = Payment::where('stripe_session_id', $sessionId)
+            ->where('user_id', $request->user()->id)
+            ->first();
 
         if (! $payment) {
             return redirect()->route('home')->with('error', 'Payment not found.');

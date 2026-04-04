@@ -28,9 +28,9 @@ Route::get('/api', [ApiController::class, 'docs'])->name('api.docs');
 // Auth routes (guests only)
 Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 });
@@ -63,7 +63,7 @@ Route::view('/privacy', 'legal.privacy')->name('privacy');
 Route::view('/terms', 'legal.terms')->name('terms');
 
 // Admin
-Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->prefix('admin')->name('admin')->group(function () {
+Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class, 'throttle:30,1'])->prefix('admin')->name('admin')->group(function () {
     Route::get('/', [AdminController::class, 'index']);
     Route::post('/update-tier', [AdminController::class, 'updateTier'])->name('.updateTier');
     Route::get('/user/{user}', [AdminController::class, 'showUser'])->name('.user');
