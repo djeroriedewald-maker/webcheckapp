@@ -11,19 +11,16 @@ class SetLocale
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Priority: session > cookie > browser > default
-        $locale = session('locale')
-            ?? $request->cookie('locale')
-            ?? null;
-
-        if (! $locale) {
-            $browserLang = substr($request->server('HTTP_ACCEPT_LANGUAGE', 'en'), 0, 2);
-            $locale = in_array($browserLang, ['nl', 'en']) ? $browserLang : 'en';
+        // Check explicit session value first
+        if (session()->has('locale') && in_array(session('locale'), ['nl', 'en'])) {
+            App::setLocale(session('locale'));
+            return $next($request);
         }
 
-        if (in_array($locale, ['nl', 'en'])) {
-            App::setLocale($locale);
-        }
+        // Auto-detect from browser
+        $browserLang = substr($request->server('HTTP_ACCEPT_LANGUAGE', 'en'), 0, 2);
+        $locale = $browserLang === 'nl' ? 'nl' : 'en';
+        App::setLocale($locale);
 
         return $next($request);
     }

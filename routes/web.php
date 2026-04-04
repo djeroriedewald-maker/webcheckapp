@@ -10,12 +10,11 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ToolController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/lang/{locale}', function (string $locale) {
+Route::post('/lang/{locale}', function (string $locale) {
     if (in_array($locale, ['en', 'nl'])) {
         session()->put('locale', $locale);
-        session()->save();
     }
-    return redirect()->back()->withCookie(cookie('locale', $locale, 60 * 24 * 365));
+    return redirect()->back();
 })->name('locale.switch');
 
 Route::get('/', [ScanController::class, 'index'])->name('home');

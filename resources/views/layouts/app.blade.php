@@ -63,11 +63,14 @@
                 {{-- Right side: lang + auth + CTA --}}
                 <div class="hidden md:flex items-center gap-2">
                     {{-- Language switch --}}
-                    <a href="{{ route('locale.switch', app()->getLocale() === 'nl' ? 'en' : 'nl') }}"
-                       class="text-xs text-gray-500 hover:text-white px-2 py-1.5 rounded-lg hover:bg-white/5 transition uppercase font-bold"
-                       title="{{ app()->getLocale() === 'nl' ? 'Switch to English' : 'Schakel naar Nederlands' }}">
-                        {{ app()->getLocale() === 'nl' ? 'EN' : 'NL' }}
-                    </a>
+                    <form action="{{ route('locale.switch', app()->getLocale() === 'nl' ? 'en' : 'nl') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit"
+                                class="text-xs text-gray-500 hover:text-white px-2 py-1.5 rounded-lg hover:bg-white/5 transition uppercase font-bold"
+                                title="{{ app()->getLocale() === 'nl' ? 'Switch to English' : 'Schakel naar Nederlands' }}">
+                            {{ app()->getLocale() === 'nl' ? 'EN' : 'NL' }}
+                        </button>
+                    </form>
                     @auth
                     <a href="{{ route('dashboard') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_dashboard') }}</a>
                     @if(auth()->user()->is_admin)
@@ -118,10 +121,12 @@
                 <a href="{{ route('register') }}" class="block text-sm text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-2.5 rounded-lg transition text-center font-semibold mt-2">{{ __('nav_create_account') }}</a>
                 @endauth
                 <div class="border-t border-white/5 my-2"></div>
-                <a href="{{ route('locale.switch', app()->getLocale() === 'nl' ? 'en' : 'nl') }}"
-                   class="block text-sm text-gray-400 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">
-                    {{ app()->getLocale() === 'nl' ? '🇬🇧 English' : '🇳🇱 Nederlands' }}
-                </a>
+                <form action="{{ route('locale.switch', app()->getLocale() === 'nl' ? 'en' : 'nl') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full text-left text-sm text-gray-400 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">
+                        {{ app()->getLocale() === 'nl' ? 'English' : 'Nederlands' }}
+                    </button>
+                </form>
             </div>
         </div>
     </nav>
