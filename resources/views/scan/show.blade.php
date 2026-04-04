@@ -158,27 +158,27 @@
         {{-- Header with score --}}
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
             <div>
-                <p class="text-sm text-gray-500 mb-1">Security report for</p>
+                <p class="text-sm text-gray-500 mb-1">{{ __('report_for') }}</p>
                 <h1 class="text-2xl font-bold text-white">{{ $scan->host }}</h1>
                 <p class="text-sm text-gray-500 mt-1">
-                    Scanned {{ $scan->completed_at->diffForHumans() }}
+                    {{ __('report_scanned') }} {{ $scan->completed_at->diffForHumans() }}
                 </p>
 
-                {{-- Cached result notice --}}
+                {{-- {{ __('report_cached') }} notice --}}
                 @if($scan->completed_at < now()->subMinutes(5))
                 <div class="flex items-center gap-2 mt-2">
                     <span class="inline-flex items-center gap-1.5 text-xs text-amber-400/80 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
-                        Cached result
+                        {{ __('report_cached') }}
                     </span>
                     <form action="{{ route('scan.store') }}" method="POST" class="inline"
                           x-data @submit="$dispatch('scan-start', { url: '{{ addslashes($scan->url) }}' })">
                         @csrf
                         <input type="hidden" name="url" value="{{ $scan->url }}">
                         <button type="submit" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                            Run fresh scan &rarr;
+                            {{ __('report_fresh') }}
                         </button>
                     </form>
                 </div>
@@ -186,8 +186,8 @@
 
                 @isset($newerScan)
                 <div class="mt-2 text-xs text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2">
-                    A newer scan is available.
-                    <a href="{{ route('scan.show', $newerScan) }}" class="underline hover:text-white">View latest &rarr;</a>
+                    {{ __('report_newer') }}
+                    <a href="{{ route('scan.show', $newerScan) }}" class="underline hover:text-white">{{ __('report_view_latest') }}</a>
                 </div>
                 @endisset
 
@@ -203,7 +203,7 @@
                         <svg x-show="copied" class="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        <span x-text="copied ? 'Copied!' : 'Copy link'"></span>
+                        <span x-text="copied ? '{{ __('report_copied') }}' : '{{ __('report_copy') }}'"></span>
                     </button>
 
                     <a href="https://x.com/intent/tweet?text={{ urlencode('I scanned ' . $scan->host . ' with WebCheckApp — security score ' . $scan->score . '/100 (Grade ' . $scan->grade . ')') }}&url={{ urlencode(route('scan.show', $scan)) }}"
@@ -229,7 +229,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Score card
+                        {{ __('report_score_card') }}
                     </a>
                 </div>
             </div>
@@ -328,7 +328,7 @@
         @endphp
         <div class="bg-white/2 border border-white/8 rounded-2xl overflow-hidden mb-8">
             <div class="px-6 py-4 border-b border-white/5">
-                <h2 class="text-lg font-bold text-white">Executive Summary</h2>
+                <h2 class="text-lg font-bold text-white">{{ __('summary_title') }}</h2>
             </div>
             <div class="px-6 py-5">
                 <div class="text-sm text-gray-300 leading-relaxed space-y-4">
@@ -371,7 +371,7 @@
                     {{-- Top priority issues --}}
                     @if($topIssues->isNotEmpty())
                     <div>
-                        <p class="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">Top priority fixes:</p>
+                        <p class="text-xs text-red-400 font-semibold uppercase tracking-wider mb-2">{{ __('summary_top_fixes') }}</p>
                         <div class="space-y-1.5">
                             @foreach($topIssues as $issue)
                             <div class="flex items-start gap-2 text-xs">
@@ -387,7 +387,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                         @if($strongAreas->isNotEmpty())
                         <div class="bg-emerald-500/5 border border-emerald-500/15 rounded-lg px-3 py-2.5">
-                            <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider mb-1">Strong areas</p>
+                            <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider mb-1">{{ __('summary_strong') }}</p>
                             @foreach($strongAreas as $area)
                             <p class="text-xs text-gray-400 flex items-center gap-1.5">
                                 <svg class="w-3 h-3 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -398,7 +398,7 @@
                         @endif
                         @if($mediumAreas->isNotEmpty())
                         <div class="bg-yellow-500/5 border border-yellow-500/15 rounded-lg px-3 py-2.5">
-                            <p class="text-[10px] text-yellow-400 font-semibold uppercase tracking-wider mb-1">Needs improvement</p>
+                            <p class="text-[10px] text-yellow-400 font-semibold uppercase tracking-wider mb-1">{{ __('summary_needs_improvement') }}</p>
                             @foreach($mediumAreas as $area)
                             <p class="text-xs text-gray-400 flex items-center gap-1.5">
                                 <svg class="w-3 h-3 text-yellow-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
@@ -409,7 +409,7 @@
                         @endif
                         @if($weakAreas->isNotEmpty())
                         <div class="bg-red-500/5 border border-red-500/15 rounded-lg px-3 py-2.5">
-                            <p class="text-[10px] text-red-400 font-semibold uppercase tracking-wider mb-1">Needs work</p>
+                            <p class="text-[10px] text-red-400 font-semibold uppercase tracking-wider mb-1">{{ __('summary_needs_work') }}</p>
                             @foreach($weakAreas as $area)
                             <p class="text-xs text-gray-400 flex items-center gap-1.5">
                                 <svg class="w-3 h-3 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -428,42 +428,42 @@
             $r = $scan->results;
             $healthChecks = [
                 [
-                    'label'    => 'Is my website safe for visitors?',
+                    'label'    => __('health_safe'),
                     'ok'       => ($r['ssl']['score'] ?? 0) >= 75 && ($r['headers']['score'] ?? 0) >= 60,
-                    'good'     => 'Yes — your website uses encryption and has security protections in place.',
-                    'bad'      => 'Not fully — your website is missing important security protections that keep visitors safe.',
+                    'good'     => __('health_safe_good'),
+                    'bad'      => __('health_safe_bad'),
                     'icon_ok'  => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
                     'icon_bad' => 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
                 ],
                 [
-                    'label'    => 'Can my website be found by Google?',
+                    'label'    => __('health_google'),
                     'ok'       => ($r['performance']['score'] ?? 0) >= 50 && ($r['robots']['score'] ?? 100) >= 50,
-                    'good'     => 'Yes — your website is accessible to search engines and loads at a reasonable speed.',
-                    'bad'      => 'There are issues — search engines may have trouble finding or ranking your website properly.',
+                    'good'     => __('health_google_good'),
+                    'bad'      => __('health_google_bad'),
                     'icon_ok'  => 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
                     'icon_bad' => 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
                 ],
                 [
-                    'label'    => 'Is my email protected against spoofing?',
+                    'label'    => __('health_email'),
                     'ok'       => ($r['dns']['score'] ?? 0) >= 70,
-                    'good'     => 'Yes — your domain has email authentication records (SPF/DMARC) that prevent others from sending fake emails on your behalf.',
-                    'bad'      => 'Not fully — attackers could send fake emails pretending to be from your domain. This is used in phishing attacks.',
+                    'good'     => __('health_email_good'),
+                    'bad'      => __('health_email_bad'),
                     'icon_ok'  => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
                     'icon_bad' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
                 ],
                 [
-                    'label'    => 'Is my website leaking sensitive data?',
+                    'label'    => __('health_leaking'),
                     'ok'       => ($r['exposed_files']['score'] ?? 100) >= 80 && ($r['content']['score'] ?? 0) >= 70,
-                    'good'     => 'No leaks detected — configuration files and sensitive data appear to be properly protected.',
-                    'bad'      => 'Potential leaks found — some sensitive files or information may be publicly accessible to anyone.',
+                    'good'     => __('health_leaking_good'),
+                    'bad'      => __('health_leaking_bad'),
                     'icon_ok'  => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
                     'icon_bad' => 'M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z',
                 ],
                 [
-                    'label'    => 'Does my website respect visitor privacy?',
+                    'label'    => __('health_privacy'),
                     'ok'       => ($r['privacy']['score'] ?? 100) >= 60,
-                    'good'     => 'Yes — a privacy policy and cookie consent appear to be in place.',
-                    'bad'      => 'Improvements needed — privacy policy, cookie consent, or tracking may not comply with GDPR regulations.',
+                    'good'     => __('health_privacy_good'),
+                    'bad'      => __('health_privacy_bad'),
                     'icon_ok'  => 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z',
                     'icon_bad' => 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M3 3l18 18',
                 ],
@@ -474,8 +474,8 @@
                 <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
-                <h2 class="text-lg font-bold text-white">Website Health Check</h2>
-                <span class="text-xs text-gray-500">Simple overview for everyone</span>
+                <h2 class="text-lg font-bold text-white">{{ __('health_title') }}</h2>
+                <span class="text-xs text-gray-500">{{ __('health_subtitle') }}</span>
             </div>
             <div class="divide-y divide-white/5">
                 @foreach($healthChecks as $h)
@@ -491,9 +491,9 @@
                     </div>
                     <div class="shrink-0 mt-1">
                         @if($h['ok'])
-                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">Good</span>
+                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">{{ __('health_good') }}</span>
                         @else
-                        <span class="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-full">Action needed</span>
+                        <span class="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-full">{{ __('health_action') }}</span>
                         @endif
                     </div>
                 </div>
@@ -1513,8 +1513,8 @@
         <div class="bg-gradient-to-r from-purple-600/10 to-indigo-600/10 border border-purple-500/20 rounded-2xl p-6 mb-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div class="flex-1">
-                    <h3 class="font-bold text-white mb-1">Unlock the full security report</h3>
-                    <p class="text-sm text-gray-400">This Quick Scan covers 5 categories. Upgrade to Pro for OWASP Top 10 analysis, malware detection, exposed files, and 15 more scanners.</p>
+                    <h3 class="font-bold text-white mb-1">{{ __('upgrade_title') }}</h3>
+                    <p class="text-sm text-gray-400">{{ __('upgrade_desc') }}</p>
                 </div>
                 <div class="flex gap-2 shrink-0">
                     <form action="{{ route('checkout.create') }}" method="POST">
