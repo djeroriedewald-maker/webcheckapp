@@ -6,12 +6,19 @@
 @section('content')
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-    <div class="flex items-center justify-between mb-10">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-10">
         <div>
             <h1 class="text-3xl font-black text-white">Admin Dashboard</h1>
             <p class="text-gray-500 mt-1">Real-time platform metrics</p>
         </div>
-        <span class="text-xs text-gray-600">Last updated: {{ now()->format('d M Y, H:i') }}</span>
+        <div class="flex items-center gap-3">
+            <form action="{{ route('admin.search') }}" method="GET" class="flex gap-2">
+                <input type="text" name="q" placeholder="Search users or domains..." value="{{ request('q') }}"
+                       class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition w-48">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-3 py-2 rounded-lg transition">Search</button>
+            </form>
+            <a href="{{ route('admin.system') }}" class="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-lg transition">System</a>
+        </div>
     </div>
 
     {{-- ═══ Stat cards ═══ --}}
@@ -307,6 +314,7 @@
                         <th class="px-5 py-3">Grade</th>
                         <th class="px-5 py-3">IP</th>
                         <th class="px-5 py-3">Time</th>
+                        <th class="px-5 py-3"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
@@ -339,6 +347,12 @@
                         <td class="px-5 py-3 font-bold text-white">{{ $scan->grade ?? '—' }}</td>
                         <td class="px-5 py-3 text-gray-500 text-xs font-mono">{{ $scan->ip_address }}</td>
                         <td class="px-5 py-3 text-gray-500 text-xs">{{ $scan->created_at->diffForHumans() }}</td>
+                        <td class="px-5 py-3">
+                            <form action="{{ route('admin.deleteScan', $scan) }}" method="POST" onsubmit="return confirm('Delete this scan?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/20 transition">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -456,6 +470,7 @@
                         <th class="px-5 py-3">Scans</th>
                         <th class="px-5 py-3">Payments</th>
                         <th class="px-5 py-3">Joined</th>
+                        <th class="px-5 py-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
@@ -488,6 +503,17 @@
                         <td class="px-5 py-3 text-white font-bold">{{ $user->scans_count }}</td>
                         <td class="px-5 py-3 text-white font-bold">{{ $user->payments_count }}</td>
                         <td class="px-5 py-3 text-gray-500 text-xs">{{ $user->created_at->diffForHumans() }}</td>
+                        <td class="px-5 py-3">
+                            <div class="flex items-center gap-1.5">
+                                <a href="{{ route('admin.user', $user) }}" class="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded hover:bg-indigo-500/20 transition">View</a>
+                                @if(!$user->is_admin)
+                                <form action="{{ route('admin.deleteUser', $user) }}" method="POST" onsubmit="return confirm('Delete {{ $user->email }}? This cannot be undone.')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/20 transition">Delete</button>
+                                </form>
+                                @endif
+                            </div>
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>

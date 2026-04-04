@@ -159,4 +159,105 @@ class AdminController extends Controller
 
         return back()->with('success', "Tier for {$user->email} set to: {$label}");
     }
+
+    /**
+     * Show user detail page.
+     */
+    public function showUser(User $user)
+    {
+        $scans = Scan::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        $payments = Payment::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('admin.user', compact('user', 'scans', 'payments'));
+    }
+
+    /**
+     * Delete a user and all their data.
+     */
+    public function deleteUser(User $user)
+    {
+        if ($user->is_admin) {
+            return back()->with('error', 'Cannot delete an admin user.');
+        }
+
+        $email = $user->email;
+        $user->monitoredSites()->delete();
+        $user->payments()->delete();
+        Scan::where('user_id', $user->id)->update(['user_id' => null]);
+        $user->delete();
+
+        return redirect()->route('admin')->with('success', "User {$email} has been deleted.");
+    }
+
+    /**
+     * Toggle admin status.
+     */
+    public function toggleAdmin(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot remove your own admin status.');
+        }
+
+        $user->update(['is_admin' => ! $user->is_admin]);
+        $status = $user->is_admin ? 'promoted to admin' : 'removed as admin';
+
+        return back()->with('success', "{$user->email} has been {$status}.");
+    }
+
+    /**
+     * Delete a scan.
+     */
+    public function deleteScan(Scan $scan)
+    {
+        $host = $scan->host;
+        $scan->delete();
+
+        return back()->with('success', "Scan for {$host} has been deleted.");
+    }
+
+    /**
+     * Search users and scans.
+     */
+    public function search(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+
+        if (strlen($q) < 2) {
+            return redirect()->route('admin')->with('error', 'Search query must be at least 2 characters.');
+        }
+
+        $users = User::where('email', 'like', "%{$q}%")
+            ->orWhere('name', 'like', "%{$q}%")
+            ->withCount(['scans', 'payments'])
+            ->limit(20)
+            ->get();
+
+        $scans = Scan::where('host', 'like', "%{$q}%")
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        return view('admin.search', compact('q', 'users', 'scans'));
+    }
+
+    /**
+     * System status overview.
+     */
+    public function system()
+    {
+        $pendingJobs = DB::table('jobs')->count();
+        $failedJobs = DB::table('failed_jobs')->count();
+        $dbSize = DB::select("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")[0]->size ?? 0;
+        $scanCount = Scan::count();
+        $userCount = User::count();
+        $paymentCount = Payment::count();
+
+        return view('admin.system', compact('pendingJobs', 'failedJobs', 'dbSize', 'scanCount', 'userCount', 'paymentCount'));
+    }
 }

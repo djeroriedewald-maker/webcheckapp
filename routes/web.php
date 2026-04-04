@@ -63,9 +63,15 @@ Route::view('/privacy', 'legal.privacy')->name('privacy');
 Route::view('/terms', 'legal.terms')->name('terms');
 
 // Admin
-Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin');
-    Route::post('/admin/update-tier', [AdminController::class, 'updateTier'])->name('admin.updateTier');
+Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->prefix('admin')->name('admin')->group(function () {
+    Route::get('/', [AdminController::class, 'index']);
+    Route::post('/update-tier', [AdminController::class, 'updateTier'])->name('.updateTier');
+    Route::get('/user/{user}', [AdminController::class, 'showUser'])->name('.user');
+    Route::delete('/user/{user}', [AdminController::class, 'deleteUser'])->name('.deleteUser');
+    Route::post('/user/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('.toggleAdmin');
+    Route::delete('/scan/{scan}', [AdminController::class, 'deleteScan'])->name('.deleteScan');
+    Route::get('/search', [AdminController::class, 'search'])->name('.search');
+    Route::get('/system', [AdminController::class, 'system'])->name('.system');
 });
 
 // Sitemap
