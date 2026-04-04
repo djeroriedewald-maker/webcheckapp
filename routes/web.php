@@ -12,9 +12,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/lang/{locale}', function (string $locale) {
     if (in_array($locale, ['en', 'nl'])) {
-        session(['locale' => $locale]);
+        session()->put('locale', $locale);
+        session()->save();
     }
-    return back();
+    return redirect()->back()->withCookie(cookie('locale', $locale, 60 * 24 * 365));
 })->name('locale.switch');
 
 Route::get('/', [ScanController::class, 'index'])->name('home');
