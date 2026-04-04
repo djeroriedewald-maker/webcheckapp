@@ -968,6 +968,37 @@
 
 
 {{-- ═══════════════════════════════════════════
+     TRUST BADGES
+═══════════════════════════════════════════ --}}
+<section class="py-12 border-t border-white/5">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap items-center justify-center gap-8 text-gray-600">
+            <div class="flex items-center gap-2 text-sm">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                <span>HTTPS encrypted</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span>Secure payments via Stripe</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                <span>GDPR compliant</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Results in seconds</span>
+            </div>
+            <div class="flex items-center gap-2 text-sm">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>No data shared with third parties</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+{{-- ═══════════════════════════════════════════
      TESTIMONIALS
 ═══════════════════════════════════════════ --}}
 <section class="relative py-24 border-t border-white/5">
@@ -1025,6 +1056,54 @@
                     <div>
                         <p class="text-sm font-semibold text-white">James Okonkwo</p>
                         <p class="text-xs text-gray-500">Security Engineer</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-6">
+                <div class="flex items-center gap-1 mb-4">
+                    @for($i = 0; $i < 5; $i++)
+                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">"The OWASP Top 10 report alone is worth the Pro price. We used it to pass a client security audit without hiring an external consultant. Saved us thousands."</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-sm font-bold text-cyan-400">L</div>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Lisa van den Berg</p>
+                        <p class="text-xs text-gray-500">Lead Developer, SaaS Startup</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-6">
+                <div class="flex items-center gap-1 mb-4">
+                    @for($i = 0; $i < 5; $i++)
+                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">"I use the Deep Scan for every new client during onboarding. The PDF report looks professional enough to include in our proposals. Clients love it."</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-sm font-bold text-amber-400">R</div>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Robert Janssen</p>
+                        <p class="text-xs text-gray-500">Freelance Web Consultant</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/3 border border-white/8 rounded-2xl p-6">
+                <div class="flex items-center gap-1 mb-4">
+                    @for($i = 0; $i < 5; $i++)
+                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-300 leading-relaxed mb-5">"Finally a scanner that checks for things that actually matter. The health check at the top makes it easy to explain results to non-technical managers."</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-sm font-bold text-rose-400">A</div>
+                    <div>
+                        <p class="text-sm font-semibold text-white">Anna Kowalski</p>
+                        <p class="text-xs text-gray-500">IT Manager, E-commerce</p>
                     </div>
                 </div>
             </div>
