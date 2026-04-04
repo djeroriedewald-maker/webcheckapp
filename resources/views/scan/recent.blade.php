@@ -56,9 +56,15 @@
         </div>
     </div>
 
-    <div class="text-center mt-8">
+    <div class="flex flex-wrap items-center justify-center gap-4 mt-8">
         <a href="{{ route('home') }}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition">
             Scan your website →
+        </a>
+        <a href="{{ route('scan.compare') }}" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl transition">
+            Compare two sites
+        </a>
+        <a href="{{ route('api.docs') }}" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold px-6 py-3 rounded-xl transition">
+            API documentation
         </a>
     </div>
 

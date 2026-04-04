@@ -116,6 +116,46 @@
                 "@@type": "Answer",
                 "text": "Yes. Create a free account and add up to 10 sites to your monitoring dashboard. You can rescan sites at any time, track score changes over time, and get notified when your security score drops or your SSL certificate is about to expire."
             }
+        },
+        {
+            "@@type": "Question",
+            "name": "How accurate are the scan results?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Our scanners check publicly accessible information using the same methods as attackers and search engines. Results are highly accurate for external security posture. However, some server-side configurations (like internal rate limiting or WAF rules) may not be fully detectable from the outside. We recommend using scan results as a starting point and consulting a security professional for internal audits."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Can I get a refund if I'm not satisfied?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "If you experience technical issues with a paid scan (e.g. the scan fails to complete), please contact us and we will resolve the issue or provide a refund. Since scan results are delivered instantly, we cannot offer refunds for completed scans."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Is WebCheckApp suitable for GDPR compliance checks?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "WebCheckApp includes privacy and GDPR checks in Pro and Deep scans, covering cookie consent detection, privacy policy presence, third-party tracker analysis, and cookie compliance. While this provides a good starting point, full GDPR compliance requires legal review. For comprehensive compliance audits, visit our partner BudgetPixels.nl."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "Can I use WebCheckApp for client reports?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "Yes. Pro and Deep scans include a downloadable PDF report with an executive summary, OWASP Top 10 analysis, and detailed findings with fix recommendations. Many agencies and freelancers use these reports for client security assessments and proposals."
+            }
+        },
+        {
+            "@@type": "Question",
+            "name": "What payment methods do you accept?",
+            "acceptedAnswer": {
+                "@@type": "Answer",
+                "text": "We accept credit/debit cards (Visa, Mastercard, American Express) and iDEAL (for Dutch bank accounts) through our secure payment partner Stripe. All payments are processed securely — we never see or store your card details."
+            }
         }
     ]
 }
