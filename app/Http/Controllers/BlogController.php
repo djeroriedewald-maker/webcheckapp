@@ -6,7 +6,7 @@ class BlogController extends Controller
 {
     private const ARTICLES = [
         'what-is-owasp-top-10' => [
-            'title'       => 'What Is the OWASP Top 10? A Complete Guide for 2025',
+            'title'       => 'What Is the OWASP Top 10? A Complete Guide for 2026',
             'description' => 'Learn about the OWASP Top 10 web application security risks, why they matter, and how to protect your website against each vulnerability.',
             'category'    => 'Security',
             'date'        => '2026-03-15',
@@ -34,7 +34,7 @@ class BlogController extends Controller
             'read_time'   => 6,
         ],
         'website-security-checklist' => [
-            'title'       => 'The Ultimate Website Security Checklist for 2025',
+            'title'       => 'The Ultimate Website Security Checklist for 2026',
             'description' => 'A comprehensive security checklist covering SSL, headers, DNS, exposed files, malware, and more. Scan your site and fix issues in order of priority.',
             'category'    => 'Security',
             'date'        => '2026-04-03',
