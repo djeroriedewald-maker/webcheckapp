@@ -168,8 +168,15 @@
 
         {{-- Scan form with tier selection --}}
         @php $grantedTier = auth()->user()->granted_tier ?? null; @endphp
-        <div x-data="{ tier: '{{ $grantedTier ?? 'free' }}', loading: false, url: '{{ old('url') }}' }"
+        <div x-data="{ tier: '{{ old('tier', $grantedTier ?? 'free') }}', loading: false, url: '{{ old('url') }}' }"
              x-init="window.addEventListener('pageshow', (e) => { if (e.persisted) loading = false; })">
+
+            {{-- Show any errors from checkout/scan --}}
+            @if($errors->any())
+            <div class="max-w-2xl mx-auto mb-6 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">
+                {{ $errors->first() }}
+            </div>
+            @endif
             {{-- URL input --}}
             <div class="max-w-2xl mx-auto mb-6">
                 <div class="relative">
@@ -187,9 +194,6 @@
                         autofocus
                     >
                 </div>
-                @error('url')
-                    <p class="mt-3 text-red-400 text-sm">{{ $message }}</p>
-                @enderror
             </div>
 
             {{-- Tier cards --}}
