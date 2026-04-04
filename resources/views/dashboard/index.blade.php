@@ -10,12 +10,12 @@
     {{-- Header --}}
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-2xl font-bold">Dashboard</h1>
+            <h1 class="text-2xl font-bold">{{ __('dash_title') }}</h1>
             <p class="text-gray-500 text-sm mt-1">
                 {{ auth()->user()->name ?? auth()->user()->email }}
                 @if($grantedTier)
                 <span class="ml-2 text-xs font-bold {{ $grantedTier === 'deep' ? 'text-pink-400 bg-pink-500/10' : 'text-purple-400 bg-purple-500/10' }} px-2 py-0.5 rounded-full">
-                    {{ strtoupper($grantedTier) }} account
+                    {{ strtoupper($grantedTier) }} {{ __('dash_account') }}
                 </span>
                 @endif
             </p>
@@ -27,13 +27,13 @@
                 <button type="submit" :disabled="loading" class="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 px-3 py-1.5 rounded-lg transition disabled:opacity-50">
                     <svg x-show="!loading" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     <svg x-show="loading" x-cloak class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                    <span x-text="loading ? 'Scanning...' : 'Scan all sites'"></span>
+                    <span x-text="loading ? '{{ __('dash_scanning') }}' : '{{ __('dash_scan_all') }}'"></span>
                 </button>
             </form>
             @endif
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="text-sm text-gray-500 hover:text-gray-300 transition">Sign out</button>
+                <button type="submit" class="text-sm text-gray-500 hover:text-gray-300 transition">{{ __('dash_signout') }}</button>
             </form>
         </div>
     </div>
@@ -49,23 +49,23 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <div class="{{ $avgBg }} border border-white/8 rounded-2xl p-5 text-center">
             <p class="text-3xl font-black {{ $avgColor }}">{{ $avg ?? '—' }}</p>
-            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Avg. score</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">{{ __('dash_avg_score') }}</p>
         </div>
         <div class="bg-white/3 border border-white/8 rounded-2xl p-5 text-center">
             <p class="text-3xl font-black text-white">{{ $stats['total'] }}<span class="text-gray-700 text-lg font-normal">/10</span></p>
-            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Sites</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">{{ __('dash_sites') }}</p>
         </div>
         <div class="{{ $stats['healthy'] > 0 ? 'bg-green-500/8 border-green-500/20' : 'bg-white/3 border-white/8' }} border rounded-2xl p-5 text-center">
             <p class="text-3xl font-black {{ $stats['healthy'] > 0 ? 'text-green-400' : 'text-gray-400' }}">{{ $stats['healthy'] }}</p>
-            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Healthy (80+)</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">{{ __('dash_healthy') }}</p>
         </div>
         <div class="{{ $stats['critical'] > 0 ? 'bg-red-500/8 border-red-500/20' : 'bg-white/3 border-white/8' }} border rounded-2xl p-5 text-center">
             <p class="text-3xl font-black {{ $stats['critical'] > 0 ? 'text-red-400' : 'text-gray-400' }}">{{ $stats['critical'] }}</p>
-            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Critical (&lt;60)</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">{{ __('dash_critical') }}</p>
         </div>
         <div class="bg-indigo-500/8 border border-indigo-500/20 rounded-2xl p-5 text-center">
             <p class="text-3xl font-black text-indigo-400">{{ $totalUserScans }}</p>
-            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">Total scans</p>
+            <p class="text-xs text-gray-600 mt-1 uppercase tracking-wider">{{ __('dash_total_scans') }}</p>
         </div>
     </div>
 
@@ -74,7 +74,7 @@
     <div class="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 mb-6">
         <div class="flex items-center gap-2 mb-3">
             <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-            <h2 class="text-sm font-semibold text-red-400 uppercase tracking-wider">SSL Certificate Warnings</h2>
+            <h2 class="text-sm font-semibold text-red-400 uppercase tracking-wider">{{ __('dash_ssl_warnings') }}</h2>
         </div>
         @foreach($sslWarnings as $warn)
         <div class="flex items-start gap-2 text-sm mb-1.5">
@@ -85,12 +85,12 @@
     </div>
     @endif
 
-    {{-- Score trend + Grade distribution --}}
+    {{-- Score trend + {{ __('dash_grade_dist') }} --}}
     @if($stats['total'] > 0)
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
         {{-- Score trend chart --}}
         <div class="lg:col-span-2 bg-white/3 border border-white/8 rounded-2xl p-5">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Score trend (30 days)</h2>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{{ __('dash_score_trend') }}</h2>
             @if(!empty($scoreTrend) && max($scoreTrend) > 0)
             @php
                 $maxVal = max(max(array_values($scoreTrend)), 1);
@@ -122,13 +122,13 @@
                 <span>{{ \Carbon\Carbon::parse($days[count($days)-1])->format('d M') }}</span>
             </div>
             @else
-            <p class="text-sm text-gray-600 py-8 text-center">Not enough data yet. Scores will appear here after your sites are scanned.</p>
+            <p class="text-sm text-gray-600 py-8 text-center">{{ __('dash_no_data') }}</p>
             @endif
         </div>
 
-        {{-- Grade distribution --}}
+        {{-- {{ __('dash_grade_dist') }} --}}
         <div class="bg-white/3 border border-white/8 rounded-2xl p-5">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Grade distribution</h2>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{{ __('dash_grade_dist') }}</h2>
             @if(!empty($gradeDistribution))
             @php
                 $gradeColors = [
@@ -168,7 +168,7 @@
         {{-- Top issues --}}
         @if($topIssuesSummary->isNotEmpty())
         <div class="bg-white/3 border border-white/8 rounded-2xl p-5">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Top issues across your sites</h2>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{{ __('dash_top_issues') }}</h2>
             <div class="space-y-3">
                 @foreach($topIssuesSummary as $issue)
                 <div class="flex items-start gap-3">
@@ -188,7 +188,7 @@
         {{-- Personalized tips --}}
         @if($tips->isNotEmpty())
         <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-5">
-            <h2 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider mb-4">Quick wins</h2>
+            <h2 class="text-sm font-semibold text-indigo-400 uppercase tracking-wider mb-4">{{ __('dash_quick_wins') }}</h2>
             <div class="space-y-3">
                 @foreach($tips as $tip)
                 <div class="flex items-start gap-2.5">
@@ -197,7 +197,7 @@
                 </div>
                 @endforeach
             </div>
-            <p class="text-xs text-gray-600 mt-4">Fixing these issues will have the biggest impact on your overall scores.</p>
+            <p class="text-xs text-gray-600 mt-4">{{ __('dash_quick_wins_note') }}</p>
         </div>
         @endif
     </div>
@@ -219,8 +219,8 @@
     {{-- Add site form --}}
     <div class="bg-white/3 border border-white/8 rounded-2xl p-6 mb-4" x-data="{ bulk: false }">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Add a site to monitor</h2>
-            <button @click="bulk = !bulk" class="text-xs text-gray-600 hover:text-gray-400 transition" x-text="bulk ? 'Single domain' : 'Import multiple'"></button>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">{{ __('dash_add_site') }}</h2>
+            <button @click="bulk = !bulk" class="text-xs text-gray-600 hover:text-gray-400 transition" x-text="bulk ? '{{ __('dash_single') }}' : '{{ __('dash_import') }}'"></button>
         </div>
 
         <form x-show="!bulk" action="{{ route('dashboard.addSite') }}" method="POST" class="flex gap-3">
@@ -228,7 +228,7 @@
             <input type="text" name="domain" placeholder="example.com" value="{{ old('domain') }}"
                    class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
             <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition whitespace-nowrap">
-                Add site
+                {{ __('dash_add') }}
             </button>
         </form>
 
@@ -237,12 +237,12 @@
             <textarea name="domains" rows="4" placeholder="example.com&#10;mysite.nl&#10;another-domain.com"
                       class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none text-sm mb-3"></textarea>
             <div class="flex items-center justify-between">
-                <p class="text-xs text-gray-600">One domain per line.</p>
-                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2.5 rounded-xl transition text-sm whitespace-nowrap">Import sites</button>
+                <p class="text-xs text-gray-600">{{ __('dash_import_note') }}</p>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-2.5 rounded-xl transition text-sm whitespace-nowrap">{{ __('dash_import_btn') }}</button>
             </div>
         </form>
 
-        <p class="text-xs text-gray-700 mt-3" x-show="!bulk">Up to 10 sites. An initial scan runs immediately after adding.</p>
+        <p class="text-xs text-gray-700 mt-3" x-show="!bulk">{{ __('dash_add_note') }}</p>
     </div>
 
     {{-- Site list --}}
@@ -251,7 +251,7 @@
         <svg class="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
-        <p class="text-sm">No sites added yet. Add your first site above.</p>
+        <p class="text-sm">{{ __('dash_no_sites') }}</p>
     </div>
     @else
     <div class="space-y-3">
@@ -287,24 +287,24 @@
                             @endif
                         </div>
                         <p class="text-xs text-gray-600 mt-0.5">
-                            @if($site->last_checked_at) Checked {{ $site->last_checked_at->diffForHumans() }}
-                            @else Not yet scanned @endif
+                            @if($site->last_checked_at) {{ __('dash_checked') }} {{ $site->last_checked_at->diffForHumans() }}
+                            @else {{ __('dash_not_scanned') }} @endif
                         </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     @if($site->lastScan)
-                    <a href="{{ route('scan.show', $site->lastScan) }}" class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">Report</a>
+                    <a href="{{ route('scan.show', $site->lastScan) }}" class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">{{ __('dash_report') }}</a>
                     @endif
-                    <a href="{{ route('dashboard.history', $site->domain) }}" class="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">History</a>
+                    <a href="{{ route('dashboard.history', $site->domain) }}" class="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">{{ __('dash_history') }}</a>
                     <form action="{{ route('dashboard.refresh', $site) }}" method="POST">
                         @csrf
-                        <button type="submit" class="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">Rescan</button>
+                        <button type="submit" class="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">{{ __('dash_rescan') }}</button>
                     </form>
                     <button @click="open = !open" class="text-xs text-gray-500 hover:text-gray-300 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition">···</button>
                     <form action="{{ route('dashboard.removeSite', $site) }}" method="POST" onsubmit="return confirm('Remove {{ $site->domain }} from monitoring?')">
                         @csrf @method('DELETE')
-                        <button type="submit" class="text-xs text-red-500 hover:text-red-400 bg-red-500/5 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition">Remove</button>
+                        <button type="submit" class="text-xs text-red-500 hover:text-red-400 bg-red-500/5 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition">{{ __('dash_remove') }}</button>
                     </form>
                 </div>
             </div>
@@ -313,13 +313,13 @@
                     @csrf @method('PATCH')
                     <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
                         <input type="checkbox" name="notify_score_drop" value="1" {{ $site->notify_score_drop ? 'checked' : '' }} class="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500">
-                        Alert me when score drops
+                        {{ __('dash_alert_score') }}
                     </label>
                     <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
                         <input type="checkbox" name="notify_cert_expiry" value="1" {{ $site->notify_cert_expiry ? 'checked' : '' }} class="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500">
-                        Alert me 30 days before SSL expiry
+                        {{ __('dash_alert_ssl') }}
                     </label>
-                    <button type="submit" class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">Save</button>
+                    <button type="submit" class="text-xs text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition">{{ __('dash_save') }}</button>
                 </form>
             </div>
         </div>
@@ -331,7 +331,7 @@
     @if($recentScans->isNotEmpty())
     <div class="bg-white/3 border border-white/8 rounded-2xl overflow-hidden mt-8">
         <div class="px-5 py-4 border-b border-white/5">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent scans</h2>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">{{ __('dash_recent') }}</h2>
         </div>
         <div class="divide-y divide-white/5">
             @foreach($recentScans as $scan)
@@ -353,10 +353,10 @@
     {{-- Upgrade CTA for free users --}}
     @if(!$grantedTier)
     <div class="mt-8 bg-gradient-to-r from-purple-600/10 to-indigo-600/10 border border-purple-500/20 rounded-2xl p-6 text-center">
-        <h3 class="text-lg font-bold text-white mb-2">Get deeper insights with Pro or Deep scans</h3>
-        <p class="text-sm text-gray-400 mb-4 max-w-lg mx-auto">Unlock OWASP Top 10 analysis, malware detection, exposed file scanning, and 20+ additional security checks for any website.</p>
+        <h3 class="text-lg font-bold text-white mb-2">{{ __('dash_upgrade_title') }}</h3>
+        <p class="text-sm text-gray-400 mb-4 max-w-lg mx-auto">{{ __('dash_upgrade_desc') }}</p>
         <a href="{{ route('home') }}" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-purple-500/25">
-            View scan options →
+            {{ __('dash_upgrade_cta') }}
         </a>
     </div>
     @endif
