@@ -233,7 +233,7 @@
             @if($grantedTier)
             {{-- User has granted tier — all scans go through scan.store (no payment needed) --}}
             <form action="{{ route('scan.store') }}" method="POST"
-                  @submit="loading = true" class="max-w-2xl mx-auto">
+                  @submit="$el.querySelector('[name=url]').value = url; loading = true" class="max-w-2xl mx-auto">
                 @csrf
                 <input type="hidden" name="url" x-bind:value="url">
                 <button type="submit" :disabled="loading"
@@ -246,7 +246,7 @@
             @else
             {{-- Free scan --}}
             <form x-show="tier === 'free'" action="{{ route('scan.store') }}" method="POST"
-                  @submit="loading = true" class="max-w-2xl mx-auto">
+                  @submit="$el.querySelector('[name=url]').value = url; loading = true" class="max-w-2xl mx-auto">
                 @csrf
                 <input type="hidden" name="url" x-bind:value="url">
                 <button type="submit" :disabled="loading"
@@ -260,10 +260,11 @@
             @auth
             {{-- Logged in: submit directly to checkout --}}
             <form x-show="tier !== 'free'" action="{{ route('checkout.create') }}" method="POST"
-                  @submit="loading = true" class="max-w-2xl mx-auto">
+                  @submit="$el.querySelector('[name=url]').value = url; $el.querySelector('[name=tier]').value = tier; loading = true"
+                  class="max-w-2xl mx-auto">
                 @csrf
                 <input type="hidden" name="url" x-bind:value="url">
-                <input type="hidden" name="tier" :value="tier">
+                <input type="hidden" name="tier" x-bind:value="tier">
                 <button type="submit" :disabled="loading"
                         :class="tier === 'pro' ? 'from-purple-600 to-purple-500 shadow-purple-500/25' : 'from-pink-600 to-pink-500 shadow-pink-500/25'"
                         class="w-full sm:w-auto bg-gradient-to-r hover:opacity-90 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 mx-auto min-w-[250px] shadow-lg">
