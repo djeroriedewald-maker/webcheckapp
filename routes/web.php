@@ -70,6 +70,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class])->prefix('admi
     Route::delete('/user/{user}', [AdminController::class, 'deleteUser'])->name('.deleteUser');
     Route::post('/user/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('.toggleAdmin');
     Route::delete('/scan/{scan}', [AdminController::class, 'deleteScan'])->name('.deleteScan');
+    Route::post('/scans/bulk-delete', [AdminController::class, 'bulkDeleteScans'])->name('.bulkDeleteScans');
     Route::get('/search', [AdminController::class, 'search'])->name('.search');
     Route::get('/system', [AdminController::class, 'system'])->name('.system');
 });

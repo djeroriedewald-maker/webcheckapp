@@ -222,6 +222,22 @@ class AdminController extends Controller
     }
 
     /**
+     * Bulk delete scans.
+     */
+    public function bulkDeleteScans(Request $request)
+    {
+        $ids = $request->input('scan_ids', []);
+
+        if (empty($ids)) {
+            return back()->with('error', 'No scans selected.');
+        }
+
+        $count = Scan::whereIn('id', $ids)->delete();
+
+        return back()->with('success', "{$count} scan(s) deleted.");
+    }
+
+    /**
      * Search users and scans.
      */
     public function search(Request $request)

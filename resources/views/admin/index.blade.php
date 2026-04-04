@@ -299,31 +299,47 @@
     </div>
 
     {{-- ═══ Recent scans ═══ --}}
+    <form action="{{ route('admin.bulkDeleteScans') }}" method="POST" onsubmit="return confirm('Delete selected scans?')"
+          x-data="{ selected: [], get allIds() { return [{{ $recentScans->pluck('id')->implode(',') }}] }, get allSelected() { return this.selected.length === this.allIds.length && this.allIds.length > 0 } }">
+    @csrf
     <div class="bg-white/3 border border-white/8 rounded-xl overflow-hidden">
-        <div class="px-5 py-4 border-b border-white/5">
+        <div class="px-5 py-4 border-b border-white/5 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recent Scans</h2>
+            <button type="submit" x-show="selected.length > 0" x-cloak
+                    class="text-xs text-red-400 bg-red-500/10 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                Delete selected (<span x-text="selected.length"></span>)
+            </button>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-white/5">
-                        <th class="px-5 py-3">Host</th>
-                        <th class="px-5 py-3">Tier</th>
-                        <th class="px-5 py-3">Status</th>
-                        <th class="px-5 py-3">Score</th>
-                        <th class="px-5 py-3">Grade</th>
-                        <th class="px-5 py-3">IP</th>
-                        <th class="px-5 py-3">Time</th>
-                        <th class="px-5 py-3"></th>
+                        <th class="px-3 py-3 w-10">
+                            <input type="checkbox" @click="selected = allSelected ? [] : [...allIds]" :checked="allSelected"
+                                   class="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500">
+                        </th>
+                        <th class="px-3 py-3">Host</th>
+                        <th class="px-3 py-3">Tier</th>
+                        <th class="px-3 py-3">Status</th>
+                        <th class="px-3 py-3">Score</th>
+                        <th class="px-3 py-3">Grade</th>
+                        <th class="px-3 py-3">IP</th>
+                        <th class="px-3 py-3">Time</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-white/5">
                     @foreach($recentScans as $scan)
-                    <tr class="hover:bg-white/2 transition">
-                        <td class="px-5 py-3">
+                    <tr class="hover:bg-white/2 transition" :class="selected.includes({{ $scan->id }}) && 'bg-red-500/5'">
+                        <td class="px-3 py-3">
+                            <input type="checkbox" name="scan_ids[]" value="{{ $scan->id }}"
+                                   x-model.number="selected"
+                                   class="rounded border-white/20 bg-white/5 text-indigo-500 focus:ring-indigo-500">
+                        </td>
+                        <td class="px-3 py-3">
                             <a href="{{ route('scan.show', $scan) }}" class="text-indigo-400 hover:text-indigo-300 transition">{{ $scan->host }}</a>
                         </td>
-                        <td class="px-5 py-3">
+                        <td class="px-3 py-3">
                             @if($scan->tier === 'deep')
                             <span class="text-[10px] font-bold text-pink-400 bg-pink-500/10 px-1.5 py-0.5 rounded-full">DEEP</span>
                             @elseif($scan->tier === 'pro')
@@ -332,7 +348,7 @@
                             <span class="text-[10px] font-bold text-gray-500 bg-white/5 px-1.5 py-0.5 rounded-full">FREE</span>
                             @endif
                         </td>
-                        <td class="px-5 py-3">
+                        <td class="px-3 py-3">
                             @if($scan->status === 'completed')
                                 <span class="inline-flex items-center gap-1 text-green-400 text-xs"><span class="w-1.5 h-1.5 bg-green-400 rounded-full"></span> Done</span>
                             @elseif($scan->status === 'failed')
@@ -341,24 +357,19 @@
                                 <span class="inline-flex items-center gap-1 text-yellow-400 text-xs"><span class="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></span> {{ ucfirst($scan->status) }}</span>
                             @endif
                         </td>
-                        <td class="px-5 py-3 {{ $scan->score !== null ? ($scan->score >= 75 ? 'text-green-400' : ($scan->score >= 50 ? 'text-yellow-400' : 'text-red-400')) : 'text-gray-600' }} font-bold">
+                        <td class="px-3 py-3 {{ $scan->score !== null ? ($scan->score >= 75 ? 'text-green-400' : ($scan->score >= 50 ? 'text-yellow-400' : 'text-red-400')) : 'text-gray-600' }} font-bold">
                             {{ $scan->score ?? '—' }}
                         </td>
-                        <td class="px-5 py-3 font-bold text-white">{{ $scan->grade ?? '—' }}</td>
-                        <td class="px-5 py-3 text-gray-500 text-xs font-mono">{{ $scan->ip_address }}</td>
-                        <td class="px-5 py-3 text-gray-500 text-xs">{{ $scan->created_at->diffForHumans() }}</td>
-                        <td class="px-5 py-3">
-                            <form action="{{ route('admin.deleteScan', $scan) }}" method="POST" onsubmit="return confirm('Delete this scan?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-[10px] text-red-400 bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/20 transition">Delete</button>
-                            </form>
-                        </td>
+                        <td class="px-3 py-3 font-bold text-white">{{ $scan->grade ?? '—' }}</td>
+                        <td class="px-3 py-3 text-gray-500 text-xs font-mono">{{ $scan->ip_address }}</td>
+                        <td class="px-3 py-3 text-gray-500 text-xs">{{ $scan->created_at->diffForHumans() }}</td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
+    </form>
 
     {{-- ═══ Manage user tiers ═══ --}}
     <div class="bg-purple-500/5 border border-purple-500/20 rounded-xl p-5 mb-10 mt-10">
