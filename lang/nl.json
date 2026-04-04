@@ -126,5 +126,55 @@
 
     "footer_disclaimer": "Disclaimer",
     "footer_privacy": "Privacy",
-    "footer_terms": "Voorwaarden"
+    "footer_terms": "Voorwaarden",
+
+    "report_preview_tag": "Wat je krijgt",
+    "report_preview_title": "Een echt beveiligingsrapport",
+    "report_preview_desc": "Elke scan levert een compleet, leesbaar rapport dat je kunt delen met je team of klant.",
+    "report_preview_sample": "Dit is een voorbeeldrapport. Voer een scan uit om echte resultaten te zien.",
+    "report_preview_scan": "Scan nu",
+
+    "before_after_tag": "Echte resultaten",
+    "before_after_score": "Score",
+
+    "whatwecheck_tag": "Uitgebreid",
+    "whatwecheck_title": "Wat we controleren",
+    "whatwecheck_desc": "27 beveiligings-, prestatie- en privacycategorieën — 1500+ individuele checks per scan.",
+
+    "features_tag": "Gebouwd voor iedereen",
+    "features_title": "Meer dan alleen een scan",
+    "features_desc": "Tools voor ontwikkelaars, bureaus en website-eigenaren die om beveiliging geven.",
+    "features_pdf_title": "PDF Export",
+    "features_pdf_desc": "Download een professioneel PDF-rapport voor je archief of om te delen met klanten en management.",
+    "features_compare_title": "Vergelijk naast elkaar",
+    "features_compare_desc": "Vergelijk twee websites op alle categorieën — perfect voor concurrentieanalyse of voor/na-audits.",
+    "features_compare_link": "Probeer vergelijken →",
+    "features_badge_title": "Badge insluiten",
+    "features_badge_desc": "Toon je beveiligingscijfer op je eigen site met een live SVG-badge die automatisch bijwerkt bij een nieuwe scan.",
+    "features_api_title": "Publieke JSON API",
+    "features_api_desc": "Integreer scans in je eigen tools, dashboards of CI/CD-pipelines. Gratis, geen authenticatie nodig.",
+    "features_api_link": "API-documentatie →",
+    "features_monitor_title": "Monitoring & meldingen",
+    "features_monitor_desc": "Registreer je sites en ontvang wekelijkse e-mailmeldingen wanneer je score daalt of je SSL-certificaat bijna verloopt.",
+    "features_monitor_link": "Maak gratis account →",
+    "features_github_title": "GitHub Action",
+    "features_github_desc": "Voeg beveiligingsscanning toe aan je CI/CD-pipeline. Laat de build automatisch falen als de score onder je drempel zakt.",
+
+    "pricing_tag": "Kies je scan",
+    "pricing_5_scanners": "5 beveiligingsscanners",
+    "pricing_ssl_headers": "SSL, Headers, DNS, Performance, Content",
+    "pricing_owasp": "OWASP Top 10 analyse",
+    "pricing_pdf": "PDF-rapport",
+    "pricing_20_scanners": "20 beveiligingsscanners",
+    "pricing_malware": "Malware, Poorten, Blootgestelde bestanden",
+    "pricing_privacy": "Privacy, Toegankelijkheid, API-beveiliging",
+    "pricing_pdf_dashboard": "PDF-rapport + dashboard",
+    "pricing_27_scanners": "27 beveiligingsscanners",
+    "pricing_everything_pro": "Alles uit Pro +",
+    "pricing_dir_brute": "Directory brute-force",
+    "pricing_xss": "XSS-reflectietesten",
+    "pricing_deep_extras": "Error disclosure, HTTP-methoden, Sessie, E-mail, Cookies",
+    "pricing_need_more": "Meer nodig?",
+
+    "testimonials_tag": "Vertrouwd door ontwikkelaars & bureaus"
 }

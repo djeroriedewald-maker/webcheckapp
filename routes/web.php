@@ -17,17 +17,6 @@ Route::post('/lang/{locale}', function (string $locale) {
     return redirect()->back();
 })->name('locale.switch');
 
-// Debug route - remove after testing
-Route::get('/lang-debug', function () {
-    return response()->json([
-        'session_locale' => session('locale'),
-        'app_locale' => app()->getLocale(),
-        'session_has' => session()->has('locale'),
-        'browser' => substr(request()->server('HTTP_ACCEPT_LANGUAGE', 'none'), 0, 20),
-        'session_id' => session()->getId(),
-    ]);
-});
-
 Route::get('/', [ScanController::class, 'index'])->name('home');
 Route::get('/scan', fn () => redirect('/'))->name('scan.index');
 Route::post('/scan', [ScanController::class, 'store'])->name('scan.store')->middleware('throttle:10,1');

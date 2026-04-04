@@ -126,5 +126,55 @@
 
     "footer_disclaimer": "Disclaimer",
     "footer_privacy": "Privacy",
-    "footer_terms": "Terms"
+    "footer_terms": "Terms",
+
+    "report_preview_tag": "What you get",
+    "report_preview_title": "A real security report",
+    "report_preview_desc": "Every scan produces a complete, readable report you can share with your team or client.",
+    "report_preview_sample": "This is a sample report. Run a scan to see real results for your site.",
+    "report_preview_scan": "Scan now",
+
+    "before_after_tag": "Real results",
+    "before_after_score": "Score",
+
+    "whatwecheck_tag": "Comprehensive",
+    "whatwecheck_title": "What we check",
+    "whatwecheck_desc": "27 security, performance and privacy categories — 1500+ individual checks per scan.",
+
+    "features_tag": "Built for everyone",
+    "features_title": "More than just a scan",
+    "features_desc": "Tools built for developers, agencies and site owners who care about security.",
+    "features_pdf_title": "PDF Export",
+    "features_pdf_desc": "Download a professional PDF report for your records or to share with clients and management.",
+    "features_compare_title": "Side-by-side compare",
+    "features_compare_desc": "Compare two websites head to head across all categories — perfect for competitive analysis or pre/post audits.",
+    "features_compare_link": "Try compare →",
+    "features_badge_title": "Embed badge",
+    "features_badge_desc": "Show your security grade on your own site with a live SVG badge that auto-updates when you rescan.",
+    "features_api_title": "Public JSON API",
+    "features_api_desc": "Integrate scans into your own tools, dashboards or CI/CD pipelines. Free, no authentication needed.",
+    "features_api_link": "View API docs →",
+    "features_monitor_title": "Monitoring & alerts",
+    "features_monitor_desc": "Register your sites and get weekly email alerts when your score drops or your SSL certificate is about to expire.",
+    "features_monitor_link": "Create free account →",
+    "features_github_title": "GitHub Action",
+    "features_github_desc": "Add security scanning to your CI/CD pipeline. Fail the build automatically when the score drops below your threshold.",
+
+    "pricing_tag": "Choose your scan",
+    "pricing_5_scanners": "5 security scanners",
+    "pricing_ssl_headers": "SSL, Headers, DNS, Performance, Content",
+    "pricing_owasp": "OWASP Top 10 analysis",
+    "pricing_pdf": "PDF report",
+    "pricing_20_scanners": "20 security scanners",
+    "pricing_malware": "Malware, Ports, Exposed Files",
+    "pricing_privacy": "Privacy, Accessibility, API Security",
+    "pricing_pdf_dashboard": "PDF report + dashboard",
+    "pricing_27_scanners": "27 security scanners",
+    "pricing_everything_pro": "Everything in Pro +",
+    "pricing_dir_brute": "Directory brute-force",
+    "pricing_xss": "XSS reflection testing",
+    "pricing_deep_extras": "Error disclosure, HTTP methods, Session, Email, Cookies",
+    "pricing_need_more": "Need more?",
+
+    "testimonials_tag": "Trusted by developers & agencies"
 }

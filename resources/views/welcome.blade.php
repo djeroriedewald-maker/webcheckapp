@@ -486,9 +486,9 @@
     <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="text-center mb-16">
-            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">What you get</p>
-            <h2 class="text-4xl font-black mb-4">A real security report</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Every scan produces a complete, readable report you can share with your team or client.</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ __('report_preview_tag') }}</p>
+            <h2 class="text-4xl font-black mb-4">{{ __('report_preview_title') }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ __('report_preview_desc') }}</p>
         </div>
 
         {{-- Mock report card --}}
@@ -571,9 +571,9 @@
 <section class="relative py-24 border-t border-white/5">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
-            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Real results</p>
-            <h2 class="text-4xl font-black mb-4">From D to A+ in one afternoon</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Most security issues are quick to fix once you know what they are. Here is a real example of what a single scan can uncover.</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ __('before_after_tag') }}</p>
+            <h2 class="text-4xl font-black mb-4">{{ __('before_after_title') }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ __('before_after_subtitle') }}</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -585,7 +585,7 @@
                         <span class="text-[9px] text-red-500">42</span>
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-white">Before scan</p>
+                        <p class="text-sm font-bold text-white">{{ __('before_after_before') }}</p>
                         <p class="text-xs text-gray-500">Score: 42/100</p>
                     </div>
                 </div>
@@ -614,7 +614,7 @@
                         <span class="text-[9px] text-emerald-500">96</span>
                     </div>
                     <div>
-                        <p class="text-sm font-bold text-white">After fixes</p>
+                        <p class="text-sm font-bold text-white">{{ __('before_after_after') }}</p>
                         <p class="text-xs text-gray-500">Score: 96/100</p>
                     </div>
                 </div>
@@ -636,7 +636,7 @@
             </div>
         </div>
 
-        <p class="text-center text-sm text-gray-600 mt-6">All fixes were implemented in under 2 hours using only the recommendations from our report.</p>
+        <p class="text-center text-sm text-gray-600 mt-6">{{ __('before_after_footer') }}</p>
     </div>
 </section>
 
@@ -647,9 +647,9 @@
 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
 
     <div class="text-center mb-16">
-        <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Comprehensive</p>
-        <h2 class="text-4xl font-black mb-4">What we check</h2>
-        <p class="text-gray-400 max-w-xl mx-auto">19 security, performance and privacy categories — 50+ individual checks per scan.</p>
+        <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ __('whatwecheck_tag') }}</p>
+        <h2 class="text-4xl font-black mb-4">{{ __('whatwecheck_title') }}</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">{{ __('whatwecheck_desc') }}</p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -793,9 +793,9 @@
     <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="text-center mb-16">
-            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Built for everyone</p>
-            <h2 class="text-4xl font-black mb-4">More than just a scan</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Tools built for developers, agencies and site owners who care about security.</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ __('features_tag') }}</p>
+            <h2 class="text-4xl font-black mb-4">{{ __('features_title') }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ __('features_desc') }}</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -807,8 +807,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-white mb-2">PDF Export</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Download a professional PDF report for your records or to share with clients and management.</p>
+                <h3 class="font-bold text-white mb-2">{{ __('features_pdf_title') }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ __('features_pdf_desc') }}</p>
             </div>
 
             {{-- Compare --}}
@@ -818,10 +818,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-white mb-2">Side-by-side compare</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Compare two websites head to head across all categories — perfect for competitive analysis or pre/post audits.</p>
+                <h3 class="font-bold text-white mb-2">{{ __('features_compare_title') }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ __('features_compare_desc') }}</p>
                 <a href="{{ route('scan.compare') }}" class="inline-flex items-center gap-1 text-xs text-purple-400 hover:text-purple-300 mt-3 transition-colors">
-                    Try compare →
+                    {{ __('features_compare_link') }}
                 </a>
             </div>
 
@@ -832,8 +832,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-white mb-2">Embed badge</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Show your security grade on your own site with a live SVG badge that auto-updates when you rescan.</p>
+                <h3 class="font-bold text-white mb-2">{{ __('features_badge_title') }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ __('features_badge_desc') }}</p>
             </div>
 
             {{-- API --}}
@@ -843,10 +843,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-white mb-2">Public JSON API</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Integrate scans into your own tools, dashboards or CI/CD pipelines. Free, no authentication needed.</p>
+                <h3 class="font-bold text-white mb-2">{{ __('features_api_title') }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ __('features_api_desc') }}</p>
                 <a href="{{ route('api.docs') }}" class="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 mt-3 transition-colors">
-                    View API docs →
+                    {{ __('features_api_link') }}
                 </a>
             </div>
 
@@ -857,10 +857,10 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-white mb-2">Monitoring & alerts</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Register your sites and get weekly email alerts when your score drops or your SSL certificate is about to expire.</p>
+                <h3 class="font-bold text-white mb-2">{{ __('features_monitor_title') }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ __('features_monitor_desc') }}</p>
                 <a href="{{ route('register') }}" class="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 mt-3 transition-colors">
-                    Create free account →
+                    {{ __('features_monitor_link') }}
                 </a>
             </div>
 
@@ -871,8 +871,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                     </svg>
                 </div>
-                <h3 class="font-bold text-white mb-2">GitHub Action</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">Add security scanning to your CI/CD pipeline. Fail the build automatically when the score drops below your threshold.</p>
+                <h3 class="font-bold text-white mb-2">{{ __('features_github_title') }}</h3>
+                <p class="text-sm text-gray-500 leading-relaxed">{{ __('features_github_desc') }}</p>
             </div>
 
         </div>
@@ -890,9 +890,9 @@
 
     <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Choose your scan</p>
-            <h2 class="text-4xl font-black mb-4">Simple, transparent pricing</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Start free. Upgrade when you need deeper analysis or OWASP compliance reporting.</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ __('pricing_tag') }}</p>
+            <h2 class="text-4xl font-black mb-4">{{ __('pricing_title') }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ __('pricing_subtitle') }}</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -904,61 +904,61 @@
             {{-- Quick Scan --}}
             <div class="bg-white/3 border border-white/8 rounded-2xl p-8 hover:border-white/15 transition-all">
                 <h3 class="text-xl font-bold text-white mb-1">Quick Scan</h3>
-                <p class="text-sm text-gray-500 mb-4">Basic security check</p>
-                <p class="text-4xl font-black text-white mb-6">Free</p>
+                <p class="text-sm text-gray-500 mb-4">{{ __('pricing_basic_check') }}</p>
+                <p class="text-4xl font-black text-white mb-6">{{ __('tier_free') }}</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} 5 security scanners</li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} SSL, Headers, DNS, Performance, Content</li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} No account required</li>
-                    <li class="flex items-center gap-2 text-gray-600">{!! $crossIcon !!} OWASP Top 10 analysis</li>
-                    <li class="flex items-center gap-2 text-gray-600">{!! $crossIcon !!} PDF report</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_5_scanners') }}</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_ssl_headers') }}</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_no_account') }}</li>
+                    <li class="flex items-center gap-2 text-gray-600">{!! $crossIcon !!} {{ __('pricing_owasp') }}</li>
+                    <li class="flex items-center gap-2 text-gray-600">{!! $crossIcon !!} {{ __('pricing_pdf') }}</li>
                 </ul>
-                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">Start free scan</a>
+                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">{{ __('pricing_start_free') }}</a>
             </div>
 
             {{-- Pro Scan --}}
             <div class="bg-purple-500/5 border-2 border-purple-500/30 rounded-2xl p-8 relative">
                 <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span class="text-xs font-bold text-white bg-purple-600 px-4 py-1 rounded-full uppercase tracking-wider">Most popular</span>
+                    <span class="text-xs font-bold text-white bg-purple-600 px-4 py-1 rounded-full uppercase tracking-wider">{{ __('pricing_most_popular') }}</span>
                 </div>
-                <h3 class="text-xl font-bold text-white mb-1">Pro Scan</h3>
-                <p class="text-sm text-gray-500 mb-4">Complete security analysis</p>
+                <h3 class="text-xl font-bold text-white mb-1">{{ __('tier_pro') }}</h3>
+                <p class="text-sm text-gray-500 mb-4">{{ __('pricing_complete') }}</p>
                 <p class="text-4xl font-black text-white mb-1">&euro;9<span class="text-xl text-gray-400">,99</span></p>
                 <p class="text-xs text-gray-600 mb-6">per scan</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>20 security scanners</strong></li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>OWASP Top 10 analysis</strong></li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Malware, Ports, Exposed Files</li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Privacy, Accessibility, API Security</li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} PDF report + dashboard</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>{{ __('pricing_20_scanners') }}</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>{{ __('pricing_owasp') }}</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_malware') }}</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_privacy') }}</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_pdf_dashboard') }}</li>
                 </ul>
-                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-purple-500/25">Get Pro Scan</a>
+                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-purple-500/25">{{ __('pricing_get_pro') }}</a>
             </div>
 
             {{-- Deep Scan --}}
             <div class="bg-white/3 border border-white/8 rounded-2xl p-8 hover:border-white/15 transition-all">
-                <h3 class="text-xl font-bold text-white mb-1">Deep Scan</h3>
-                <p class="text-sm text-gray-500 mb-4">Advanced penetration checks</p>
+                <h3 class="text-xl font-bold text-white mb-1">{{ __('tier_deep') }}</h3>
+                <p class="text-sm text-gray-500 mb-4">{{ __('pricing_advanced') }}</p>
                 <p class="text-4xl font-black text-white mb-1">&euro;29<span class="text-xl text-gray-400">,99</span></p>
                 <p class="text-xs text-gray-600 mb-6">per scan</p>
                 <ul class="space-y-3 mb-8 text-sm">
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>27 security scanners</strong></li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Everything in Pro +</li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>Directory brute-force</strong></li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>XSS reflection testing</strong></li>
-                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} Error disclosure, HTTP methods, Session, Email, Cookies</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>{{ __('pricing_27_scanners') }}</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_everything_pro') }}</li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>{{ __('pricing_dir_brute') }}</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} <strong>{{ __('pricing_xss') }}</strong></li>
+                    <li class="flex items-center gap-2 text-gray-300">{!! $checkIcon !!} {{ __('pricing_deep_extras') }}</li>
                 </ul>
-                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">Get Deep Scan</a>
+                <a href="#" onclick="document.getElementById('scan-url').focus(); return false;" class="block w-full text-center bg-white/5 border border-white/10 hover:bg-white/10 text-white font-semibold py-3 rounded-xl transition">{{ __('pricing_get_deep') }}</a>
             </div>
         </div>
 
         {{-- BudgetPixels CTA --}}
         <div class="mt-12 text-center bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-2xl p-8">
-            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-2">Need more?</p>
-            <h3 class="text-xl font-bold text-white mb-2">Professional pentest or security audit?</h3>
-            <p class="text-sm text-gray-400 mb-5 max-w-lg mx-auto">Our experts at BudgetPixels perform manual penetration tests, security audits with source code review, and AVG/GDPR compliance checks.</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-2">{{ __('pricing_need_more') }}</p>
+            <h3 class="text-xl font-bold text-white mb-2">{{ __('budgetpixels_title') }}</h3>
+            <p class="text-sm text-gray-400 mb-5 max-w-lg mx-auto">{{ __('budgetpixels_desc') }}</p>
             <a href="https://budgetpixels.nl" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg shadow-indigo-500/25">
-                View professional services →
+                {{ __('budgetpixels_cta') }}
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
             </a>
         </div>
@@ -1004,9 +1004,9 @@
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="text-center mb-16">
-            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Trusted by developers &amp; agencies</p>
-            <h2 class="text-4xl font-black mb-4">What people say</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Used by security-conscious teams and developers worldwide.</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ __('testimonials_tag') }}</p>
+            <h2 class="text-4xl font-black mb-4">{{ __('testimonials_title') }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ __('testimonials_subtitle') }}</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1125,11 +1125,11 @@
         <div class="relative">
             <div class="inline-flex items-center gap-2 bg-indigo-500/15 border border-indigo-500/25 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-6">
                 <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
-                Free quick scan — no account needed
+                {{ __('cta_badge') }}
             </div>
 
-            <h2 class="text-4xl font-black mb-4">Scan your website now</h2>
-            <p class="text-gray-400 mb-10 max-w-lg mx-auto">Find out what attackers see when they look at your site. Free quick scan in 15 seconds, or upgrade for OWASP Top 10 and deep analysis.</p>
+            <h2 class="text-4xl font-black mb-4">{{ __('cta_title') }}</h2>
+            <p class="text-gray-400 mb-10 max-w-lg mx-auto">{{ __('cta_subtitle') }}</p>
 
             <form action="{{ route('scan.store') }}" method="POST"
                   x-data="{ loading: false }"
@@ -1140,14 +1140,14 @@
                            class="flex-1 bg-white/6 border border-white/15 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition text-sm">
                     <button type="submit" :disabled="loading"
                             class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 whitespace-nowrap">
-                        <span x-show="!loading">Scan for free →</span>
+                        <span x-show="!loading">{{ __('btn_quick_scan') }}</span>
                         <span x-show="loading" x-cloak>Scanning…</span>
                     </button>
                 </div>
             </form>
 
             <p class="mt-5 text-xs text-gray-600">
-                Or <a href="{{ route('register') }}" class="text-indigo-400 hover:text-indigo-300 transition-colors">create a free account</a> to monitor your sites and get weekly alerts.
+                {{ app()->getLocale() === 'nl' ? 'Of' : 'Or' }} <a href="{{ route('register') }}" class="text-indigo-400 hover:text-indigo-300 transition-colors">{{ __('cta_register') }}</a> {{ __('cta_register_desc') }}
             </p>
         </div>
     </div>
