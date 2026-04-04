@@ -45,7 +45,12 @@ class CheckoutController extends Controller
 
         $price = self::TIER_PRICES[$tier];
 
-        Stripe::setApiKey(config('services.stripe.secret'));
+        $stripeSecret = config('services.stripe.secret');
+        if (! $stripeSecret) {
+            return back()->withErrors(['url' => 'Payment system is not configured. Please contact support.'])->withInput();
+        }
+
+        Stripe::setApiKey($stripeSecret);
 
         $session = StripeSession::create([
             'payment_method_types' => ['card', 'ideal'],
