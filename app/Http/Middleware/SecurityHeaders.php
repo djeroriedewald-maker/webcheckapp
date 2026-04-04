@@ -48,7 +48,7 @@ class SecurityHeaders
             "img-src 'self' data: https:",
             "connect-src 'self'",
             "font-src 'self'",
-            "form-action 'self'",
+            "form-action 'self' https://checkout.stripe.com",
             "frame-ancestors 'none'",
             "base-uri 'self'",
         ]);
