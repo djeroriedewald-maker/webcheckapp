@@ -57,6 +57,7 @@
                     <a href="{{ route('scan.compare') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Compare</a>
                     <a href="{{ route('scan.recent') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Recent</a>
                     <a href="{{ route('api.docs') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">API</a>
+                    <a href="{{ route('blog') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Blog</a>
                 </div>
 
                 {{-- Right side: auth + CTA --}}
@@ -95,6 +96,7 @@
                 <a href="{{ route('scan.compare') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Compare</a>
                 <a href="{{ route('scan.recent') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Recent scans</a>
                 <a href="{{ route('api.docs') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">API</a>
+                <a href="{{ route('blog') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Blog</a>
                 <div class="border-t border-white/5 my-2"></div>
                 @auth
                 <a href="{{ route('dashboard') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Dashboard</a>
