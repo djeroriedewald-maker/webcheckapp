@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\ToolController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ScanController::class, 'index'])->name('home');
@@ -76,6 +77,10 @@ Route::middleware(['auth', \App\Http\Middleware\AdminOnly::class, 'throttle:30,1
 });
 
 // Sitemap
+// Tool landing pages (SEO)
+Route::get('/tools/{tool}', [ToolController::class, 'show'])->name('tool.show')
+    ->whereIn('tool', ['ssl-checker', 'security-headers-check', 'dns-security-check', 'malware-scanner', 'owasp-scanner']);
+
 // Recent public scans directory (SEO)
 Route::get('/recent', [ScanController::class, 'recent'])->name('scan.recent');
 
@@ -83,6 +88,11 @@ Route::get('/sitemap.xml', function () {
     $urls = [
         ['loc' => url('/'),             'changefreq' => 'daily',   'priority' => '1.0'],
         ['loc' => url('/recent'),       'changefreq' => 'daily',   'priority' => '0.8'],
+        ['loc' => url('/tools/ssl-checker'),           'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/tools/security-headers-check'),'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/tools/dns-security-check'),    'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/tools/malware-scanner'),       'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/tools/owasp-scanner'),         'changefreq' => 'monthly', 'priority' => '0.8'],
         ['loc' => url('/compare'),      'changefreq' => 'monthly', 'priority' => '0.7'],
         ['loc' => url('/api'),          'changefreq' => 'monthly', 'priority' => '0.6'],
         ['loc' => url('/disclaimer'),   'changefreq' => 'yearly',  'priority' => '0.3'],
