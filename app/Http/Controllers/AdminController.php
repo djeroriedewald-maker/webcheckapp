@@ -253,7 +253,23 @@ class AdminController extends Controller
     {
         $pendingJobs = DB::table('jobs')->count();
         $failedJobs = DB::table('failed_jobs')->count();
-        $dbSize = DB::select("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")[0]->size ?? 0;
+
+        // Database size — works for both MySQL and SQLite
+        $dbSize = 0;
+        try {
+            $driver = config('database.default');
+            if ($driver === 'sqlite') {
+                $result = DB::select("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()");
+                $dbSize = $result[0]->size ?? 0;
+            } else {
+                $dbName = config('database.connections.' . $driver . '.database');
+                $result = DB::select("SELECT SUM(data_length + index_length) as size FROM information_schema.tables WHERE table_schema = ?", [$dbName]);
+                $dbSize = $result[0]->size ?? 0;
+            }
+        } catch (\Throwable) {
+            // Ignore — show 0
+        }
+
         $scanCount = Scan::count();
         $userCount = User::count();
         $paymentCount = Payment::count();
