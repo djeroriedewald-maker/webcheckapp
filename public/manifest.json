@@ -1,16 +1,48 @@
 {
-    "name": "WebCheckApp",
+    "name": "WebCheckApp — Website Security Scanner",
     "short_name": "WebCheckApp",
-    "description": "Free website security scanner — SSL, headers, DNS, malware, ports and more.",
+    "description": "Scan any website for security issues. Get a detailed report with score, grade and fixes.",
     "start_url": "/",
-    "display": "browser",
-    "background_color": "#030712",
-    "theme_color": "#4f46e5",
+    "display": "standalone",
+    "background_color": "#0b0b12",
+    "theme_color": "#6366f1",
+    "orientation": "portrait-primary",
+    "categories": ["security", "utilities"],
+    "lang": "en",
     "icons": [
         {
             "src": "/favicon.ico",
             "sizes": "48x48",
             "type": "image/x-icon"
+        },
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "New Scan",
+            "url": "/",
+            "description": "Start a new security scan"
+        },
+        {
+            "name": "Dashboard",
+            "url": "/dashboard",
+            "description": "View your monitored sites"
+        },
+        {
+            "name": "Compare",
+            "url": "/compare",
+            "description": "Compare two websites"
         }
     ]
 }

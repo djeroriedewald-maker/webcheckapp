@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="{{ app()->getLocale() }}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#6366f1">
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
@@ -357,6 +357,13 @@
 
         </div>
     </div>
+
+{{-- Service Worker registration --}}
+<script nonce="{{ Vite::cspNonce() }}">
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
 
 </body>
 </html>
