@@ -52,30 +52,40 @@ class CheckoutController extends Controller
 
         Stripe::setApiKey($stripeSecret);
 
-        $session = StripeSession::create([
-            'payment_method_types' => ['card', 'ideal'],
-            'mode'                 => 'payment',
-            'customer_email'       => $request->user()->email,
-            'line_items'           => [[
-                'price_data' => [
-                    'currency'     => 'eur',
-                    'unit_amount'  => $price['amount'],
-                    'product_data' => [
-                        'name'        => "{$price['label']} — {$host}",
-                        'description' => "Complete security scan of {$host}",
+        try {
+            $session = StripeSession::create([
+                'payment_method_types' => ['card', 'ideal'],
+                'mode'                 => 'payment',
+                'customer_email'       => $request->user()->email,
+                'line_items'           => [[
+                    'price_data' => [
+                        'currency'     => 'eur',
+                        'unit_amount'  => $price['amount'],
+                        'product_data' => [
+                            'name'        => "{$price['label']} — {$host}",
+                            'description' => "Complete security scan of {$host}",
+                        ],
                     ],
+                    'quantity' => 1,
+                ]],
+                'metadata' => [
+                    'user_id' => $request->user()->id,
+                    'url'     => $url,
+                    'host'    => $host,
+                    'tier'    => $tier,
                 ],
-                'quantity' => 1,
-            ]],
-            'metadata' => [
-                'user_id' => $request->user()->id,
-                'url'     => $url,
-                'host'    => $host,
-                'tier'    => $tier,
-            ],
-            'success_url' => route('checkout.success') . '?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url'  => route('home'),
-        ]);
+                'success_url' => route('checkout.success') . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url'  => route('home'),
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Stripe checkout failed', [
+                'error' => $e->getMessage(),
+                'tier'  => $tier,
+                'host'  => $host,
+                'user'  => $request->user()->id,
+            ]);
+            return back()->withErrors(['url' => 'Payment could not be initiated: ' . $e->getMessage()])->withInput();
+        }
 
         // Store pending payment
         Payment::create([
