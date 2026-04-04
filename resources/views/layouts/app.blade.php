@@ -53,31 +53,37 @@
 
                 {{-- Desktop menu links --}}
                 <div class="hidden md:flex items-center gap-1 mx-6">
-                    <a href="{{ route('home') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Scan</a>
-                    <a href="{{ route('scan.compare') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Compare</a>
-                    <a href="{{ route('scan.recent') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Recent</a>
-                    <a href="{{ route('api.docs') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">API</a>
-                    <a href="{{ route('blog') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Blog</a>
+                    <a href="{{ route('home') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_scan') }}</a>
+                    <a href="{{ route('scan.compare') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_compare') }}</a>
+                    <a href="{{ route('scan.recent') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_recent') }}</a>
+                    <a href="{{ route('api.docs') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_api') }}</a>
+                    <a href="{{ route('blog') }}" class="text-sm text-gray-400 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_blog') }}</a>
                 </div>
 
-                {{-- Right side: auth + CTA --}}
+                {{-- Right side: lang + auth + CTA --}}
                 <div class="hidden md:flex items-center gap-2">
+                    {{-- Language switch --}}
+                    <a href="{{ route('locale.switch', app()->getLocale() === 'nl' ? 'en' : 'nl') }}"
+                       class="text-xs text-gray-500 hover:text-white px-2 py-1.5 rounded-lg hover:bg-white/5 transition uppercase font-bold"
+                       title="{{ app()->getLocale() === 'nl' ? 'Switch to English' : 'Schakel naar Nederlands' }}">
+                        {{ app()->getLocale() === 'nl' ? 'EN' : 'NL' }}
+                    </a>
                     @auth
-                    <a href="{{ route('dashboard') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_dashboard') }}</a>
                     @if(auth()->user()->is_admin)
-                    <a href="{{ route('admin') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Admin</a>
+                    <a href="{{ route('admin') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_admin') }}</a>
                     @endif
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit" class="text-sm text-gray-500 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Logout</button>
+                        <button type="submit" class="text-sm text-gray-500 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_logout') }}</button>
                     </form>
                     @else
-                    <a href="{{ route('login') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">Sign in</a>
+                    <a href="{{ route('login') }}" class="text-sm text-gray-300 hover:text-white px-3 py-2 rounded-lg hover:bg-white/5 transition">{{ __('nav_signin') }}</a>
                     @endauth
                     <a href="{{ route('home') }}"
                        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-md shadow-indigo-500/25">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        New scan
+                        {{ __('nav_new_scan') }}
                     </a>
                 </div>
 
@@ -92,25 +98,30 @@
         {{-- Mobile menu --}}
         <div x-show="mobileOpen" x-cloak class="md:hidden border-t border-white/5 bg-gray-900/95 backdrop-blur">
             <div class="px-4 py-4 space-y-1">
-                <a href="{{ route('home') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Scan</a>
-                <a href="{{ route('scan.compare') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Compare</a>
-                <a href="{{ route('scan.recent') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Recent scans</a>
-                <a href="{{ route('api.docs') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">API</a>
-                <a href="{{ route('blog') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Blog</a>
+                <a href="{{ route('home') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_scan') }}</a>
+                <a href="{{ route('scan.compare') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_compare') }}</a>
+                <a href="{{ route('scan.recent') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_recent') }}</a>
+                <a href="{{ route('api.docs') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_api') }}</a>
+                <a href="{{ route('blog') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_blog') }}</a>
                 <div class="border-t border-white/5 my-2"></div>
                 @auth
-                <a href="{{ route('dashboard') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_dashboard') }}</a>
                 @if(auth()->user()->is_admin)
-                <a href="{{ route('admin') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Admin</a>
+                <a href="{{ route('admin') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_admin') }}</a>
                 @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="w-full text-left text-sm text-gray-500 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Logout</button>
+                    <button type="submit" class="w-full text-left text-sm text-gray-500 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_logout') }}</button>
                 </form>
                 @else
-                <a href="{{ route('login') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">Sign in</a>
-                <a href="{{ route('register') }}" class="block text-sm text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-2.5 rounded-lg transition text-center font-semibold mt-2">Create account</a>
+                <a href="{{ route('login') }}" class="block text-sm text-gray-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">{{ __('nav_signin') }}</a>
+                <a href="{{ route('register') }}" class="block text-sm text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-2.5 rounded-lg transition text-center font-semibold mt-2">{{ __('nav_create_account') }}</a>
                 @endauth
+                <div class="border-t border-white/5 my-2"></div>
+                <a href="{{ route('locale.switch', app()->getLocale() === 'nl' ? 'en' : 'nl') }}"
+                   class="block text-sm text-gray-400 hover:text-white px-3 py-2.5 rounded-lg hover:bg-white/5 transition">
+                    {{ app()->getLocale() === 'nl' ? '🇬🇧 English' : '🇳🇱 Nederlands' }}
+                </a>
             </div>
         </div>
     </nav>

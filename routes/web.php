@@ -10,6 +10,13 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ToolController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/lang/{locale}', function (string $locale) {
+    if (in_array($locale, ['en', 'nl'])) {
+        session(['locale' => $locale]);
+    }
+    return back();
+})->name('locale.switch');
+
 Route::get('/', [ScanController::class, 'index'])->name('home');
 Route::get('/scan', fn () => redirect('/'))->name('scan.index');
 Route::post('/scan', [ScanController::class, 'store'])->name('scan.store')->middleware('throttle:10,1');

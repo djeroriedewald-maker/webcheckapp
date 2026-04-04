@@ -190,20 +190,19 @@
         {{-- Badge --}}
         <div class="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/25 rounded-full px-4 py-1.5 text-sm text-indigo-300 mb-8 backdrop-blur-sm">
             <span class="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>
-            Free quick scan · Pro & Deep scans available
+            {{ __('hero_badge') }}
         </div>
 
         {{-- Headline --}}
         <h1 class="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[1.08]">
-            Is your website<br>
+            {{ __('hero_title_1') }}<br>
             <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-                actually secure?
+                {{ __('hero_title_2') }}
             </span>
         </h1>
 
         <p class="text-lg sm:text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Scan any website in seconds. Get a detailed security report with score,
-            grade and clear steps to fix every issue found.
+            {{ __('hero_subtitle') }}
         </p>
 
         {{-- Scan form with tier selection --}}
@@ -241,31 +240,31 @@
                 {{-- Quick Scan (Free) --}}
                 <button @click="tier = 'free'" :class="tier === 'free' ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10 bg-white/3 hover:bg-white/5'" class="border rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-bold text-white">Quick Scan</span>
-                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Free</span>
+                        <span class="text-sm font-bold text-white">{{ __('tier_quick') }}</span>
+                        <span class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">{{ __('tier_free') }}</span>
                     </div>
-                    <p class="text-xs text-gray-500">5 scanners — SSL, Headers, DNS, Performance, Content</p>
+                    <p class="text-xs text-gray-500">{{ __('tier_quick_desc') }}</p>
                 </button>
 
                 {{-- Pro Scan --}}
                 <button @click="tier = 'pro'" :class="tier === 'pro' ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 bg-white/3 hover:bg-white/5'" class="border rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer relative">
                     <div class="absolute -top-2 left-1/2 -translate-x-1/2">
-                        <span class="text-[10px] font-bold text-white bg-purple-600 px-2 py-0.5 rounded-full uppercase tracking-wider">Popular</span>
+                        <span class="text-[10px] font-bold text-white bg-purple-600 px-2 py-0.5 rounded-full uppercase tracking-wider">{{ __('tier_popular') }}</span>
                     </div>
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-bold text-white">Pro Scan</span>
+                        <span class="text-sm font-bold text-white">{{ __('tier_pro') }}</span>
                         <span class="text-xs font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">&euro;9,99</span>
                     </div>
-                    <p class="text-xs text-gray-500">20 scanners + OWASP Top 10 analysis</p>
+                    <p class="text-xs text-gray-500">{{ __('tier_pro_desc') }}</p>
                 </button>
 
                 {{-- Deep Scan --}}
                 <button @click="tier = 'deep'" :class="tier === 'deep' ? 'border-pink-500 bg-pink-500/10' : 'border-white/10 bg-white/3 hover:bg-white/5'" class="border rounded-2xl p-4 text-left transition-all duration-200 cursor-pointer">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-bold text-white">Deep Scan</span>
+                        <span class="text-sm font-bold text-white">{{ __('tier_deep') }}</span>
                         <span class="text-xs font-bold text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">&euro;29,99</span>
                     </div>
-                    <p class="text-xs text-gray-500">27 scanners + OWASP + penetration checks</p>
+                    <p class="text-xs text-gray-500">{{ __('tier_deep_desc') }}</p>
                 </button>
             </div>
 
@@ -291,8 +290,8 @@
                 <input type="hidden" name="url" x-bind:value="url">
                 <button type="submit" :disabled="loading"
                         class="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 text-lg flex items-center justify-center gap-2.5 mx-auto min-w-[200px] shadow-lg shadow-indigo-500/25">
-                    <span x-show="!loading">Quick Scan (Free) →</span>
-                    <span x-show="loading" x-cloak>Scanning…</span>
+                    <span x-show="!loading">{{ __('btn_quick_scan') }}</span>
+                    <span x-show="loading" x-cloak>{{ __('btn_scanning') }}</span>
                 </button>
             </form>
 
@@ -336,7 +335,7 @@
         </div>
 
         <p class="mt-5 text-sm text-gray-600">
-            SSL · Headers · DNS · OWASP Top 10 · Malware · Ports · Privacy and more
+            {{ __('hero_tags') }}
         </p>
 
         {{-- Stats with animated counter --}}
@@ -355,23 +354,23 @@
                 setTimeout(() => requestAnimationFrame(tick), 300);
             ">
                 <p class="text-3xl sm:text-4xl font-black text-white"><span x-text="count.toLocaleString()">0</span>+</p>
-                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Websites scanned</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">{{ __('stats_scanned') }}</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             @endif
             <div class="text-center">
                 <p class="text-3xl sm:text-4xl font-black text-white">27</p>
-                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Security scanners</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">{{ __('stats_scanners') }}</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
                 <p class="text-3xl sm:text-4xl font-black text-white">1500+</p>
-                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Individual checks</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">{{ __('stats_checks') }}</p>
             </div>
             <div class="w-px h-10 bg-white/10"></div>
             <div class="text-center">
-                <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Free</p>
-                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">Quick scan</p>
+                <p class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{{ __('stats_free') }}</p>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">{{ __('stats_quick_scan') }}</p>
             </div>
         </div>
 
@@ -433,9 +432,9 @@
 <section class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
 
     <div class="text-center mb-16">
-        <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">Simple & fast</p>
-        <h2 class="text-4xl font-black mb-4">How it works</h2>
-        <p class="text-gray-400 max-w-xl mx-auto">No installation. No account. Just type a domain and get a full security report within seconds.</p>
+        <p class="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">{{ app()->getLocale() === 'nl' ? 'Simpel & snel' : 'Simple & fast' }}</p>
+        <h2 class="text-4xl font-black mb-4">{{ __('how_title') }}</h2>
+        <p class="text-gray-400 max-w-xl mx-auto">{{ __('how_subtitle') }}</p>
     </div>
 
     <div class="relative grid grid-cols-1 sm:grid-cols-3 gap-8">
@@ -446,8 +445,8 @@
                 <span class="text-3xl font-black text-indigo-400">1</span>
                 <div class="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full"></div>
             </div>
-            <h3 class="font-bold text-white text-lg mb-3">Enter a domain</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">Paste any URL or domain name — <code class="text-indigo-400 bg-indigo-500/8 px-1.5 py-0.5 rounded text-xs">example.com</code> works just fine. No account or sign-up required.</p>
+            <h3 class="font-bold text-white text-lg mb-3">{{ __('how_step1_title') }}</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">{{ __('how_step1_desc') }}</p>
         </div>
 
         {{-- Step 2 --}}
@@ -456,8 +455,8 @@
                 <span class="text-3xl font-black text-purple-400">2</span>
                 <div class="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full"></div>
             </div>
-            <h3 class="font-bold text-white text-lg mb-3">19 scanners run</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">We run 19 security scanners — SSL, DNS, headers, malware, exposed files, open ports, privacy, accessibility and more. Done in under 60 seconds.</p>
+            <h3 class="font-bold text-white text-lg mb-3">{{ __('how_step2_title') }}</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">{{ __('how_step2_desc') }}</p>
         </div>
 
         {{-- Step 3 --}}
@@ -466,8 +465,8 @@
                 <span class="text-3xl font-black text-pink-400">3</span>
                 <div class="absolute -top-1 -right-1 w-3 h-3 bg-pink-500 rounded-full"></div>
             </div>
-            <h3 class="font-bold text-white text-lg mb-3">Get your report</h3>
-            <p class="text-sm text-gray-500 leading-relaxed">A security score from 0–100, letter grade A+–F, and a prioritised list of issues with exact steps to fix each one. Share via link or download as PDF.</p>
+            <h3 class="font-bold text-white text-lg mb-3">{{ __('how_step3_title') }}</h3>
+            <p class="text-sm text-gray-500 leading-relaxed">{{ __('how_step3_desc') }}</p>
         </div>
 
     </div>
@@ -975,23 +974,23 @@
         <div class="flex flex-wrap items-center justify-center gap-8 text-gray-600">
             <div class="flex items-center gap-2 text-sm">
                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                <span>HTTPS encrypted</span>
+                <span>{{ __('trust_https') }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm">
                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                <span>Secure payments via Stripe</span>
+                <span>{{ __('trust_stripe') }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm">
                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
-                <span>GDPR compliant</span>
+                <span>{{ __('trust_gdpr') }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm">
                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span>Results in seconds</span>
+                <span>{{ __('trust_fast') }}</span>
             </div>
             <div class="flex items-center gap-2 text-sm">
                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>No data shared with third parties</span>
+                <span>{{ __('trust_no_share') }}</span>
             </div>
         </div>
     </div>
