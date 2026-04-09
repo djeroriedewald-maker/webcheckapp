@@ -417,7 +417,8 @@
 <div class="cover-page">
     <div class="cover-top">
         <div class="cover-brand">WebCheck<span class="cover-brand-accent">App</span></div>
-        <div class="cover-tagline">Security Report</div>
+        <div style="font-size: 9px; color: #a5b4fc; margin-top: 3px;">powered by <strong>BudgetPixels</strong></div>
+        <div class="cover-tagline" style="margin-top: 8px;">Security Report</div>
     </div>
     <div class="cover-grade-bar gbar-{{ $gc }}"></div>
 
@@ -439,10 +440,6 @@
             Scanned: {{ $scan->completed_at->format('d M Y, H:i') }} UTC<br>
             Report generated: {{ now()->format('d M Y, H:i') }} UTC<br>
             Categories: {{ count($scan->results ?? []) }} &bull; Checks: {{ $allChecks->count() }}
-        </div>
-
-        <div class="cover-prepared">
-            Prepared by <strong>WebCheckApp</strong> &mdash; Automated Website Security Scanner
         </div>
 
         <div class="cover-conf">Confidential</div>
