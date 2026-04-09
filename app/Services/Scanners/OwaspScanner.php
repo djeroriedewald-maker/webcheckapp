@@ -267,14 +267,11 @@ class OwaspScanner
             $earned -= 3;
         }
 
-        // Own check: rate limiting (check headers and 429 responses)
-        // This is a soft check — many frameworks implement rate limiting that
-        // cannot be detected from outside without triggering it (60+ requests).
-        $noRateLimit = $this->safe(fn() => $this->checkRateLimiting($host), false);
-        if ($noRateLimit) {
-            $issues[] = 'No visible rate limiting headers detected (may still be present server-side)';
-            $earned -= 2;
-        }
+        // Rate limiting is NOT checked here. Absence of rate-limit headers
+        // does not mean rate limiting is absent — most servers (Cloudflare,
+        // Nginx, Laravel) implement it without exposing headers. Testing it
+        // properly requires 60+ requests which is intrusive. Removed to
+        // avoid false positives.
 
         $earned = max(0, $earned);
         $status = $earned === $points ? 'pass' : ($earned >= $points / 2 ? 'warn' : 'fail');
@@ -472,17 +469,9 @@ class OwaspScanner
         $points = 10;
         $earned = $points;
 
-        // Map: COEP/COOP headers
-        $coopIssue = $this->checkHasStatus($results, 'headers', 'header_coop', 'warn');
-        $coepIssue = $this->checkHasStatus($results, 'headers', 'header_coep', 'warn');
-        if ($coopIssue) {
-            $issues[] = 'Cross-Origin-Opener-Policy (COOP) header not set';
-            $earned -= 2;
-        }
-        if ($coepIssue) {
-            $issues[] = 'Cross-Origin-Embedder-Policy (COEP) header not set';
-            $earned -= 2;
-        }
+        // COOP/COEP are no longer scored here. These headers can break
+        // Alpine.js, bfcache, payment popups, and external embeds (YouTube,
+        // Google Maps). They are shown as informational in the headers scan.
 
         // Own check: Subresource Integrity (SRI) on external scripts
         $sriResult = $this->safe(fn() => $this->checkSRI($host), null);
@@ -507,7 +496,7 @@ class OwaspScanner
                 : 'Issues found: ' . implode('; ', $issues) . '.',
             'recommendation' => empty($issues)
                 ? null
-                : 'Add Subresource Integrity (SRI) hashes to all external scripts and stylesheets. Set COOP and COEP headers for cross-origin isolation.',
+                : 'Add Subresource Integrity (SRI) hashes to all external scripts and stylesheets.',
             'points_earned'  => $earned,
             'points_max'     => $points,
         ];

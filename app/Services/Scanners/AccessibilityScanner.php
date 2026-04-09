@@ -202,8 +202,8 @@ class AccessibilityScanner
                 $checks[] = [
                     'id'             => 'a11y_labels',
                     'label'          => 'Form labels',
-                    'status'         => 'warn',
-                    'description'    => "{$unlabeled} of {$inputCount} form inputs may be missing accessible labels.",
+                    'status'         => 'info',
+                    'description'    => "{$unlabeled} of {$inputCount} form inputs may be missing accessible labels. This is an accessibility recommendation, not a security issue.",
                     'recommendation' => 'Associate each <input> with a <label for="..."> or use aria-label/aria-labelledby.',
                 ];
             }

@@ -257,11 +257,11 @@ class HeadersScanner
             }
         }
 
-        // --- Check: Cross-Origin-Opener-Policy (COOP) ---
-        $maxScore += 10;
+        // --- Informational: Cross-Origin-Opener-Policy (COOP) ---
+        // COOP can break Alpine.js, bfcache, window.open popups, and payment
+        // flows. Shown as informational only — not scored as a warning.
         $coop = $headers['cross-origin-opener-policy'] ?? null;
         if ($coop !== null) {
-            $score += 10;
             $checks[] = [
                 'id'          => 'header_coop',
                 'label'       => 'Cross-Origin-Opener-Policy',
@@ -272,17 +272,17 @@ class HeadersScanner
             $checks[] = [
                 'id'             => 'header_coop',
                 'label'          => 'Cross-Origin-Opener-Policy',
-                'status'         => 'warn',
-                'description'    => 'No Cross-Origin-Opener-Policy (COOP) header found.',
-                'recommendation' => 'Add Cross-Origin-Opener-Policy: same-origin to isolate your browsing context and protect against cross-origin attacks and Spectre-like vulnerabilities.',
+                'status'         => 'info',
+                'description'    => 'No Cross-Origin-Opener-Policy (COOP) header found. Note: COOP can break popup-based flows (payments, OAuth) and browser back/forward cache.',
+                'recommendation' => 'Consider adding Cross-Origin-Opener-Policy: same-origin if your site does not use cross-origin popups.',
             ];
         }
 
-        // --- Check: Cross-Origin-Embedder-Policy (COEP) ---
-        $maxScore += 10;
+        // --- Informational: Cross-Origin-Embedder-Policy (COEP) ---
+        // COEP breaks external embeds (YouTube, Google Maps, ads) unless they
+        // all send CORP headers. Shown as informational only.
         $coep = $headers['cross-origin-embedder-policy'] ?? null;
         if ($coep !== null) {
-            $score += 10;
             $checks[] = [
                 'id'          => 'header_coep',
                 'label'       => 'Cross-Origin-Embedder-Policy',
@@ -293,9 +293,9 @@ class HeadersScanner
             $checks[] = [
                 'id'             => 'header_coep',
                 'label'          => 'Cross-Origin-Embedder-Policy',
-                'status'         => 'warn',
-                'description'    => 'No Cross-Origin-Embedder-Policy (COEP) header found.',
-                'recommendation' => 'Add Cross-Origin-Embedder-Policy: require-corp to enable advanced browser isolation features (required for SharedArrayBuffer and high-resolution timers).',
+                'status'         => 'info',
+                'description'    => 'No Cross-Origin-Embedder-Policy (COEP) header found. Note: COEP breaks external embeds (YouTube, maps, ads) that don\'t send CORP headers.',
+                'recommendation' => 'Consider adding Cross-Origin-Embedder-Policy: require-corp only if your site does not embed third-party content.',
             ];
         }
 
