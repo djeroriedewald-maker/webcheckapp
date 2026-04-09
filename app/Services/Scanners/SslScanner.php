@@ -377,7 +377,19 @@ class SslScanner
         $accepted = [];
         foreach ($handles as $name => $ch) {
             if (curl_errno($ch) === 0) {
-                $accepted[] = $name;
+                // Verify the server actually negotiated one of the weak ciphers,
+                // not a strong fallback cipher chosen by the local OpenSSL library.
+                $usedCipher = strtoupper(curl_getinfo($ch, CURLINFO_SSL_CIPHER) ?? '');
+                $isWeak = match ($name) {
+                    'RC4'    => str_contains($usedCipher, 'RC4'),
+                    '3DES'   => str_contains($usedCipher, 'DES-CBC3') || str_contains($usedCipher, '3DES'),
+                    'EXPORT' => str_contains($usedCipher, 'EXP'),
+                    'NULL'   => str_contains($usedCipher, 'NULL'),
+                    default  => false,
+                };
+                if ($isWeak) {
+                    $accepted[] = $name;
+                }
             }
             curl_multi_remove_handle($multi, $ch);
             curl_close($ch);
