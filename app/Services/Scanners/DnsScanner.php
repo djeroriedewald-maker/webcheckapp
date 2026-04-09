@@ -197,18 +197,17 @@ class DnsScanner
         }
 
         // --- Informational: DNSSEC (not scored — PHP cannot reliably verify this) ---
-        // We show it as informational only. Most systems will report not confirmed,
-        // even for domains that do have DNSSEC, because php dns_get_record uses the
-        // system resolver which strips DNSSEC records.
+        // PHP's dns_get_record uses the system stub resolver which strips DNSSEC
+        // records (DS, DNSKEY, RRSIG). This means we almost always get a false
+        // negative. We show it as informational only, never as a warning.
         $dnssec = $this->safe(fn() => $this->checkDnssec($apexHost), false);
         $checks[] = [
             'id'          => 'dns_dnssec',
             'label'       => 'DNSSEC',
-            'status'      => $dnssec ? 'pass' : 'warn',
+            'status'      => $dnssec ? 'pass' : 'info',
             'description' => $dnssec
                 ? 'DNSSEC signatures detected for this domain.'
-                : 'DNSSEC could not be confirmed via this check. Verify with your domain registrar.',
-            'recommendation' => $dnssec ? null : 'Enable DNSSEC through your domain registrar to protect against DNS cache poisoning.',
+                : 'DNSSEC could not be verified via this automated check (PHP DNS resolvers strip DNSSEC data). Check with your domain registrar or use dnsviz.net to verify.',
         ];
 
         return [

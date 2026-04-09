@@ -73,31 +73,69 @@ class DirectoryBruteScanner
             curl_multi_select($multiHandle);
         } while ($running > 0);
 
+        $redirectsToVerify = [];
+
         foreach ($handles as $path => $ch) {
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $label = self::PATHS[$path];
-            curl_multi_remove_handle($multiHandle, $ch);
-            curl_close($ch);
 
-            // 200 or 301/302 (protected but exists) is interesting
-            if (in_array($code, [200, 301, 302, 403])) {
-                $statusText = match($code) {
-                    200     => 'accessible',
-                    403     => 'forbidden but exists',
-                    default => 'redirects',
-                };
+            if ($code === 200) {
+                // Directly accessible — real finding
                 $found[] = [
                     'path'   => $path,
                     'label'  => $label,
                     'code'   => $code,
-                    'status' => $statusText,
+                    'status' => 'accessible',
+                ];
+            } elseif ($code === 403) {
+                // Forbidden but exists — real finding
+                $found[] = [
+                    'path'   => $path,
+                    'label'  => $label,
+                    'code'   => $code,
+                    'status' => 'forbidden but exists',
+                ];
+            } elseif (in_array($code, [301, 302])) {
+                // Redirect — needs verification: is it a real redirect to the tool,
+                // or just the app's catch-all redirect to /login or /?
+                $redirectUrl = curl_getinfo($ch, CURLINFO_REDIRECT_URL) ?: '';
+                $redirectsToVerify[$path] = [
+                    'label'       => $label,
+                    'code'        => $code,
+                    'redirectUrl' => $redirectUrl,
                 ];
             } else {
                 $score += 5;
             }
+
+            curl_multi_remove_handle($multiHandle, $ch);
+            curl_close($ch);
         }
 
         curl_multi_close($multiHandle);
+
+        // Verify redirects: only flag if the redirect destination stays within the
+        // same path (e.g. /phpmyadmin → /phpmyadmin/index.php is real, but
+        // /phpmyadmin → /login or / is a catch-all and not a real finding).
+        foreach ($redirectsToVerify as $path => $info) {
+            $redirectPath = parse_url($info['redirectUrl'], PHP_URL_PATH) ?? '/';
+            $trimmedOriginal = rtrim($path, '/');
+
+            // The redirect destination starts with the original path = real tool redirect
+            $isRealRedirect = str_starts_with($redirectPath, $trimmedOriginal . '/');
+
+            if ($isRealRedirect) {
+                $found[] = [
+                    'path'   => $path,
+                    'label'  => $info['label'],
+                    'code'   => $info['code'],
+                    'status' => 'redirects',
+                ];
+            } else {
+                // Catch-all redirect (e.g. to /login, /) — not a real finding
+                $score += 5;
+            }
+        }
 
         if (empty($found)) {
             $checks[] = [

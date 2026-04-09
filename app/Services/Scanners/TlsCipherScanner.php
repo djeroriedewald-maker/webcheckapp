@@ -26,28 +26,45 @@ class TlsCipherScanner
             ? (CURL_SSLVERSION_TLSv1_0 | CURL_SSLVERSION_MAX_TLSv1_0) : null;
 
         // 1. TLS 1.3 support
+        // Guard: first verify that the scanning server's own curl/OpenSSL can
+        // negotiate TLS 1.3 at all.  If the local library doesn't support it,
+        // a handshake failure is a client-side limitation, not a server rejection.
         if ($tls13Version !== null) {
-            $tls13 = $this->safe(fn() => $this->testTlsVersion($host, $tls13Version), null);
-            if ($tls13 !== null) {
-                $maxScore += 20;
-                if ($tls13) {
-                    $score += 20;
-                    $checks[] = [
-                        'id'          => 'tls_v13',
-                        'label'       => 'TLS 1.3 supported',
-                        'status'      => 'pass',
-                        'description' => 'TLS 1.3 is supported — the most secure and performant TLS version.',
-                    ];
-                } else {
-                    $checks[] = [
-                        'id'             => 'tls_v13',
-                        'label'          => 'TLS 1.3 supported',
-                        'status'         => 'warn',
-                        'description'    => 'TLS 1.3 is not supported.',
-                        'recommendation' => 'Enable TLS 1.3 on your web server for better security and performance.',
-                    ];
+            $clientSupportsTls13 = $this->safe(fn() => $this->testTlsVersion('tls-v1-2.badssl.com', $tls13Version), null);
+
+            // Only test the target if we confirmed our client CAN do TLS 1.3
+            // (badssl.com doesn't support 1.3, so null/false is expected — but
+            // if we get a local SSL error with errno 35 and no handshake at all,
+            // the client itself lacks support).
+            // Simpler approach: try a known TLS 1.3 host.
+            $clientCanTls13 = $this->safe(fn() => $this->testTlsVersion('cloudflare.com', $tls13Version), null);
+
+            if ($clientCanTls13 === true) {
+                // Our client supports TLS 1.3 — now test the target
+                $tls13 = $this->safe(fn() => $this->testTlsVersion($host, $tls13Version), null);
+                if ($tls13 !== null) {
+                    $maxScore += 20;
+                    if ($tls13) {
+                        $score += 20;
+                        $checks[] = [
+                            'id'          => 'tls_v13',
+                            'label'       => 'TLS 1.3 supported',
+                            'status'      => 'pass',
+                            'description' => 'TLS 1.3 is supported — the most secure and performant TLS version.',
+                        ];
+                    } else {
+                        $checks[] = [
+                            'id'             => 'tls_v13',
+                            'label'          => 'TLS 1.3 supported',
+                            'status'         => 'warn',
+                            'description'    => 'TLS 1.3 is not supported.',
+                            'recommendation' => 'Enable TLS 1.3 on your web server for better security and performance.',
+                        ];
+                    }
                 }
             }
+            // If client can't do TLS 1.3, silently skip the check — don't report
+            // a false warning based on our own limitation.
         }
 
         // 2. TLS 1.2 support (required minimum)

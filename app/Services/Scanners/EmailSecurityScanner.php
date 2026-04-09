@@ -140,7 +140,9 @@ class EmailSecurityScanner
             }
         }
 
-        // Check 5: DANE/TLSA record (bonus)
+        // Check 5: DANE/TLSA record (informational only)
+        // PHP's dns_get_record(DNS_ANY) does not return TLSA records on most systems,
+        // so this check almost always produces a false negative. Show as info, not warn.
         $tlsaRecords = $this->safe(fn() => dns_get_record("_25._tcp.{$host}", DNS_ANY), []);
         $hasTlsa = false;
         foreach ($tlsaRecords as $record) {
@@ -161,8 +163,8 @@ class EmailSecurityScanner
             $checks[] = [
                 'id'          => 'email_no_dane',
                 'label'       => 'No DANE/TLSA record',
-                'status'      => 'warn',
-                'description' => 'No DANE TLSA record found. DANE provides additional verification for TLS certificates on mail servers.',
+                'status'      => 'info',
+                'description' => 'DANE/TLSA could not be verified via this automated check (PHP DNS resolvers do not return TLSA records). Use a dedicated tool like dane.sys4.de to verify.',
             ];
         }
 
